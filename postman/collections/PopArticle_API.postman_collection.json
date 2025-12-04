@@ -1,0 +1,1196 @@
+{
+    "info": {
+        "name": "PopArticle API",
+        "description": "Complete API collection for PopArticle - AI-Powered Content Platform\n\nSupports both authentication methods:\n1. JWT Token Authentication (for web/mobile apps)\n2. API Key Authentication (for programmatic access)",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "version": "1.0.0"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{jwt_token}}",
+                "type": "string"
+            }
+        ]
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:5000",
+            "type": "string"
+        },
+        {
+            "key": "jwt_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "refresh_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "api_key",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "user_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "article_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "category_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "tenant_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "tenant_slug",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "member_user_id",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "System",
+            "item": [
+                {
+                    "name": "Health Check",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/health",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "health"
+                            ]
+                        },
+                        "description": "Check if the API is running"
+                    }
+                },
+                {
+                    "name": "API Info",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                ""
+                            ]
+                        },
+                        "description": "Get API information and available endpoints"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Authentication (JWT)",
+            "item": [
+                {
+                    "name": "Register User",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.collectionVariables.set('jwt_token', response.access_token);",
+                                    "    pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                                    "    pm.collectionVariables.set('user_id', response.user.id);",
+                                    "    console.log('JWT Token saved:', response.access_token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"username\": \"testuser\",\n  \"full_name\": \"Test User\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "register"
+                            ]
+                        },
+                        "description": "Register a new user account. Returns JWT tokens and user info."
+                    }
+                },
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.collectionVariables.set('jwt_token', response.access_token);",
+                                    "    pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                                    "    pm.collectionVariables.set('user_id', response.user.id);",
+                                    "    console.log('JWT Token saved:', response.access_token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Login with email and password. Returns JWT tokens."
+                    }
+                },
+                {
+                    "name": "Refresh Token",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.collectionVariables.set('jwt_token', response.access_token);",
+                                    "    console.log('JWT Token refreshed:', response.access_token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/refresh",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "refresh"
+                            ]
+                        },
+                        "description": "Refresh access token using refresh token"
+                    }
+                },
+                {
+                    "name": "Get Current User",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "me"
+                            ]
+                        },
+                        "description": "Get current user profile (requires JWT token)"
+                    }
+                }
+            ],
+            "description": "JWT-based authentication endpoints for web/mobile applications"
+        },
+        {
+            "name": "OAuth",
+            "item": [
+                {
+                    "name": "Google OAuth Login",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/oauth/google",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "oauth",
+                                "google"
+                            ]
+                        },
+                        "description": "Initiate Google OAuth login flow"
+                    }
+                },
+                {
+                    "name": "GitHub OAuth Login",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/oauth/github",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "oauth",
+                                "github"
+                            ]
+                        },
+                        "description": "Initiate GitHub OAuth login flow"
+                    }
+                },
+                {
+                    "name": "LinkedIn OAuth Login",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/oauth/linkedin",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "oauth",
+                                "linkedin"
+                            ]
+                        },
+                        "description": "Initiate LinkedIn OAuth login flow"
+                    }
+                }
+            ],
+            "description": "OAuth authentication with Google, GitHub, and LinkedIn"
+        },
+        {
+            "name": "API Keys",
+            "item": [
+                {
+                    "name": "Create API Key",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.collectionVariables.set('api_key', response.api_key);",
+                                    "    console.log('API Key saved:', response.api_key);",
+                                    "    console.log('⚠️ IMPORTANT: Save this key! You will not see it again.');",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"My API Key\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/api-keys",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "api-keys"
+                            ]
+                        },
+                        "description": "Create a new API key (requires JWT authentication)"
+                    }
+                },
+                {
+                    "name": "List API Keys",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/api-keys",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "api-keys"
+                            ]
+                        },
+                        "description": "List all API keys for current user"
+                    }
+                },
+                {
+                    "name": "Delete API Key",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/api-keys/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "api-keys",
+                                "1"
+                            ]
+                        },
+                        "description": "Delete an API key by ID"
+                    }
+                }
+            ],
+            "description": "Manage API keys for programmatic access"
+        },
+        {
+            "name": "Articles (JWT Auth)",
+            "item": [
+                {
+                    "name": "Generate Article with AI",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.collectionVariables.set('article_id', response.article.id);",
+                                    "    console.log('Article created with ID:', response.article.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"topic\": \"The Future of Artificial Intelligence in Healthcare\",\n  \"category_id\": 1,\n  \"keywords\": [\"AI\", \"healthcare\", \"machine learning\", \"diagnosis\"],\n  \"tone\": \"professional\",\n  \"length\": \"medium\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles/generate",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles",
+                                "generate"
+                            ]
+                        },
+                        "description": "Generate a new article using OpenAI. Returns the complete article with SEO metadata."
+                    }
+                },
+                {
+                    "name": "List Articles",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles?status=published&limit=10&offset=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "published",
+                                    "description": "Filter by status (draft, published, archived)"
+                                },
+                                {
+                                    "key": "category_id",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "0"
+                                },
+                                {
+                                    "key": "user_only",
+                                    "value": "true",
+                                    "disabled": true,
+                                    "description": "Show only current user's articles"
+                                }
+                            ]
+                        },
+                        "description": "List articles with optional filtering"
+                    }
+                },
+                {
+                    "name": "Get Article by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles/{{article_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles",
+                                "{{article_id}}"
+                            ]
+                        },
+                        "description": "Get a specific article by ID"
+                    }
+                },
+                {
+                    "name": "Update Article",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Updated Article Title\",\n  \"content\": \"Updated article content in Markdown format...\",\n  \"status\": \"published\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles/{{article_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles",
+                                "{{article_id}}"
+                            ]
+                        },
+                        "description": "Update an existing article"
+                    }
+                },
+                {
+                    "name": "Delete Article",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles/{{article_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles",
+                                "{{article_id}}"
+                            ]
+                        },
+                        "description": "Delete an article"
+                    }
+                },
+                {
+                    "name": "Search Articles",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles/search?q=artificial%20intelligence&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles",
+                                "search"
+                            ],
+                            "query": [
+                                {
+                                    "key": "q",
+                                    "value": "artificial intelligence",
+                                    "description": "Search query"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        },
+                        "description": "Search articles by keywords"
+                    }
+                },
+                {
+                    "name": "Publish Article",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles/{{article_id}}/publish",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles",
+                                "{{article_id}}",
+                                "publish"
+                            ]
+                        },
+                        "description": "Publish a draft article"
+                    }
+                }
+            ],
+            "description": "Article management using JWT authentication",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{jwt_token}}",
+                        "type": "string"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Articles (API Key Auth)",
+            "item": [
+                {
+                    "name": "Generate Article with AI",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.collectionVariables.set('article_id', response.article.id);",
+                                    "    console.log('Article created with ID:', response.article.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"topic\": \"The Future of Artificial Intelligence in Healthcare\",\n  \"category_id\": 1,\n  \"keywords\": [\"AI\", \"healthcare\", \"machine learning\"],\n  \"tone\": \"professional\",\n  \"length\": \"medium\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles/generate",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles",
+                                "generate"
+                            ]
+                        },
+                        "description": "Generate article using API Key authentication"
+                    }
+                },
+                {
+                    "name": "List Articles",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles?status=published&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "published"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        },
+                        "description": "List articles using API Key authentication"
+                    }
+                },
+                {
+                    "name": "Get Article by ID",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles/{{article_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles",
+                                "{{article_id}}"
+                            ]
+                        },
+                        "description": "Get article using API Key authentication"
+                    }
+                },
+                {
+                    "name": "Search Articles",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles/search?q=technology",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles",
+                                "search"
+                            ],
+                            "query": [
+                                {
+                                    "key": "q",
+                                    "value": "technology"
+                                }
+                            ]
+                        },
+                        "description": "Search articles using API Key authentication"
+                    }
+                }
+            ],
+            "description": "Article management using API Key authentication (for programmatic access)"
+        },
+        {
+            "name": "Categories",
+            "item": [
+                {
+                    "name": "List Categories",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/categories",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "categories"
+                            ]
+                        },
+                        "description": "List all categories (no authentication required)"
+                    }
+                },
+                {
+                    "name": "Get Category by ID",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/categories/{{category_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "categories",
+                                "{{category_id}}"
+                            ]
+                        },
+                        "description": "Get a specific category"
+                    }
+                },
+                {
+                    "name": "Create Category",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.collectionVariables.set('category_id', response.category.id);",
+                                    "    console.log('Category created with ID:', response.category.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Artificial Intelligence\",\n  \"description\": \"Articles about AI, machine learning, and deep learning\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/categories",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "categories"
+                            ]
+                        },
+                        "description": "Create a new category (requires authentication)"
+                    }
+                },
+                {
+                    "name": "Update Category",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"AI & Machine Learning\",\n  \"description\": \"Updated description for AI category\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/categories/{{category_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "categories",
+                                "{{category_id}}"
+                            ]
+                        },
+                        "description": "Update a category (requires authentication)"
+                    }
+                },
+                {
+                    "name": "Delete Category",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/categories/{{category_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "categories",
+                                "{{category_id}}"
+                            ]
+                        },
+                        "description": "Delete a category (requires authentication)"
+                    }
+                }
+            ],
+            "description": "Category management endpoints"
+        },
+        {
+            "name": "Tenant Management",
+            "item": [
+                {
+                    "name": "Register Tenant",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const response = pm.response.json();",
+                                    "    if (response.tenant && response.tenant.id) {",
+                                    "        pm.collectionVariables.set('tenant_id', response.tenant.id);",
+                                    "        pm.collectionVariables.set('tenant_slug', response.tenant.slug);",
+                                    "        console.log('Tenant ID saved:', response.tenant.id);",
+                                    "    }",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"My Website\",\n    \"primary_domain\": \"example.com\",\n    \"plan\": \"free\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/tenants/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "tenants",
+                                "register"
+                            ]
+                        },
+                        "description": "Register a new tenant/website (requires JWT authentication)"
+                    }
+                },
+                {
+                    "name": "List My Tenants",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/tenants/my-tenants",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "tenants",
+                                "my-tenants"
+                            ]
+                        },
+                        "description": "List all tenants the current user belongs to"
+                    }
+                },
+                {
+                    "name": "Get Tenant Details",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "tenants",
+                                "{{tenant_id}}"
+                            ]
+                        },
+                        "description": "Get detailed information about a specific tenant"
+                    }
+                },
+                {
+                    "name": "Update Tenant",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Updated Website Name\",\n    \"allowed_domains\": [\"example.com\", \"www.example.com\"],\n    \"settings\": {\n        \"theme\": \"dark\",\n        \"analytics_enabled\": true\n    },\n    \"branding\": {\n        \"logo_url\": \"https://example.com/logo.png\",\n        \"primary_color\": \"#007bff\"\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "tenants",
+                                "{{tenant_id}}"
+                            ]
+                        },
+                        "description": "Update tenant settings (owner/admin only)"
+                    }
+                },
+                {
+                    "name": "Get Tenant Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}/stats",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "tenants",
+                                "{{tenant_id}}",
+                                "stats"
+                            ]
+                        },
+                        "description": "Get usage statistics for a tenant"
+                    }
+                },
+                {
+                    "name": "List Tenant Members",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}/members",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "tenants",
+                                "{{tenant_id}}",
+                                "members"
+                            ]
+                        },
+                        "description": "List all members of a tenant"
+                    }
+                },
+                {
+                    "name": "Add Tenant Member",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"teammate@example.com\",\n    \"role\": \"user\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}/members",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "tenants",
+                                "{{tenant_id}}",
+                                "members"
+                            ]
+                        },
+                        "description": "Add a member to tenant (owner/admin only). Role can be 'user' or 'admin'"
+                    }
+                },
+                {
+                    "name": "Remove Tenant Member",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}/members/{{member_user_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "tenants",
+                                "{{tenant_id}}",
+                                "members",
+                                "{{member_user_id}}"
+                            ]
+                        },
+                        "description": "Remove a member from tenant (owner/admin only)"
+                    }
+                }
+            ],
+            "description": "Multi-tenant management endpoints for registering and managing websites/organizations"
+        }
+    ]
+}
