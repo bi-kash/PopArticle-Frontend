@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { authService } from "@/lib/authService";
+import SocialAuth from "@/components/SocialAuth";
 
 export default function Register() {
   const router = useRouter();
@@ -13,6 +14,8 @@ export default function Register() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  <SocialAuth />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();

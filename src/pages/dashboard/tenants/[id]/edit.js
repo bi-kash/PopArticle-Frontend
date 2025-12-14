@@ -1,46 +1,92 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayout";
 import { tenantService } from "@/lib/tenantService";
-import { Building2, Save } from "lucide-react";
+import { Building2, Save, ArrowLeft } from "lucide-react";
 
-export default function NewTenant() {
+export default function EditTenant() {
   const router = useRouter();
+  const { id } = router.query;
   const [formData, setFormData] = useState({
     name: "",
     primary_domain: "",
     plan: "free",
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  useEffect(() => {
+    if (id) {
+      loadTenant();
+    }
+  }, [id]);
 
+  const loadTenant = async () => {
     try {
-      await tenantService.registerTenant(formData);
-      router.push("/dashboard/tenants");
+      setLoading(true);
+      const data = await tenantService.getTenant(id);
+      const tenant = data.tenant || data;
+      setFormData({
+        name: tenant.name || "",
+        primary_domain: tenant.primary_domain || "",
+        plan: tenant.plan || "free",
+      });
     } catch (err) {
-      console.error("Tenant registration error:", err);
-      console.error("Error response:", err.response);
-      const errorMessage =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to register tenant";
-      setError(errorMessage);
+      console.error("Failed to load tenant:", err);
+      setError(err.response?.data?.message || "Failed to load tenant");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSaving(true);
+
+    try {
+      await tenantService.updateTenant(id, formData);
+      router.push(`/dashboard/tenants/${id}`);
+    } catch (err) {
+      console.error("Update error:", err);
+      setError(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Failed to update tenant"
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <ProtectedRoute>
+        <DashboardLayout>
+          <div className="loading">
+            <div className="spinner"></div>
+          </div>
+        </DashboardLayout>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <DashboardLayout>
         <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+          <div style={{ marginBottom: "2rem" }}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => router.push(`/dashboard/tenants/${id}`)}
+            >
+              <ArrowLeft size={20} />
+              Back to Tenant
+            </button>
+          </div>
+
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
             <Building2
               size={48}
@@ -53,11 +99,10 @@ export default function NewTenant() {
                 marginBottom: "0.5rem",
               }}
             >
-              Register New Tenant
+              Edit Tenant
             </h1>
             <p style={{ color: "var(--text-secondary)" }}>
-              Register a new website that can use PopArticle for authentication
-              and content
+              Update tenant information and settings
             </p>
           </div>
 
@@ -77,15 +122,6 @@ export default function NewTenant() {
                   required
                   placeholder="My Awesome Website"
                 />
-                <p
-                  style={{
-                    fontSize: "0.875rem",
-                    color: "var(--text-secondary)",
-                    marginTop: "0.25rem",
-                  }}
-                >
-                  A friendly name for your website
-                </p>
               </div>
 
               <div className="form-group">
@@ -100,15 +136,6 @@ export default function NewTenant() {
                   required
                   placeholder="example.com"
                 />
-                <p
-                  style={{
-                    fontSize: "0.875rem",
-                    color: "var(--text-secondary)",
-                    marginTop: "0.25rem",
-                  }}
-                >
-                  The main domain where your website is hosted
-                </p>
               </div>
 
               <div className="form-group">
@@ -127,29 +154,20 @@ export default function NewTenant() {
                 </select>
               </div>
 
-              <div
-                className="alert alert-warning"
-                style={{ marginBottom: "1rem" }}
-              >
-                <strong>Note:</strong> After registering your tenant,
-                you&apos;ll receive a tenant ID that you can use to enable
-                authentication on your website.
-              </div>
-
               <div style={{ display: "flex", gap: "1rem" }}>
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={loading}
+                  disabled={saving}
                   style={{ flex: 1 }}
                 >
                   <Save size={20} />
-                  {loading ? "Registering..." : "Register Tenant"}
+                  {saving ? "Saving..." : "Save Changes"}
                 </button>
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => router.push("/dashboard/tenants")}
+                  onClick={() => router.push(`/dashboard/tenants/${id}`)}
                 >
                   Cancel
                 </button>

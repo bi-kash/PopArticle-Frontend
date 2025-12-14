@@ -18,9 +18,25 @@ export default function TenantsPage() {
   const loadTenants = async () => {
     try {
       const data = await tenantService.getMyTenants();
-      setTenants(data.tenants || []);
+      console.log("Tenants API response:", data);
+      console.log("Response type:", typeof data);
+      console.log("Is array?:", Array.isArray(data));
+
+      // Handle different response structures
+      let tenantsArray = [];
+      if (Array.isArray(data)) {
+        tenantsArray = data;
+      } else if (data.tenants && Array.isArray(data.tenants)) {
+        tenantsArray = data.tenants;
+      } else if (data.data && Array.isArray(data.data)) {
+        tenantsArray = data.data;
+      }
+
+      console.log("Parsed tenants array:", tenantsArray);
+      setTenants(tenantsArray);
     } catch (error) {
       console.error("Failed to load tenants:", error);
+      console.error("Error response:", error.response);
     } finally {
       setLoading(false);
     }

@@ -17,8 +17,10 @@ export default function DashboardLayout({ children }) {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const userData = authService.getUser();
     setUser(userData);
   }, []);
@@ -41,6 +43,8 @@ export default function DashboardLayout({ children }) {
         display: "flex",
         minHeight: "100vh",
         background: "var(--surface)",
+        opacity: mounted ? 1 : 0,
+        transition: "opacity 0.15s ease-in",
       }}
     >
       {/* Sidebar */}
@@ -141,7 +145,7 @@ export default function DashboardLayout({ children }) {
                 </span>
               </div>
               <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>
-                {user?.email}
+                {user?.email || ""}
               </span>
             </div>
 
@@ -209,7 +213,7 @@ export default function DashboardLayout({ children }) {
             <div
               style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}
             >
-              {user?.email}
+              {user?.email || ""}
             </div>
           </div>
         </header>

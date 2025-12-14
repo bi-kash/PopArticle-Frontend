@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { authService } from "@/lib/authService";
+import SocialAuth from "@/components/SocialAuth";
 
 export default function Login() {
   const router = useRouter();
@@ -109,6 +110,8 @@ export default function Login() {
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
+
+        <SocialAuth />
 
         <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
           <p style={{ color: "var(--text-secondary)" }}>
