@@ -14,7 +14,7 @@ const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
 
 export default function EditArticle() {
   const router = useRouter();
-  const { id } = router.query;
+  const { id: tenantId, articleId } = router.query;
   const [formData, setFormData] = useState(null);
   const [editorType, setEditorType] = useState("markdown");
   const [categories, setCategories] = useState([]);
@@ -24,21 +24,29 @@ export default function EditArticle() {
   const [keywordInput, setKeywordInput] = useState("");
 
   useEffect(() => {
-    if (id) {
+    if (articleId && tenantId) {
       loadArticle();
       loadCategories();
     }
-  }, [id]);
+  }, [articleId, tenantId]);
 
   const loadArticle = async () => {
     try {
-      const data = await articleService.getArticle(id);
+      const data = await articleService.getArticle(articleId);
+
+      // Handle both category_id (number) and category (object with id)
+      let categoryId = data.article.category_id;
+      if (!categoryId && data.article.category) {
+        categoryId = data.article.category.id;
+      }
+
       setFormData({
         title: data.article.title || "",
         content: data.article.content || "",
         excerpt: data.article.excerpt || "",
-        category_id: data.article.category_id || "",
+        category_id: categoryId ? String(categoryId) : "",
         status: data.article.status || "draft",
+        is_featured: data.article.is_featured || false,
         meta_title: data.article.meta_title || "",
         meta_description: data.article.meta_description || "",
         keywords: data.article.keywords || [],
@@ -60,7 +68,7 @@ export default function EditArticle() {
 
   const loadCategories = async () => {
     try {
-      const data = await categoryService.getCategories();
+      const data = await categoryService.getCategories({ tenant_id: tenantId });
       setCategories(data.categories || []);
     } catch (error) {
       console.error("Failed to load categories:", error);
@@ -78,12 +86,17 @@ export default function EditArticle() {
         category_id: formData.category_id
           ? parseInt(formData.category_id)
           : null,
+        is_featured: Boolean(formData.is_featured),
       };
 
-      await articleService.updateArticle(id, data);
-      router.push("/dashboard/articles");
+      await articleService.updateArticle(articleId, data);
+      router.push(`/dashboard/tenants/${tenantId}/articles`);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update article");
+      setError(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Failed to update article"
+      );
     } finally {
       setSaving(false);
     }
@@ -93,8 +106,8 @@ export default function EditArticle() {
     if (!confirm("Are you sure you want to delete this article?")) return;
 
     try {
-      await articleService.deleteArticle(id);
-      router.push("/dashboard/articles");
+      await articleService.deleteArticle(articleId);
+      router.push(`/dashboard/tenants/${tenantId}/articles`);
     } catch (error) {
       alert("Failed to delete article");
     }
@@ -252,6 +265,40 @@ export default function EditArticle() {
                     <option value="published">Published</option>
                     <option value="archived">Archived</option>
                   </select>
+                </div>
+
+                <div className="form-group">
+                  <label
+                    className="label"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.is_featured}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          is_featured: e.target.checked,
+                        })
+                      }
+                      style={{ width: "auto", cursor: "pointer" }}
+                    />
+                    <span>Featured Article</span>
+                  </label>
+                  <small
+                    style={{
+                      color: "var(--text-secondary)",
+                      display: "block",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    Featured articles appear in special sections and highlights
+                  </small>
                 </div>
               </div>
             </div>

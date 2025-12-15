@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import DashboardLayout from "@/components/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { categoryService } from "@/lib/categoryService";
 import { Plus, Edit, Trash2, FolderTree } from "lucide-react";
 

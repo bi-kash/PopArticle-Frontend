@@ -9,7 +9,16 @@ export const articleService = {
 
   // Get all articles
   async getArticles(params = {}) {
-    const response = await api.get("/api/v1/articles", { params });
+    // Extract tenant_id from params to send as header
+    const { tenant_id, ...queryParams } = params;
+    const config = { params: queryParams };
+
+    // If tenant_id is provided, send it as X-Tenant-ID header
+    if (tenant_id) {
+      config.headers = { "X-Tenant-ID": tenant_id };
+    }
+
+    const response = await api.get("/api/v1/articles", config);
     return response.data;
   },
 

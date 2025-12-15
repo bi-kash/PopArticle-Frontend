@@ -1,62 +1,45 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
-import { Save, Trash2 } from "lucide-react";
+import { Save, Eye } from "lucide-react";
 
+// Dynamic imports for editors to avoid SSR issues
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
   ssr: false,
 });
 
-export default function EditArticle() {
+export default function NewArticle() {
   const router = useRouter();
-  const { id } = router.query;
-  const [formData, setFormData] = useState(null);
-  const [editorType, setEditorType] = useState("markdown");
+  const { id: tenantId } = router.query;
+  const [formData, setFormData] = useState({
+    title: "",
+    content: "",
+    excerpt: "",
+    category_id: "",
+    status: "draft",
+    is_featured: false,
+    meta_title: "",
+    meta_description: "",
+    keywords: [],
+    tenant_id: "",
+  });
+  const [editorType, setEditorType] = useState("markdown"); // 'html' or 'markdown'
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
 
   useEffect(() => {
-    if (id) {
-      loadArticle();
-      loadCategories();
+    loadCategories();
+    if (tenantId) {
+      setFormData((prev) => ({ ...prev, tenant_id: tenantId }));
     }
-  }, [id]);
-
-  const loadArticle = async () => {
-    try {
-      const data = await articleService.getArticle(id);
-      setFormData({
-        title: data.article.title || "",
-        content: data.article.content || "",
-        excerpt: data.article.excerpt || "",
-        category_id: data.article.category_id || "",
-        status: data.article.status || "draft",
-        meta_title: data.article.meta_title || "",
-        meta_description: data.article.meta_description || "",
-        keywords: data.article.keywords || [],
-      });
-
-      // Detect editor type from content
-      if (
-        data.article.content?.includes("<") &&
-        data.article.content?.includes(">")
-      ) {
-        setEditorType("html");
-      }
-    } catch (error) {
-      setError("Failed to load article");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [tenantId]);
 
   const loadCategories = async () => {
     try {
@@ -70,7 +53,7 @@ export default function EditArticle() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSaving(true);
+    setLoading(true);
 
     try {
       const data = {
@@ -78,25 +61,22 @@ export default function EditArticle() {
         category_id: formData.category_id
           ? parseInt(formData.category_id)
           : null,
+        is_featured: Boolean(formData.is_featured),
+        tenant_id: tenantId,
       };
 
-      await articleService.updateArticle(id, data);
-      router.push("/dashboard/articles");
+      const response = await articleService.createArticle(data);
+      router.push(
+        `/dashboard/tenants/${tenantId}/articles/${response.article.id}`
+      );
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update article");
+      setError(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Failed to create article"
+      );
     } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this article?")) return;
-
-    try {
-      await articleService.deleteArticle(id);
-      router.push("/dashboard/articles");
-    } catch (error) {
-      alert("Failed to delete article");
+      setLoading(false);
     }
   };
 
@@ -120,28 +100,6 @@ export default function EditArticle() {
     });
   };
 
-  if (loading) {
-    return (
-      <ProtectedRoute>
-        <DashboardLayout>
-          <div className="loading">
-            <div className="spinner"></div>
-          </div>
-        </DashboardLayout>
-      </ProtectedRoute>
-    );
-  }
-
-  if (!formData) {
-    return (
-      <ProtectedRoute>
-        <DashboardLayout>
-          <div className="alert alert-error">Article not found</div>
-        </DashboardLayout>
-      </ProtectedRoute>
-    );
-  }
-
   const quillModules = {
     toolbar: [
       [{ header: [1, 2, 3, false] }],
@@ -158,22 +116,15 @@ export default function EditArticle() {
     <ProtectedRoute>
       <DashboardLayout>
         <div>
-          <div
+          <h1
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              fontSize: "2rem",
+              fontWeight: "bold",
               marginBottom: "2rem",
             }}
           >
-            <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
-              Edit Article
-            </h1>
-            <button className="btn btn-danger" onClick={handleDelete}>
-              <Trash2 size={20} />
-              Delete
-            </button>
-          </div>
+            Create New Article
+          </h1>
 
           {error && <div className="alert alert-error">{error}</div>}
 
@@ -199,6 +150,7 @@ export default function EditArticle() {
                     setFormData({ ...formData, title: e.target.value })
                   }
                   required
+                  placeholder="Enter article title"
                 />
               </div>
 
@@ -210,6 +162,7 @@ export default function EditArticle() {
                   onChange={(e) =>
                     setFormData({ ...formData, excerpt: e.target.value })
                   }
+                  placeholder="Brief description of the article"
                   rows="3"
                 />
               </div>
@@ -250,12 +203,46 @@ export default function EditArticle() {
                   >
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
-                    <option value="archived">Archived</option>
                   </select>
+                </div>
+
+                <div className="form-group">
+                  <label
+                    className="label"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.is_featured}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          is_featured: e.target.checked,
+                        })
+                      }
+                      style={{ width: "auto", cursor: "pointer" }}
+                    />
+                    <span>Featured Article</span>
+                  </label>
+                  <small
+                    style={{
+                      color: "var(--text-secondary)",
+                      display: "block",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    Featured articles appear in special sections and highlights
+                  </small>
                 </div>
               </div>
             </div>
 
+            {/* Content Editor */}
             <div className="card" style={{ marginBottom: "2rem" }}>
               <div
                 style={{
@@ -300,6 +287,7 @@ export default function EditArticle() {
                   }
                   options={{
                     spellChecker: false,
+                    placeholder: "Write your article content in Markdown...",
                     status: false,
                     autofocus: false,
                   }}
@@ -312,10 +300,12 @@ export default function EditArticle() {
                     setFormData({ ...formData, content: value })
                   }
                   modules={quillModules}
+                  placeholder="Write your article content..."
                 />
               )}
             </div>
 
+            {/* SEO Settings */}
             <div className="card" style={{ marginBottom: "2rem" }}>
               <h2
                 style={{
@@ -336,6 +326,7 @@ export default function EditArticle() {
                   onChange={(e) =>
                     setFormData({ ...formData, meta_title: e.target.value })
                   }
+                  placeholder="SEO title for search engines"
                 />
               </div>
 
@@ -350,6 +341,7 @@ export default function EditArticle() {
                       meta_description: e.target.value,
                     })
                   }
+                  placeholder="SEO description for search engines"
                   rows="3"
                 />
               </div>
@@ -372,7 +364,7 @@ export default function EditArticle() {
                       e.key === "Enter" &&
                       (e.preventDefault(), handleAddKeyword())
                     }
-                    placeholder="Add keyword"
+                    placeholder="Add keyword and press Enter"
                   />
                   <button
                     type="button"
@@ -399,14 +391,15 @@ export default function EditArticle() {
               </div>
             </div>
 
+            {/* Submit */}
             <div style={{ display: "flex", gap: "1rem" }}>
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={saving}
+                disabled={loading}
               >
                 <Save size={20} />
-                {saving ? "Saving..." : "Save Changes"}
+                {loading ? "Saving..." : "Save Article"}
               </button>
               <button
                 type="button"

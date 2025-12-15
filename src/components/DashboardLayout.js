@@ -43,12 +43,11 @@ export default function DashboardLayout({ children }) {
         display: "flex",
         minHeight: "100vh",
         background: "var(--surface)",
-        opacity: mounted ? 1 : 0,
-        transition: "opacity 0.15s ease-in",
       }}
     >
       {/* Sidebar */}
       <aside
+        suppressHydrationWarning
         style={{
           width: sidebarOpen ? "250px" : "0",
           position: "fixed",
@@ -60,6 +59,7 @@ export default function DashboardLayout({ children }) {
           transition: "width 0.3s",
           overflow: "hidden",
           zIndex: 1000,
+          opacity: mounted ? 1 : 0,
         }}
       >
         <div style={{ padding: "1.5rem" }}>
@@ -132,6 +132,7 @@ export default function DashboardLayout({ children }) {
               }}
             >
               <div
+                suppressHydrationWarning
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -144,7 +145,10 @@ export default function DashboardLayout({ children }) {
                   {user?.full_name || "User"}
                 </span>
               </div>
-              <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>
+              <span
+                suppressHydrationWarning
+                style={{ fontSize: "0.75rem", opacity: 0.7 }}
+              >
                 {user?.email || ""}
               </span>
             </div>
@@ -211,6 +215,7 @@ export default function DashboardLayout({ children }) {
             </button>
 
             <div
+              suppressHydrationWarning
               style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}
             >
               {user?.email || ""}

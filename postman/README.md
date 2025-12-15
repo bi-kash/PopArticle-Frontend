@@ -102,6 +102,183 @@ The collection supports two authentication methods:
 
 - Create, List, Get, Update, Delete
 
+### Tenant Management
+
+- Register Tenant, List My Tenants, Get Tenant Details, Update Tenant
+- Get Tenant Statistics, List Members, Add Member, Remove Member
+
+## Multi-Tenant Testing
+
+The PopArticle API supports multi-tenant architecture, allowing multiple websites/applications to use the same backend with complete data isolation.
+
+### Understanding Tenants
+
+A **tenant** represents a separate organization, website, or application using the PopArticle backend. Each tenant has:
+
+- Unique domain and slug
+- Isolated articles, categories, and users
+- Usage limits based on plan (Free: 10 articles/month, Pro: 100, Enterprise: unlimited)
+- Team members with roles (owner, admin, user)
+
+### Tenant Identification Methods
+
+The API identifies tenants using one of these methods (in priority order):
+
+1. **X-Tenant-ID Header**: Explicit tenant ID
+
+   ```
+   X-Tenant-ID: 123
+   ```
+
+2. **X-Tenant-Slug Header**: Tenant slug
+
+   ```
+   X-Tenant-Slug: my-company
+   ```
+
+3. **Origin Header**: Matches registered domain
+
+   ```
+   Origin: https://my-company.com
+   ```
+
+4. **Host Header**: Matches registered domain
+   ```
+   Host: my-company.com
+   ```
+
+### Multi-Tenant Testing Workflow
+
+1. **Register a user** (if you haven't):
+
+   - Authentication JWT → Register
+   - Tokens saved automatically
+
+2. **Register your first tenant**:
+
+   - Tenant Management → Register Tenant
+   - Provide: `name`, `slug`, `primary_domain`
+   - `tenant_id` and `tenant_slug` saved automatically
+   - You become the tenant owner
+
+3. **List your tenants**:
+
+   - Tenant Management → List My Tenants
+   - See all tenants you're a member of with your role
+
+4. **Get tenant details**:
+
+   - Tenant Management → Get Tenant Details
+   - View settings, branding, usage stats
+
+5. **Add team members**:
+
+   - Tenant Management → Add Member
+   - Invite users by email with role (owner/admin/user)
+
+6. **Create tenant-scoped content**:
+   - Enable the `X-Tenant-ID` header in article/category/API key requests (currently disabled by default)
+   - The header will use `{{tenant_id}}` variable (auto-saved from tenant registration)
+   - All data is automatically isolated per tenant
+
+### Using X-Tenant-ID Header in Postman
+
+All article, category, and API key endpoints include an **optional** `X-Tenant-ID` header that is **disabled by default**:
+
+**To enable tenant isolation:**
+
+1. Open any article/category request (e.g., "Generate Article with AI")
+2. Go to the **Headers** tab
+3. Find the `X-Tenant-ID` header
+4. **Check the box** to enable it
+5. The header will automatically use `{{tenant_id}}` from your variables
+
+**Header behavior:**
+
+- **Disabled (default)**: Works without tenant (backward compatible)
+- **Enabled**: Filters/creates content within the specified tenant
+- **Value**: Uses `{{tenant_id}}` variable auto-saved from tenant registration
+
+**Endpoints with X-Tenant-ID support:**
+
+- ✅ Generate Article
+- ✅ List/Get/Update/Delete Article
+- ✅ Search Articles
+- ✅ Publish Article
+- ✅ Create/List/Get/Update/Delete Category
+- ✅ Create/List API Keys
+
+### Example: Testing Tenant Isolation
+
+To verify complete data isolation:
+
+1. **Create Tenant A**:
+
+   ```
+   POST /api/v1/tenants/register
+   { "name": "Company A", "slug": "company-a", "primary_domain": "companya.com" }
+   ```
+
+   Save tenant_id as `tenant_a_id`
+
+2. **Create Article in Tenant A**:
+
+   ```
+   POST /api/v1/articles/generate
+   Headers: X-Tenant-ID: {{tenant_a_id}}
+   ```
+
+3. **Create Tenant B**:
+
+   ```
+   POST /api/v1/tenants/register
+   { "name": "Company B", "slug": "company-b", "primary_domain": "companyb.com" }
+   ```
+
+   Save tenant_id as `tenant_b_id`
+
+4. **List Articles in Tenant B**:
+   ```
+   GET /api/v1/articles
+   Headers: X-Tenant-ID: {{tenant_b_id}}
+   ```
+   Result: Empty list (Tenant A's articles are isolated)
+
+### Tenant Settings & Branding
+
+Update tenant configuration:
+
+```json
+PUT /api/v1/tenants/{{tenant_id}}
+{
+  "settings": {
+    "theme": "dark",
+    "language": "en",
+    "timezone": "UTC"
+  },
+  "branding": {
+    "logo_url": "https://example.com/logo.png",
+    "primary_color": "#007bff",
+    "secondary_color": "#6c757d"
+  }
+}
+```
+
+### Monitoring Tenant Usage
+
+Check article generation limits and usage:
+
+```
+GET /api/v1/tenants/{{tenant_id}}/stats
+```
+
+Returns:
+
+- Current article count
+- Monthly limit based on plan
+- Percentage used
+- Members count
+
 ## Testing Workflow
 
 ### First Time Setup
@@ -145,6 +322,9 @@ The collection uses these variables (automatically managed):
 - `user_id`: Current user ID (auto-saved)
 - `article_id`: Last created article ID (auto-saved)
 - `category_id`: Last created category ID (auto-saved)
+- `tenant_id`: Current tenant ID (auto-saved after tenant registration)
+- `tenant_slug`: Current tenant slug (auto-saved after tenant registration)
+- `member_user_id`: User ID for tenant member operations (manual)
 
 ## Auto-Save Scripts
 
@@ -154,6 +334,7 @@ Most requests include test scripts that automatically save response data:
 - Create API Key: Saves `api_key`
 - Create Article: Saves `article_id`
 - Create Category: Saves `category_id`
+- Register Tenant: Saves `tenant_id` and `tenant_slug`
 
 ## OAuth Testing
 
@@ -215,15 +396,16 @@ API will be available at `http://localhost:5000`
 
 ## Quick Reference
 
-| Folder             | Auth Method        | Use Case                |
-| ------------------ | ------------------ | ----------------------- |
-| System             | None               | Health checks           |
-| Authentication JWT | None (creates JWT) | User registration/login |
-| OAuth              | None (creates JWT) | Social login            |
-| API Keys           | JWT required       | Key management          |
-| Articles (JWT)     | JWT Bearer token   | Web/mobile apps         |
-| Articles (API Key) | X-API-Key header   | Scripts/integrations    |
-| Categories         | JWT Bearer token   | Content management      |
+| Folder             | Auth Method        | Use Case                    |
+| ------------------ | ------------------ | --------------------------- |
+| System             | None               | Health checks               |
+| Authentication JWT | None (creates JWT) | User registration/login     |
+| OAuth              | None (creates JWT) | Social login                |
+| API Keys           | JWT required       | Key management              |
+| Articles (JWT)     | JWT Bearer token   | Web/mobile apps             |
+| Articles (API Key) | X-API-Key header   | Scripts/integrations        |
+| Categories         | JWT Bearer token   | Content management          |
+| Tenant Management  | JWT Bearer token   | Multi-tenant setup & config |
 
 ## Support
 

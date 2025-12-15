@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import DashboardLayout from "@/components/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { tenantService } from "@/lib/tenantService";
 import { Building2, Save } from "lucide-react";
 
@@ -12,6 +12,8 @@ export default function NewTenant() {
     primary_domain: "",
     plan: "free",
   });
+  const [categories, setCategories] = useState([]);
+  const [categoryInput, setCategoryInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -21,8 +23,18 @@ export default function NewTenant() {
     setLoading(true);
 
     try {
-      await tenantService.registerTenant(formData);
-      router.push("/dashboard/tenants");
+      const tenantData = {
+        ...formData,
+        categories: categories.length > 0 ? categories : undefined,
+      };
+      const response = await tenantService.registerTenant(tenantData);
+      const tenantId = response.tenant?.id || response.id;
+
+      if (tenantId) {
+        router.push(`/dashboard/tenants/${tenantId}/dashboard`);
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       console.error("Tenant registration error:", err);
       console.error("Error response:", err.response);
@@ -34,6 +46,28 @@ export default function NewTenant() {
       setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddCategory = () => {
+    const trimmed = categoryInput.trim();
+    if (
+      trimmed &&
+      !categories.some((cat) => cat.toLowerCase() === trimmed.toLowerCase())
+    ) {
+      setCategories([...categories, trimmed]);
+      setCategoryInput("");
+    }
+  };
+
+  const handleRemoveCategory = (index) => {
+    setCategories(categories.filter((_, i) => i !== index));
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddCategory();
     }
   };
 
@@ -127,13 +161,96 @@ export default function NewTenant() {
                 </select>
               </div>
 
+              {/* Categories Section */}
+              <div className="form-group">
+                <label className="label">Initial Categories (Optional)</label>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "0.5rem",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  <input
+                    type="text"
+                    className="input"
+                    value={categoryInput}
+                    onChange={(e) => setCategoryInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Enter category name"
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleAddCategory}
+                    disabled={!categoryInput.trim()}
+                  >
+                    Add
+                  </button>
+                </div>
+                <p
+                  style={{
+                    fontSize: "0.875rem",
+                    color: "var(--text-secondary)",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  Add categories for organizing your articles (e.g., Technology,
+                  News, Blog)
+                </p>
+                {categories.length > 0 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "0.5rem",
+                      marginTop: "0.5rem",
+                    }}
+                  >
+                    {categories.map((category, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          padding: "0.5rem 0.75rem",
+                          background: "var(--primary-color)",
+                          color: "white",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        {category}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCategory(index)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "white",
+                            cursor: "pointer",
+                            padding: "0",
+                            fontSize: "1.25rem",
+                            lineHeight: 1,
+                          }}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div
                 className="alert alert-warning"
                 style={{ marginBottom: "1rem" }}
               >
                 <strong>Note:</strong> After registering your tenant,
-                you&apos;ll receive a tenant ID that you can use to enable
-                authentication on your website.
+                you&apos;ll have access to a dedicated dashboard to manage
+                articles and categories.
               </div>
 
               <div style={{ display: "flex", gap: "1rem" }}>

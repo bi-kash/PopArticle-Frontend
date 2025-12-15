@@ -1,9 +1,9 @@
 import api from "./api";
 
 export const categoryService = {
-  // Get all categories
-  async getCategories() {
-    const response = await api.get("/api/v1/categories");
+  // Get all categories (optionally filtered by tenant)
+  async getCategories(params = {}) {
+    const response = await api.get("/api/v1/categories", { params });
     return response.data;
   },
 
@@ -25,9 +25,9 @@ export const categoryService = {
     return response.data;
   },
 
-  // Delete category
-  async deleteCategory(id) {
-    const response = await api.delete(`/api/v1/categories/${id}`);
+  // Delete category with options for handling articles
+  async deleteCategory(id, params = {}) {
+    const response = await api.delete(`/api/v1/categories/${id}`, { params });
     return response.data;
   },
 };

@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "PopArticle API",
-        "description": "Complete API collection for PopArticle - AI-Powered Content Platform\n\nSupports both authentication methods:\n1. JWT Token Authentication (for web/mobile apps)\n2. API Key Authentication (for programmatic access)",
+        "description": "Complete API collection for PopArticle - AI-Powered Content Platform\n\n## Two Types of Users:\n\n### 1. Platform Admins (tenant_id = NULL)\n- Login/Register on your admin website WITHOUT X-Tenant-ID header\n- Manage tenants and platform settings\n- Use 'Authentication - Platform Admin' folder\n\n### 2. Tenant Users (tenant_id = value)\n- Login/Register on tenant websites WITH X-Tenant-ID header\n- Belong to specific tenant, isolated data\n- Use 'Authentication - Tenant User' folder\n- Same email can register on multiple tenants as separate users\n\n## Authentication Methods:\n1. JWT Token Authentication (for web/mobile apps)\n2. API Key Authentication (for programmatic access)",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "version": "1.0.0"
     },
@@ -108,6 +108,501 @@
             ]
         },
         {
+            "name": "Authentication - Platform Admin",
+            "item": [
+                {
+                    "name": "Register Platform Admin",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.collectionVariables.set('jwt_token', response.access_token);",
+                                    "    pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                                    "    pm.collectionVariables.set('user_id', response.user.id);",
+                                    "    console.log('Platform Admin registered!');",
+                                    "    console.log('JWT Token saved:', response.access_token);",
+                                    "    console.log('is_platform_admin:', response.user.is_platform_admin);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"admin@yourplatform.com\",\n  \"password\": \"AdminSecure123!\",\n  \"username\": \"platformadmin\",\n  \"full_name\": \"Platform Administrator\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "register"
+                            ]
+                        },
+                        "description": "Register a platform admin (NO X-Tenant-ID header). Platform admins manage tenants and have access to the admin dashboard. User created with tenant_id = NULL."
+                    }
+                },
+                {
+                    "name": "Login Platform Admin",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.collectionVariables.set('jwt_token', response.access_token);",
+                                    "    pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                                    "    pm.collectionVariables.set('user_id', response.user.id);",
+                                    "    console.log('Platform Admin logged in!');",
+                                    "    console.log('JWT Token saved:', response.access_token);",
+                                    "    console.log('is_platform_admin:', response.user.is_platform_admin);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"admin@yourplatform.com\",\n  \"password\": \"AdminSecure123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Login as platform admin (NO X-Tenant-ID header). Authenticates users with tenant_id = NULL."
+                    }
+                },
+                {
+                    "name": "Google OAuth (Platform Admin)",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/oauth/google",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "oauth",
+                                "google"
+                            ]
+                        },
+                        "description": "Initiate Google OAuth login for platform admin (NO X-Tenant-ID header)"
+                    }
+                },
+                {
+                    "name": "GitHub OAuth (Platform Admin)",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/oauth/github",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "oauth",
+                                "github"
+                            ]
+                        },
+                        "description": "Initiate GitHub OAuth login for platform admin (NO X-Tenant-ID header)"
+                    }
+                },
+                {
+                    "name": "LinkedIn OAuth (Platform Admin)",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/oauth/linkedin",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "oauth",
+                                "linkedin"
+                            ]
+                        },
+                        "description": "Initiate LinkedIn OAuth login for platform admin (NO X-Tenant-ID header)"
+                    }
+                },
+                {
+                    "name": "Facebook OAuth (Platform Admin)",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/oauth/facebook",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "oauth",
+                                "facebook"
+                            ]
+                        },
+                        "description": "Initiate Facebook OAuth login for platform admin (NO X-Tenant-ID header)"
+                    }
+                }
+            ],
+            "description": "Platform Admin authentication - for your admin website that manages tenants. No X-Tenant-ID header required. Users have tenant_id = NULL."
+        },
+        {
+            "name": "Authentication - Tenant User",
+            "item": [
+                {
+                    "name": "Register Tenant User",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.collectionVariables.set('jwt_token', response.access_token);",
+                                    "    pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                                    "    pm.collectionVariables.set('user_id', response.user.id);",
+                                    "    console.log('Tenant User registered!');",
+                                    "    console.log('JWT Token saved:', response.access_token);",
+                                    "    console.log('tenant_id:', response.user.tenant_id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "REQUIRED: Tenant ID for tenant user registration"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"user@tenant.com\",\n  \"password\": \"UserSecure123!\",\n  \"username\": \"tenantuser\",\n  \"full_name\": \"Tenant User\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "register"
+                            ]
+                        },
+                        "description": "Register a tenant user (REQUIRES X-Tenant-ID header). This user belongs to a specific tenant and can only access that tenant's resources. Same email can register on multiple tenants as separate users."
+                    }
+                },
+                {
+                    "name": "Login Tenant User",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.collectionVariables.set('jwt_token', response.access_token);",
+                                    "    pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                                    "    pm.collectionVariables.set('user_id', response.user.id);",
+                                    "    console.log('Tenant User logged in!');",
+                                    "    console.log('JWT Token saved:', response.access_token);",
+                                    "    console.log('tenant_id:', response.user.tenant_id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "REQUIRED: Tenant ID for tenant user login"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"user@tenant.com\",\n  \"password\": \"UserSecure123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Login as tenant user (REQUIRES X-Tenant-ID header). Authenticates users belonging to specific tenant."
+                    }
+                },
+                {
+                    "name": "Same Email Different Tenant",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const response = pm.response.json();",
+                                    "    console.log('✅ Same email registered on different tenant!');",
+                                    "    console.log('This creates a SEPARATE user account.');",
+                                    "    console.log('tenant_id:', response.user.tenant_id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "2",
+                                "description": "Different tenant ID - creates separate user!"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"user@tenant.com\",\n  \"password\": \"UserSecure123!\",\n  \"username\": \"tenantuser\",\n  \"full_name\": \"Same User Different Tenant\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "register"
+                            ]
+                        },
+                        "description": "DEMO: Same email on different tenant creates a separate user account. This shows complete data isolation - user@tenant.com on Tenant 1 is completely separate from user@tenant.com on Tenant 2."
+                    }
+                },
+                {
+                    "name": "Google OAuth (Tenant User)",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "REQUIRED for tenant user OAuth"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/oauth/google",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "oauth",
+                                "google"
+                            ]
+                        },
+                        "description": "Initiate Google OAuth login for tenant user (REQUIRES X-Tenant-ID header)"
+                    }
+                },
+                {
+                    "name": "GitHub OAuth (Tenant User)",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "REQUIRED for tenant user OAuth"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/oauth/github",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "oauth",
+                                "github"
+                            ]
+                        },
+                        "description": "Initiate GitHub OAuth login for tenant user (REQUIRES X-Tenant-ID header)"
+                    }
+                },
+                {
+                    "name": "LinkedIn OAuth (Tenant User)",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "REQUIRED for tenant user OAuth"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/oauth/linkedin",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "oauth",
+                                "linkedin"
+                            ]
+                        },
+                        "description": "Initiate LinkedIn OAuth login for tenant user (REQUIRES X-Tenant-ID header)"
+                    }
+                },
+                {
+                    "name": "Facebook OAuth (Tenant User)",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "REQUIRED for tenant user OAuth"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/oauth/facebook",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "oauth",
+                                "facebook"
+                            ]
+                        },
+                        "description": "Initiate Facebook OAuth login for tenant user (REQUIRES X-Tenant-ID header)"
+                    }
+                }
+            ],
+            "description": "Tenant User authentication - for tenant websites where end-users register. REQUIRES X-Tenant-ID header. Users belong to specific tenant."
+        },
+        {
             "name": "Authentication (JWT)",
             "item": [
                 {
@@ -156,7 +651,7 @@
                                 "register"
                             ]
                         },
-                        "description": "Register a new user account. Returns JWT tokens and user info."
+                        "description": "Register a new user account. Returns JWT tokens and user info. NOTE: Use 'Authentication - Platform Admin' or 'Authentication - Tenant User' folders for specific use cases."
                     }
                 },
                 {
@@ -205,7 +700,7 @@
                                 "login"
                             ]
                         },
-                        "description": "Login with email and password. Returns JWT tokens."
+                        "description": "Login with email and password. Returns JWT tokens. NOTE: Use 'Authentication - Platform Admin' or 'Authentication - Tenant User' folders for specific use cases."
                     }
                 },
                 {
@@ -282,7 +777,7 @@
             "name": "OAuth",
             "item": [
                 {
-                    "name": "Google OAuth Login",
+                    "name": "Google OAuth (Platform Admin)",
                     "request": {
                         "auth": {
                             "type": "noauth"
@@ -302,7 +797,37 @@
                                 "google"
                             ]
                         },
-                        "description": "Initiate Google OAuth login flow"
+                        "description": "Initiate Google OAuth login for platform admin (NO X-Tenant-ID)"
+                    }
+                },
+                {
+                    "name": "Google OAuth (Tenant User)",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "REQUIRED for tenant user OAuth"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/oauth/google",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "oauth",
+                                "google"
+                            ]
+                        },
+                        "description": "Initiate Google OAuth login for tenant user (WITH X-Tenant-ID)"
                     }
                 },
                 {
@@ -352,9 +877,33 @@
                         },
                         "description": "Initiate LinkedIn OAuth login flow"
                     }
+                },
+                {
+                    "name": "Facebook OAuth Login",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/oauth/facebook",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "oauth",
+                                "facebook"
+                            ]
+                        },
+                        "description": "Initiate Facebook OAuth login flow"
+                    }
                 }
             ],
-            "description": "OAuth authentication with Google, GitHub, and LinkedIn"
+            "description": "OAuth authentication with Google, GitHub, LinkedIn, and Facebook"
         },
         {
             "name": "API Keys",
@@ -383,6 +932,12 @@
                             {
                                 "key": "Content-Type",
                                 "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Associate API key with tenant",
+                                "disabled": true
                             }
                         ],
                         "body": {
@@ -408,7 +963,14 @@
                     "name": "List API Keys",
                     "request": {
                         "method": "GET",
-                        "header": [],
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Filter API keys by tenant",
+                                "disabled": true
+                            }
+                        ],
                         "url": {
                             "raw": "{{base_url}}/api/v1/auth/api-keys",
                             "host": [
@@ -474,6 +1036,12 @@
                             {
                                 "key": "Content-Type",
                                 "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Tenant ID for multi-tenant isolation",
+                                "disabled": true
                             }
                         ],
                         "body": {
@@ -499,7 +1067,14 @@
                     "name": "List Articles",
                     "request": {
                         "method": "GET",
-                        "header": [],
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Filter articles by tenant",
+                                "disabled": true
+                            }
+                        ],
                         "url": {
                             "raw": "{{base_url}}/api/v1/articles?status=published&limit=10&offset=0",
                             "host": [
@@ -534,17 +1109,30 @@
                                     "value": "true",
                                     "disabled": true,
                                     "description": "Show only current user's articles"
+                                },
+                                {
+                                    "key": "is_featured",
+                                    "value": "true",
+                                    "disabled": true,
+                                    "description": "Filter by featured status (true/false)"
                                 }
                             ]
                         },
-                        "description": "List articles with optional filtering"
+                        "description": "List articles with optional filtering (status, category, featured, user)"
                     }
                 },
                 {
                     "name": "Get Article by ID",
                     "request": {
                         "method": "GET",
-                        "header": [],
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Ensure article belongs to tenant",
+                                "disabled": true
+                            }
+                        ],
                         "url": {
                             "raw": "{{base_url}}/api/v1/articles/{{article_id}}",
                             "host": [
@@ -572,7 +1160,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"title\": \"Updated Article Title\",\n  \"content\": \"Updated article content in Markdown format...\",\n  \"status\": \"published\"\n}"
+                            "raw": "{\n  \"title\": \"Updated Article Title\",\n  \"content\": \"Updated article content in Markdown format...\",\n  \"status\": \"published\",\n  \"is_featured\": true\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/v1/articles/{{article_id}}",
@@ -593,7 +1181,14 @@
                     "name": "Delete Article",
                     "request": {
                         "method": "DELETE",
-                        "header": [],
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Ensure article belongs to tenant",
+                                "disabled": true
+                            }
+                        ],
                         "url": {
                             "raw": "{{base_url}}/api/v1/articles/{{article_id}}",
                             "host": [
@@ -613,7 +1208,14 @@
                     "name": "Search Articles",
                     "request": {
                         "method": "GET",
-                        "header": [],
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Search within tenant only",
+                                "disabled": true
+                            }
+                        ],
                         "url": {
                             "raw": "{{base_url}}/api/v1/articles/search?q=artificial%20intelligence&limit=10",
                             "host": [
@@ -641,10 +1243,154 @@
                     }
                 },
                 {
+                    "name": "Get Featured Articles",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Filter featured articles by tenant",
+                                "disabled": true
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles?is_featured=true&status=published&limit=5",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles"
+                            ],
+                            "query": [
+                                {
+                                    "key": "is_featured",
+                                    "value": "true",
+                                    "description": "Get only featured articles"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "published",
+                                    "description": "Only published articles"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "5",
+                                    "description": "Limit to top 5 featured articles"
+                                }
+                            ]
+                        },
+                        "description": "Get featured articles - perfect for homepage highlights or editor's picks section"
+                    }
+                },
+                {
+                    "name": "Mark Article as Featured",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"is_featured\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles/{{article_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles",
+                                "{{article_id}}"
+                            ]
+                        },
+                        "description": "Mark an article as featured - highlights it for special display"
+                    }
+                },
+                {
+                    "name": "Unmark Article as Featured",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"is_featured\": false\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles/{{article_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles",
+                                "{{article_id}}"
+                            ]
+                        },
+                        "description": "Remove featured status from an article"
+                    }
+                },
+                {
+                    "name": "Get Featured Articles by Category",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/articles?is_featured=true&category_id={{category_id}}&status=published",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "articles"
+                            ],
+                            "query": [
+                                {
+                                    "key": "is_featured",
+                                    "value": "true",
+                                    "description": "Only featured articles"
+                                },
+                                {
+                                    "key": "category_id",
+                                    "value": "{{category_id}}",
+                                    "description": "Filter by category"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "published",
+                                    "description": "Only published"
+                                }
+                            ]
+                        },
+                        "description": "Get featured articles for a specific category - useful for category page highlights"
+                    }
+                },
+                {
                     "name": "Publish Article",
                     "request": {
                         "method": "POST",
-                        "header": [],
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Ensure article belongs to tenant",
+                                "disabled": true
+                            }
+                        ],
                         "url": {
                             "raw": "{{base_url}}/api/v1/articles/{{article_id}}/publish",
                             "host": [
@@ -844,7 +1590,14 @@
                             "type": "noauth"
                         },
                         "method": "GET",
-                        "header": [],
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Filter categories by tenant",
+                                "disabled": true
+                            }
+                        ],
                         "url": {
                             "raw": "{{base_url}}/api/v1/categories",
                             "host": [
@@ -866,7 +1619,14 @@
                             "type": "noauth"
                         },
                         "method": "GET",
-                        "header": [],
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Ensure category belongs to tenant",
+                                "disabled": true
+                            }
+                        ],
                         "url": {
                             "raw": "{{base_url}}/api/v1/categories/{{category_id}}",
                             "host": [
@@ -905,6 +1665,12 @@
                             {
                                 "key": "Content-Type",
                                 "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Associate category with tenant",
+                                "disabled": true
                             }
                         ],
                         "body": {
@@ -933,6 +1699,12 @@
                             {
                                 "key": "Content-Type",
                                 "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Ensure category belongs to tenant",
+                                "disabled": true
                             }
                         ],
                         "body": {
@@ -958,7 +1730,14 @@
                     "name": "Delete Category",
                     "request": {
                         "method": "DELETE",
-                        "header": [],
+                        "header": [
+                            {
+                                "key": "X-Tenant-ID",
+                                "value": "{{tenant_id}}",
+                                "description": "Optional: Ensure category belongs to tenant",
+                                "disabled": true
+                            }
+                        ],
                         "url": {
                             "raw": "{{base_url}}/api/v1/categories/{{category_id}}",
                             "host": [
@@ -1134,59 +1913,7 @@
                                 "members"
                             ]
                         },
-                        "description": "List all members of a tenant"
-                    }
-                },
-                {
-                    "name": "Add Tenant Member",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"email\": \"teammate@example.com\",\n    \"role\": \"user\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}/members",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "tenants",
-                                "{{tenant_id}}",
-                                "members"
-                            ]
-                        },
-                        "description": "Add a member to tenant (owner/admin only). Role can be 'user' or 'admin'"
-                    }
-                },
-                {
-                    "name": "Remove Tenant Member",
-                    "request": {
-                        "method": "DELETE",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}/members/{{member_user_id}}",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "tenants",
-                                "{{tenant_id}}",
-                                "members",
-                                "{{member_user_id}}"
-                            ]
-                        },
-                        "description": "Remove a member from tenant (owner/admin only)"
+                        "description": "List all users (members) belonging to this tenant. Users now belong to exactly ONE tenant."
                     }
                 }
             ],

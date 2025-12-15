@@ -8,12 +8,14 @@ import { Sparkles } from "lucide-react";
 
 export default function GenerateArticle() {
   const router = useRouter();
+  const { id: tenantId } = router.query;
   const [formData, setFormData] = useState({
     topic: "",
     category_id: "",
     keywords: [],
     tone: "professional",
     length: "medium",
+    tenant_id: "",
   });
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -21,12 +23,15 @@ export default function GenerateArticle() {
   const [keywordInput, setKeywordInput] = useState("");
 
   useEffect(() => {
-    loadCategories();
-  }, []);
+    if (tenantId) {
+      loadCategories();
+      setFormData((prev) => ({ ...prev, tenant_id: tenantId }));
+    }
+  }, [tenantId]);
 
   const loadCategories = async () => {
     try {
-      const data = await categoryService.getCategories();
+      const data = await categoryService.getCategories({ tenant_id: tenantId });
       setCategories(data.categories || []);
     } catch (error) {
       console.error("Failed to load categories:", error);
@@ -44,10 +49,13 @@ export default function GenerateArticle() {
         category_id: formData.category_id
           ? parseInt(formData.category_id)
           : null,
+        tenant_id: tenantId,
       };
 
       const response = await articleService.generateArticle(data);
-      router.push(`/dashboard/articles/${response.article.id}`);
+      router.push(
+        `/dashboard/tenants/${tenantId}/articles/${response.article.id}`
+      );
     } catch (err) {
       setError(err.response?.data?.message || "Failed to generate article");
     } finally {
