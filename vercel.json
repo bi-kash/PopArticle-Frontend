@@ -1,0 +1,7 @@
+{
+  "buildCommand": "./vercel-build.sh",
+  "devCommand": "next dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next"
+}
