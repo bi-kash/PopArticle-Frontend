@@ -1119,6 +1119,69 @@ Authorization: Bearer <access_token>
 
 ---
 
+### Remove Tenant Member
+
+```http
+DELETE /api/v1/tenants/<tenant_id>/members/<user_id>
+Authorization: Bearer <access_token>
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Member removed successfully"
+}
+```
+
+**Error Responses:**
+
+- **400** Invalid tenant ID format
+- **403** Access denied (possible reasons):
+  - You do not have permission (must be owner/admin)
+  - Member not found
+  - Cannot remove the last owner
+  - Cannot remove yourself (use leave endpoint instead)
+- **500** Server error
+
+**Notes:**
+
+- Only owners and admins can remove members
+- Cannot remove the last owner of a tenant
+- Users cannot remove themselves (should use the leave endpoint)
+
+---
+
+### Leave Tenant
+
+```http
+POST /api/v1/tenants/<tenant_id>/leave
+Authorization: Bearer <access_token>
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Successfully left the tenant"
+}
+```
+
+**Error Responses:**
+
+- **400** Invalid tenant ID format
+- **403** Failed to leave tenant (possible reasons):
+  - You are not a member of this tenant
+  - You are the last owner (transfer ownership first)
+- **500** Server error
+
+**Notes:**
+
+- Platform users can voluntarily leave a tenant
+- The last owner cannot leave (must transfer ownership first or delete the tenant)
+
+---
+
 ### Get Tenant Statistics
 
 ```http
@@ -1283,6 +1346,8 @@ GET /api/v1/tenants/invitations/verify/<token>
 ```json
 {
   "valid": true,
+  "user_exists": false,
+  "action": "signup",
   "invitation": {
     "email": "newmember@example.com",
     "role": "editor",
@@ -1296,11 +1361,74 @@ GET /api/v1/tenants/invitations/verify/<token>
 }
 ```
 
+**Response Fields:**
+
+- `valid`: Whether the invitation is valid
+- `user_exists`: Whether a user account already exists with this email
+- `action`: Recommended action - `"login"` if user exists, `"signup"` if not
+- `invitation`: Invitation details
+
+**Frontend Flow:**
+
+1. Call verify endpoint with token
+2. If `action` is `"signup"`, redirect to signup page with email pre-filled
+3. If `action` is `"login"`, redirect to login page with email pre-filled
+4. After successful login/signup, automatically call accept endpoint
+5. Redirect user to tenant dashboard
+
 **Notes:**
 
 - No authentication required
 - Returns 404 if not found
 - Returns 400 if expired or not pending
+- Use `user_exists` and `action` to intelligently redirect users
+
+---
+
+### Accept Invitation
+
+```http
+POST /api/v1/tenants/invitations/accept
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "token": "diASoeJuP4cAsrY0tar7OQ0jmGONF6gjcdIF1S-I6hM"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Invitation accepted successfully",
+  "tenant": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "My Awesome Blog",
+    "slug": "my-awesome-blog"
+  },
+  "role": "editor"
+}
+```
+
+**Error Responses:**
+
+- **400** Token is required
+- **400** Invalid invitation token
+- **400** Invitation has already been accepted
+- **400** Invitation has expired
+- **400** Invitation has been cancelled
+- **400** Failed to accept (email mismatch)
+
+**Notes:**
+
+- Requires authentication (user must be logged in)
+- The logged-in user's email must match the invitation email
+- Upon success, user becomes a member of the tenant with the specified role
 
 ---
 

@@ -21,7 +21,7 @@ export default function DashboardLayout({ children }) {
 
   useEffect(() => {
     setMounted(true);
-    const userData = authService.getUser();
+    const userData = authService.getCurrentUser();
     setUser(userData);
   }, []);
 

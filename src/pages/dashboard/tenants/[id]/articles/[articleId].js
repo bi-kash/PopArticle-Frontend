@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
-import { Save, Trash2 } from "lucide-react";
+import { Save, Trash2, Eye, Edit3 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
@@ -16,8 +17,9 @@ export default function EditArticle() {
   const router = useRouter();
   const { id: tenantId, articleId } = router.query;
   const [formData, setFormData] = useState(null);
-  const [editorType, setEditorType] = useState("markdown");
+  const [viewMode, setViewMode] = useState("edit"); // "edit" or "preview"
   const [categories, setCategories] = useState([]);
+  const [articleData, setArticleData] = useState(null); // Store raw article data
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -25,54 +27,84 @@ export default function EditArticle() {
 
   useEffect(() => {
     if (articleId && tenantId) {
-      loadArticle();
-      loadCategories();
+      loadData();
     }
   }, [articleId, tenantId]);
 
-  const loadArticle = async () => {
+  // When both article and categories are loaded, process the form data
+  useEffect(() => {
+    if (articleData && categories.length > 0) {
+      processArticleData();
+    }
+  }, [articleData, categories]);
+
+  const loadData = async () => {
     try {
-      const data = await articleService.getArticle(articleId);
+      setLoading(true);
+      const [articleResponse, categoriesResponse] = await Promise.all([
+        articleService.getArticle(articleId),
+        categoryService.getCategories({ tenant_id: tenantId }),
+      ]);
 
-      // Handle both category_id (number) and category (object with id)
-      let categoryId = data.article.category_id;
-      if (!categoryId && data.article.category) {
-        categoryId = data.article.category.id;
-      }
+      console.log("Article data:", articleResponse.article);
+      console.log("Categories:", categoriesResponse.categories);
 
-      setFormData({
-        title: data.article.title || "",
-        content: data.article.content || "",
-        excerpt: data.article.excerpt || "",
-        category_id: categoryId ? String(categoryId) : "",
-        status: data.article.status || "draft",
-        is_featured: data.article.is_featured || false,
-        meta_title: data.article.meta_title || "",
-        meta_description: data.article.meta_description || "",
-        keywords: data.article.keywords || [],
-      });
-
-      // Detect editor type from content
-      if (
-        data.article.content?.includes("<") &&
-        data.article.content?.includes(">")
-      ) {
-        setEditorType("html");
-      }
+      setArticleData(articleResponse.article);
+      setCategories(categoriesResponse.categories || []);
     } catch (error) {
+      console.error("Failed to load data:", error);
       setError("Failed to load article");
-    } finally {
       setLoading(false);
     }
   };
 
-  const loadCategories = async () => {
-    try {
-      const data = await categoryService.getCategories({ tenant_id: tenantId });
-      setCategories(data.categories || []);
-    } catch (error) {
-      console.error("Failed to load categories:", error);
+  const processArticleData = () => {
+    if (!articleData) return;
+
+    // Handle category - can be:
+    // 1. category_id (number)
+    // 2. category: { id, name } (object)
+    // 3. category: "Technology" (string name)
+    let categoryId = "";
+
+    if (articleData.category_id) {
+      categoryId = String(articleData.category_id);
+    } else if (articleData.category) {
+      if (typeof articleData.category === "object" && articleData.category.id) {
+        // Category is an object with id
+        categoryId = String(articleData.category.id);
+      } else if (typeof articleData.category === "string") {
+        // Category is a string name - find matching category
+        const matchedCategory = categories.find(
+          (cat) => cat.name.toLowerCase() === articleData.category.toLowerCase()
+        );
+        if (matchedCategory) {
+          categoryId = String(matchedCategory.id);
+        }
+      }
     }
+
+    console.log("Final category_id:", categoryId);
+
+    // Handle SEO nested object
+    const metaTitle =
+      articleData.seo?.meta_title || articleData.meta_title || "";
+    const metaDescription =
+      articleData.seo?.meta_description || articleData.meta_description || "";
+
+    setFormData({
+      title: articleData.title || "",
+      content: articleData.content || "",
+      excerpt: articleData.excerpt || "",
+      category_id: categoryId,
+      status: articleData.status || "draft",
+      is_featured: articleData.is_featured || false,
+      meta_title: metaTitle,
+      meta_description: metaDescription,
+      keywords: articleData.keywords || [],
+    });
+
+    setLoading(false);
   };
 
   const handleSubmit = async (e) => {
@@ -319,47 +351,56 @@ export default function EditArticle() {
                   <button
                     type="button"
                     className={`btn ${
-                      editorType === "markdown"
-                        ? "btn-primary"
-                        : "btn-secondary"
+                      viewMode === "edit" ? "btn-primary" : "btn-secondary"
                     }`}
-                    onClick={() => setEditorType("markdown")}
+                    onClick={() => setViewMode("edit")}
                   >
-                    Markdown
+                    <Edit3 size={16} />
+                    Edit
                   </button>
                   <button
                     type="button"
                     className={`btn ${
-                      editorType === "html" ? "btn-primary" : "btn-secondary"
+                      viewMode === "preview" ? "btn-primary" : "btn-secondary"
                     }`}
-                    onClick={() => setEditorType("html")}
+                    onClick={() => setViewMode("preview")}
                   >
-                    HTML
+                    <Eye size={16} />
+                    Preview
                   </button>
                 </div>
               </div>
 
-              {editorType === "markdown" ? (
-                <SimpleMDE
+              {viewMode === "edit" ? (
+                <textarea
+                  className="textarea"
                   value={formData.content}
-                  onChange={(value) =>
-                    setFormData({ ...formData, content: value })
+                  onChange={(e) =>
+                    setFormData({ ...formData, content: e.target.value })
                   }
-                  options={{
-                    spellChecker: false,
-                    status: false,
-                    autofocus: false,
+                  rows={20}
+                  placeholder="Write your article content in Markdown..."
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "14px",
+                    lineHeight: "1.6",
                   }}
                 />
               ) : (
-                <ReactQuill
-                  theme="snow"
-                  value={formData.content}
-                  onChange={(value) =>
-                    setFormData({ ...formData, content: value })
-                  }
-                  modules={quillModules}
-                />
+                <div
+                  style={{
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "0.375rem",
+                    padding: "1.5rem",
+                    minHeight: "400px",
+                    background: "white",
+                  }}
+                  className="markdown-preview"
+                >
+                  <ReactMarkdown>
+                    {formData.content || "*No content yet*"}
+                  </ReactMarkdown>
+                </div>
               )}
             </div>
 

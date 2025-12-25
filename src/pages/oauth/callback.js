@@ -22,15 +22,41 @@ export default function OAuthCallback() {
 
         // If we got JSON response from backend
         if (data && data.access_token) {
-          const tokenData = {
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-          };
-          if (data.user) {
-            tokenData.user = data.user;
+          console.log("OAuth: Setting tokens from JSON response", {
+            hasUser: !!data.user,
+          });
+          authService.setTokens(
+            data.access_token,
+            data.refresh_token,
+            data.user
+          );
+
+          // If no user data was provided, fetch it from the API
+          if (!data.user) {
+            console.log("OAuth: No user data, fetching from API...");
+            try {
+              const fetchedUser = await authService.fetchCurrentUser();
+              console.log("OAuth: Fetched user data", {
+                hasUser: !!fetchedUser,
+              });
+            } catch (error) {
+              console.error("OAuth: Failed to fetch user data:", error);
+            }
           }
 
-          authService.setTokens(tokenData);
+          // Check if there's a pending invitation
+          const pendingInvitation = sessionStorage.getItem(
+            "pending_invitation_token"
+          );
+          if (pendingInvitation) {
+            console.log(
+              "OAuth: Found pending invitation, redirecting to accept page"
+            );
+            router.replace(
+              `/invitations/accept?token=${pendingInvitation}&auto=true`
+            );
+            return;
+          }
 
           // Get redirect from session storage or default to dashboard
           const redirect =
@@ -57,11 +83,35 @@ export default function OAuthCallback() {
         }
 
         if (access_token) {
-          const tokenData = { access_token };
-          if (refresh_token) tokenData.refresh_token = refresh_token;
-          if (user) tokenData.user = user;
+          console.log("OAuth: Setting tokens from query params", {
+            hasUser: !!user,
+          });
+          authService.setTokens(access_token, refresh_token, user);
 
-          authService.setTokens(tokenData);
+          // If no user data was provided, fetch it from the API
+          if (!user) {
+            console.log("OAuth: No user data, fetching from API...");
+            try {
+              user = await authService.fetchCurrentUser();
+              console.log("OAuth: Fetched user data", { hasUser: !!user });
+            } catch (error) {
+              console.error("OAuth: Failed to fetch user data:", error);
+            }
+          }
+
+          // Check if there's a pending invitation
+          const pendingInvitation = sessionStorage.getItem(
+            "pending_invitation_token"
+          );
+          if (pendingInvitation) {
+            console.log(
+              "OAuth: Found pending invitation, redirecting to accept page"
+            );
+            router.replace(
+              `/invitations/accept?token=${pendingInvitation}&auto=true`
+            );
+            return;
+          }
 
           const redirect =
             sessionStorage.getItem("oauth_redirect") || "/dashboard";

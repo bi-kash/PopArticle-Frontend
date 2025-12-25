@@ -19,11 +19,12 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const userData = authService.getUser();
+      const userData = authService.getCurrentUser();
       setUser(userData);
 
       // Load tenants
       const tenantsData = await tenantService.getMyTenants();
+      console.log("Tenants data:", tenantsData);
       setTenants(tenantsData.tenants || []);
     } catch (error) {
       console.error("Failed to load dashboard data:", error);

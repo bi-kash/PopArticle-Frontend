@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { authService } from "@/lib/authService";
@@ -15,7 +15,12 @@ export default function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  <SocialAuth />;
+  useEffect(() => {
+    // Pre-fill email from query parameter (for invitations)
+    if (router.query.email) {
+      setFormData((prev) => ({ ...prev, email: router.query.email }));
+    }
+  }, [router.query]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,12 +28,33 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await authService.register(formData);
+      console.log("Sending registration data:", formData);
+      const response = await authService.register(formData);
+      console.log("Registration response:", response);
+
+      // Check if there's a pending invitation
+      const pendingInvitation = sessionStorage.getItem(
+        "pending_invitation_token"
+      );
+      if (pendingInvitation) {
+        // Don't remove token yet - let accept page handle it
+        router.push(`/invitations/accept?token=${pendingInvitation}&auto=true`);
+        return;
+      }
+
+      // Normal redirect logic
       router.push("/dashboard");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Registration failed. Please try again."
-      );
+      console.error("Registration error:", err);
+      console.error("Error response:", err.response);
+
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Registration failed. Please try again.";
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -63,12 +89,35 @@ export default function Register() {
               marginBottom: "0.5rem",
             }}
           >
-            Create Account
+            {router.query.invitation
+              ? "Create Account to Accept Invitation"
+              : "Create Account"}
           </h1>
           <p style={{ color: "var(--text-secondary)" }}>
-            Sign up to get started
+            {router.query.invitation
+              ? "Sign up to accept your team invitation"
+              : "Sign up to get started"}
           </p>
         </div>
+
+        {router.query.invitation && (
+          <div
+            style={{
+              background: "#e6f2ff",
+              border: "1px solid #667eea",
+              borderRadius: "6px",
+              padding: "1rem",
+              marginBottom: "1.5rem",
+              textAlign: "center",
+            }}
+          >
+            <p style={{ margin: 0, fontSize: "0.875rem", color: "#667eea" }}>
+              <strong>📧 Invitation Pending</strong>
+              <br />
+              Create an account to accept your invitation
+            </p>
+          </div>
+        )}
 
         {error && <div className="alert alert-error">{error}</div>}
 
@@ -153,6 +202,8 @@ export default function Register() {
             {loading ? "Creating account..." : "Sign Up"}
           </button>
         </form>
+
+        <SocialAuth />
 
         <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
           <p style={{ color: "var(--text-secondary)" }}>

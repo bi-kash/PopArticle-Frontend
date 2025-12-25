@@ -1,38 +1,22 @@
 import api from "./api";
 import Cookies from "js-cookie";
 
-export const authService = {
-  // Register new user
-  async register(data) {
-    const response = await api.post("/api/v1/auth/register", data);
-    if (response.data.access_token) {
-      this.setTokens(response.data);
-    }
-    return response.data;
-  },
-
+const authService = {
   // Login user
   async login(email, password) {
     const response = await api.post("/api/v1/auth/login", { email, password });
-    if (response.data.access_token) {
-      this.setTokens(response.data);
-    }
+    const { access_token, refresh_token, user } = response.data;
+
+    authService.setTokens(access_token, refresh_token, user);
     return response.data;
   },
 
-  // Get current user
-  async getCurrentUser() {
-    const response = await api.get("/api/v1/auth/me");
-    return response.data;
-  },
+  // Register new user
+  async register(userData) {
+    const response = await api.post("/api/v1/auth/register", userData);
+    const { access_token, refresh_token, user } = response.data;
 
-  // Refresh token
-  async refreshToken() {
-    const refreshToken = Cookies.get("refresh_token");
-    const response = await api.post("/api/v1/auth/refresh", {
-      refresh_token: refreshToken,
-    });
-    Cookies.set("access_token", response.data.access_token, { expires: 1 });
+    authService.setTokens(access_token, refresh_token, user);
     return response.data;
   },
 
@@ -41,25 +25,75 @@ export const authService = {
     Cookies.remove("access_token");
     Cookies.remove("refresh_token");
     Cookies.remove("user");
+    window.location.href = "/login";
   },
 
   // Set tokens
-  setTokens(data) {
-    Cookies.set("access_token", data.access_token, { expires: 1 });
-    Cookies.set("refresh_token", data.refresh_token, { expires: 7 });
-    if (data.user) {
-      Cookies.set("user", JSON.stringify(data.user), { expires: 7 });
+  setTokens(accessToken, refreshToken, user) {
+    if (accessToken) {
+      Cookies.set("access_token", accessToken, { expires: 7 });
+    }
+    if (refreshToken) {
+      Cookies.set("refresh_token", refreshToken, { expires: 30 });
+    }
+    if (user) {
+      Cookies.set("user", JSON.stringify(user), { expires: 30 });
+    }
+  },
+
+  // Get access token
+  getAccessToken() {
+    return Cookies.get("access_token");
+  },
+
+  // Get refresh token
+  getRefreshToken() {
+    return Cookies.get("refresh_token");
+  },
+
+  // Get current user
+  getCurrentUser() {
+    const userCookie = Cookies.get("user");
+    return userCookie ? JSON.parse(userCookie) : null;
+  },
+
+  // Fetch current user from API
+  async fetchCurrentUser() {
+    try {
+      const response = await api.get("/api/v1/auth/me");
+      const user = response.data;
+      // Store user in cookies
+      if (user) {
+        Cookies.set("user", JSON.stringify(user), { expires: 30 });
+      }
+      return user;
+    } catch (error) {
+      console.error("Failed to fetch current user:", error);
+      return null;
     }
   },
 
   // Check if user is authenticated
   isAuthenticated() {
-    return !!Cookies.get("access_token");
+    return !!authService.getAccessToken();
   },
 
-  // Get stored user
-  getUser() {
-    const user = Cookies.get("user");
-    return user ? JSON.parse(user) : null;
+  // Refresh token
+  async refreshToken() {
+    const refreshToken = authService.getRefreshToken();
+    if (!refreshToken) {
+      throw new Error("No refresh token available");
+    }
+
+    const response = await api.post("/auth/refresh", {
+      refresh_token: refreshToken,
+    });
+    const { access_token } = response.data;
+
+    authService.setTokens(access_token, refreshToken);
+    return access_token;
   },
 };
+
+export default authService;
+export { authService };
