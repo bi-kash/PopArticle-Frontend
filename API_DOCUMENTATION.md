@@ -360,6 +360,7 @@ X-Tenant-ID: <tenant_id> (optional)
   "title": "My Custom Article Title",
   "content": "# Article Content\n\nWrite your article content in markdown...",
   "excerpt": "Optional short preview of the article",
+  "image": "https://example.com/image.jpg",
   "category_id": 1,
   "status": "draft",
   "is_featured": false,
@@ -382,6 +383,7 @@ X-Tenant-ID: <tenant_id> (optional)
 **Optional Fields:**
 
 - `excerpt`: Short preview (max 500 chars)
+- `image`: Image URL or upload file (multipart/form-data)
 - `status`: `draft` (default), `published`, `archived`
 - `is_featured`: Boolean (default: false)
 - `seo`: SEO metadata object
@@ -398,6 +400,7 @@ X-Tenant-ID: <tenant_id> (optional)
     "title": "My Custom Article Title",
     "slug": "my-custom-article-title",
     "excerpt": "Optional short preview of the article",
+    "image": "https://your-cdn.cloudfront.net/articles/123/main/abc123.jpg",
     "category": "Technology",
     "status": "draft",
     "is_featured": false,
@@ -452,6 +455,7 @@ X-Tenant-ID: <tenant_id> (optional)
     "slug": "the-future-of-artificial-intelligence-what-lies-ahead",
     "content": "Full markdown content...",
     "excerpt": "Explore the cutting-edge developments...",
+    "image": "https://your-cdn.cloudfront.net/articles/123/main/abc123.jpg",
     "category_id": 1,
     "category_name": "Technology",
     "user_id": 1,
@@ -510,6 +514,7 @@ X-Tenant-ID: <tenant_id> (optional)
       "title": "Article Title",
       "slug": "article-title",
       "excerpt": "Brief summary...",
+      "image": "https://your-cdn.cloudfront.net/articles/123/main/abc123.jpg",
       "category_id": 1,
       "category_name": "Technology",
       "user_id": 1,
@@ -550,6 +555,7 @@ X-Tenant-ID: <tenant_id> (optional)
     "slug": "article-title",
     "content": "Full markdown content...",
     "excerpt": "Brief summary...",
+    "image": "https://your-cdn.cloudfront.net/articles/123/main/abc123.jpg",
     "category_id": 1,
     "category_name": "Technology",
     "user_id": 1,
@@ -592,6 +598,7 @@ X-Tenant-ID: <tenant_id> (optional)
   "title": "Updated Title",
   "content": "Updated content...",
   "excerpt": "Updated excerpt",
+  "image": "https://example.com/new-image.jpg",
   "status": "published",
   "is_featured": true,
   "category_id": 2,
@@ -611,6 +618,7 @@ X-Tenant-ID: <tenant_id> (optional)
     "slug": "updated-title",
     "content": "Updated content...",
     "excerpt": "Updated excerpt",
+    "image": "https://your-cdn.cloudfront.net/articles/123/main/abc123.jpg",
     "category_id": 2,
     "category_name": "Business",
     "user_id": 1,
@@ -678,6 +686,7 @@ X-Tenant-ID: <tenant_id> (optional)
     "title": "Article Title",
     "slug": "article-title",
     "excerpt": "Brief summary...",
+    "image": "https://your-cdn.cloudfront.net/articles/123/main/abc123.jpg",
     "category_id": 1,
     "category_name": "Technology",
     "user_id": 1,
@@ -723,6 +732,7 @@ X-Tenant-ID: <tenant_id> (optional)
       "title": "Article Title",
       "slug": "article-title",
       "excerpt": "Brief summary...",
+      "image": "https://your-cdn.cloudfront.net/articles/123/main/abc123.jpg",
       "category_id": 1,
       "category_name": "Technology",
       "status": "published",

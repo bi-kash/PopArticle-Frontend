@@ -52,7 +52,7 @@ export default function GenerateArticle() {
         tenant_id: tenantId,
       };
 
-      const response = await articleService.generateArticle(data);
+      const response = await articleService.generateArticle(data, tenantId);
       router.push(
         `/dashboard/tenants/${tenantId}/articles/${response.article.id}`
       );

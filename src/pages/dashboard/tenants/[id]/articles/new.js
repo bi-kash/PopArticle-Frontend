@@ -1,17 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import dynamic from "next/dynamic";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
-import { Save, Eye } from "lucide-react";
-
-// Dynamic imports for editors to avoid SSR issues
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
-const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
-  ssr: false,
-});
+import { Save, Eye, Edit3 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 export default function NewArticle() {
   const router = useRouter();
@@ -28,7 +22,7 @@ export default function NewArticle() {
     keywords: [],
     tenant_id: "",
   });
-  const [editorType, setEditorType] = useState("markdown"); // 'html' or 'markdown'
+  const [viewMode, setViewMode] = useState("edit"); // 'edit' or 'preview'
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -65,7 +59,7 @@ export default function NewArticle() {
         tenant_id: tenantId,
       };
 
-      const response = await articleService.createArticle(data);
+      const response = await articleService.createArticle(data, tenantId);
       router.push(
         `/dashboard/tenants/${tenantId}/articles/${response.article.id}`
       );
@@ -98,18 +92,6 @@ export default function NewArticle() {
       ...formData,
       keywords: formData.keywords.filter((k) => k !== keyword),
     });
-  };
-
-  const quillModules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ list: "ordered" }, { list: "bullet" }],
-      ["blockquote", "code-block"],
-      [{ align: [] }],
-      ["link", "image"],
-      ["clean"],
-    ],
   };
 
   return (
@@ -253,55 +235,63 @@ export default function NewArticle() {
                 }}
               >
                 <h2 style={{ fontSize: "1.25rem", fontWeight: "bold" }}>
-                  Content *
+                  Content * (Markdown)
                 </h2>
                 <div style={{ display: "flex", gap: "0.5rem" }}>
                   <button
                     type="button"
                     className={`btn ${
-                      editorType === "markdown"
-                        ? "btn-primary"
-                        : "btn-secondary"
+                      viewMode === "edit" ? "btn-primary" : "btn-secondary"
                     }`}
-                    onClick={() => setEditorType("markdown")}
+                    onClick={() => setViewMode("edit")}
                   >
-                    Markdown
+                    <Edit3 size={16} />
+                    Edit
                   </button>
                   <button
                     type="button"
                     className={`btn ${
-                      editorType === "html" ? "btn-primary" : "btn-secondary"
+                      viewMode === "preview" ? "btn-primary" : "btn-secondary"
                     }`}
-                    onClick={() => setEditorType("html")}
+                    onClick={() => setViewMode("preview")}
                   >
-                    HTML
+                    <Eye size={16} />
+                    Preview
                   </button>
                 </div>
               </div>
 
-              {editorType === "markdown" ? (
-                <SimpleMDE
+              {viewMode === "edit" ? (
+                <textarea
+                  className="textarea"
                   value={formData.content}
-                  onChange={(value) =>
-                    setFormData({ ...formData, content: value })
+                  onChange={(e) =>
+                    setFormData({ ...formData, content: e.target.value })
                   }
-                  options={{
-                    spellChecker: false,
-                    placeholder: "Write your article content in Markdown...",
-                    status: false,
-                    autofocus: false,
+                  rows={20}
+                  placeholder="Write your article content in Markdown..."
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "14px",
+                    lineHeight: "1.6",
                   }}
+                  required
                 />
               ) : (
-                <ReactQuill
-                  theme="snow"
-                  value={formData.content}
-                  onChange={(value) =>
-                    setFormData({ ...formData, content: value })
-                  }
-                  modules={quillModules}
-                  placeholder="Write your article content..."
-                />
+                <div
+                  style={{
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "0.375rem",
+                    padding: "1.5rem",
+                    minHeight: "400px",
+                    background: "white",
+                  }}
+                  className="markdown-preview"
+                >
+                  <ReactMarkdown>
+                    {formData.content || "*No content yet. Switch to Edit mode to write your article.*"}
+                  </ReactMarkdown>
+                </div>
               )}
             </div>
 

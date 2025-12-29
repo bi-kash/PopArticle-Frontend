@@ -52,7 +52,7 @@ export default function TenantArticles() {
     if (!confirm("Are you sure you want to delete this article?")) return;
 
     try {
-      await articleService.deleteArticle(articleId);
+      await articleService.deleteArticle(articleId, id);
       loadData();
     } catch (error) {
       alert("Failed to delete article");

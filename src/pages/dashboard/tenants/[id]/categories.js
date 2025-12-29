@@ -54,10 +54,13 @@ export default function TenantCategories() {
     if (!newCategoryName.trim()) return;
 
     try {
-      await categoryService.createCategory({
-        name: newCategoryName.trim(),
-        tenant_id: tenantId,
-      });
+      await categoryService.createCategory(
+        {
+          name: newCategoryName.trim(),
+          tenant_id: tenantId,
+        },
+        tenantId
+      );
       setNewCategoryName("");
       setShowAddForm(false);
       loadData();
@@ -71,9 +74,13 @@ export default function TenantCategories() {
     if (!newCategoryName.trim() || !editingCategory) return;
 
     try {
-      await categoryService.updateCategory(editingCategory.id, {
-        name: newCategoryName.trim(),
-      });
+      await categoryService.updateCategory(
+        editingCategory.id,
+        {
+          name: newCategoryName.trim(),
+        },
+        tenantId
+      );
       setNewCategoryName("");
       setEditingCategory(null);
       loadData();
@@ -100,7 +107,7 @@ export default function TenantCategories() {
         params.reassign_to = reassignCategoryId;
       }
 
-      await categoryService.deleteCategory(deleteModal.id, params);
+      await categoryService.deleteCategory(deleteModal.id, params, tenantId);
       setDeleteModal(null);
       setReassignCategoryId("");
       loadData();

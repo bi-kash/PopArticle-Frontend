@@ -42,7 +42,7 @@ export default function EditArticle() {
     try {
       setLoading(true);
       const [articleResponse, categoriesResponse] = await Promise.all([
-        articleService.getArticle(articleId),
+        articleService.getArticle(articleId, tenantId),
         categoryService.getCategories({ tenant_id: tenantId }),
       ]);
 
@@ -121,7 +121,7 @@ export default function EditArticle() {
         is_featured: Boolean(formData.is_featured),
       };
 
-      await articleService.updateArticle(articleId, data);
+      await articleService.updateArticle(articleId, data, tenantId);
       router.push(`/dashboard/tenants/${tenantId}/articles`);
     } catch (err) {
       setError(
@@ -138,7 +138,7 @@ export default function EditArticle() {
     if (!confirm("Are you sure you want to delete this article?")) return;
 
     try {
-      await articleService.deleteArticle(articleId);
+      await articleService.deleteArticle(articleId, tenantId);
       router.push(`/dashboard/tenants/${tenantId}/articles`);
     } catch (error) {
       alert("Failed to delete article");

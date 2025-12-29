@@ -2,8 +2,17 @@ import api from "./api";
 
 export const articleService = {
   // Generate article with AI
-  async generateArticle(data) {
-    const response = await api.post("/api/v1/articles/generate", data);
+  async generateArticle(data, tenantId = null) {
+    const config = {};
+
+    // If tenant_id is provided, send it as X-Tenant-ID header
+    // Priority: explicit tenantId parameter > data.tenant_id
+    const effectiveTenantId = tenantId || data.tenant_id;
+    if (effectiveTenantId) {
+      config.headers = { "X-Tenant-ID": effectiveTenantId };
+    }
+
+    const response = await api.post("/api/v1/articles/generate", data, config);
     return response.data;
   },
 
@@ -23,40 +32,89 @@ export const articleService = {
   },
 
   // Get single article
-  async getArticle(id) {
-    const response = await api.get(`/api/v1/articles/${id}`);
+  async getArticle(id, tenantId = null) {
+    const config = {};
+
+    // If tenant_id is provided, send it as X-Tenant-ID header
+    if (tenantId) {
+      config.headers = { "X-Tenant-ID": tenantId };
+    }
+
+    const response = await api.get(`/api/v1/articles/${id}`, config);
     return response.data;
   },
 
   // Create article
-  async createArticle(data) {
-    const response = await api.post("/api/v1/articles", data);
+  async createArticle(data, tenantId = null) {
+    const config = {};
+
+    // If tenant_id is provided, send it as X-Tenant-ID header
+    // Priority: explicit tenantId parameter > data.tenant_id
+    const effectiveTenantId = tenantId || data.tenant_id;
+    if (effectiveTenantId) {
+      config.headers = { "X-Tenant-ID": effectiveTenantId };
+    }
+
+    const response = await api.post("/api/v1/articles", data, config);
     return response.data;
   },
 
   // Update article
-  async updateArticle(id, data) {
-    const response = await api.put(`/api/v1/articles/${id}`, data);
+  async updateArticle(id, data, tenantId = null) {
+    const config = {};
+
+    // If tenant_id is provided, send it as X-Tenant-ID header
+    const effectiveTenantId = tenantId || data.tenant_id;
+    if (effectiveTenantId) {
+      config.headers = { "X-Tenant-ID": effectiveTenantId };
+    }
+
+    const response = await api.put(`/api/v1/articles/${id}`, data, config);
     return response.data;
   },
 
   // Delete article
-  async deleteArticle(id) {
-    const response = await api.delete(`/api/v1/articles/${id}`);
+  async deleteArticle(id, tenantId = null) {
+    const config = {};
+
+    // If tenant_id is provided, send it as X-Tenant-ID header
+    if (tenantId) {
+      config.headers = { "X-Tenant-ID": tenantId };
+    }
+
+    const response = await api.delete(`/api/v1/articles/${id}`, config);
     return response.data;
   },
 
   // Search articles
-  async searchArticles(query, limit = 10) {
-    const response = await api.get("/api/v1/articles/search", {
+  async searchArticles(query, limit = 10, tenantId = null) {
+    const config = {
       params: { q: query, limit },
-    });
+    };
+
+    // If tenant_id is provided, send it as X-Tenant-ID header
+    if (tenantId) {
+      config.headers = { "X-Tenant-ID": tenantId };
+    }
+
+    const response = await api.get("/api/v1/articles/search", config);
     return response.data;
   },
 
   // Publish article
-  async publishArticle(id) {
-    const response = await api.post(`/api/v1/articles/${id}/publish`);
+  async publishArticle(id, tenantId = null) {
+    const config = {};
+
+    // If tenant_id is provided, send it as X-Tenant-ID header
+    if (tenantId) {
+      config.headers = { "X-Tenant-ID": tenantId };
+    }
+
+    const response = await api.post(
+      `/api/v1/articles/${id}/publish`,
+      {},
+      config
+    );
     return response.data;
   },
 };

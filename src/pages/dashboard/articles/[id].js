@@ -1,22 +1,17 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import dynamic from "next/dynamic";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
-import { Save, Trash2 } from "lucide-react";
-
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
-const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
-  ssr: false,
-});
+import { Save, Trash2, Eye, Edit3 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 export default function EditArticle() {
   const router = useRouter();
   const { id } = router.query;
   const [formData, setFormData] = useState(null);
-  const [editorType, setEditorType] = useState("markdown");
+  const [viewMode, setViewMode] = useState("edit"); // 'edit' or 'preview'
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,14 +38,6 @@ export default function EditArticle() {
         meta_description: data.article.meta_description || "",
         keywords: data.article.keywords || [],
       });
-
-      // Detect editor type from content
-      if (
-        data.article.content?.includes("<") &&
-        data.article.content?.includes(">")
-      ) {
-        setEditorType("html");
-      }
     } catch (error) {
       setError("Failed to load article");
     } finally {
@@ -266,53 +253,63 @@ export default function EditArticle() {
                 }}
               >
                 <h2 style={{ fontSize: "1.25rem", fontWeight: "bold" }}>
-                  Content *
+                  Content * (Markdown)
                 </h2>
                 <div style={{ display: "flex", gap: "0.5rem" }}>
                   <button
                     type="button"
                     className={`btn ${
-                      editorType === "markdown"
-                        ? "btn-primary"
-                        : "btn-secondary"
+                      viewMode === "edit" ? "btn-primary" : "btn-secondary"
                     }`}
-                    onClick={() => setEditorType("markdown")}
+                    onClick={() => setViewMode("edit")}
                   >
-                    Markdown
+                    <Edit3 size={16} />
+                    Edit
                   </button>
                   <button
                     type="button"
                     className={`btn ${
-                      editorType === "html" ? "btn-primary" : "btn-secondary"
+                      viewMode === "preview" ? "btn-primary" : "btn-secondary"
                     }`}
-                    onClick={() => setEditorType("html")}
+                    onClick={() => setViewMode("preview")}
                   >
-                    HTML
+                    <Eye size={16} />
+                    Preview
                   </button>
                 </div>
               </div>
 
-              {editorType === "markdown" ? (
-                <SimpleMDE
+              {viewMode === "edit" ? (
+                <textarea
+                  className="textarea"
                   value={formData.content}
-                  onChange={(value) =>
-                    setFormData({ ...formData, content: value })
+                  onChange={(e) =>
+                    setFormData({ ...formData, content: e.target.value })
                   }
-                  options={{
-                    spellChecker: false,
-                    status: false,
-                    autofocus: false,
+                  rows={20}
+                  placeholder="Write your article content in Markdown..."
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "14px",
+                    lineHeight: "1.6",
                   }}
+                  required
                 />
               ) : (
-                <ReactQuill
-                  theme="snow"
-                  value={formData.content}
-                  onChange={(value) =>
-                    setFormData({ ...formData, content: value })
-                  }
-                  modules={quillModules}
-                />
+                <div
+                  style={{
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "0.375rem",
+                    padding: "1.5rem",
+                    minHeight: "400px",
+                    background: "white",
+                  }}
+                  className="markdown-preview"
+                >
+                  <ReactMarkdown>
+                    {formData.content || "*No content yet. Switch to Edit mode to write your article.*"}
+                  </ReactMarkdown>
+                </div>
               )}
             </div>
 
