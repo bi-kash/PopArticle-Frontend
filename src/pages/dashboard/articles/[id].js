@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
+import CommentsSection from "@/components/CommentsSection";
 import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
-import { Save, Trash2, Eye, Edit3 } from "lucide-react";
+import { Save, Trash2, Eye, Edit3, Maximize2, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 export default function EditArticle() {
@@ -12,6 +13,7 @@ export default function EditArticle() {
   const { id } = router.query;
   const [formData, setFormData] = useState(null);
   const [viewMode, setViewMode] = useState("edit"); // 'edit' or 'preview'
+  const [fullscreenPreview, setFullscreenPreview] = useState(false);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -276,6 +278,15 @@ export default function EditArticle() {
                     <Eye size={16} />
                     Preview
                   </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setFullscreenPreview(true)}
+                    title="Full Page Preview"
+                  >
+                    <Maximize2 size={16} />
+                    Full Preview
+                  </button>
                 </div>
               </div>
 
@@ -307,7 +318,8 @@ export default function EditArticle() {
                   className="markdown-preview"
                 >
                   <ReactMarkdown>
-                    {formData.content || "*No content yet. Switch to Edit mode to write your article.*"}
+                    {formData.content ||
+                      "*No content yet. Switch to Edit mode to write your article.*"}
                   </ReactMarkdown>
                 </div>
               )}
@@ -414,7 +426,124 @@ export default function EditArticle() {
               </button>
             </div>
           </form>
+
+          {/* Comments Section */}
+          {id && <CommentsSection articleId={id} />}
         </div>
+
+        {/* Fullscreen Preview Modal */}
+        {fullscreenPreview && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "white",
+              zIndex: 9999,
+              overflow: "auto",
+            }}
+          >
+            <div
+              style={{
+                position: "sticky",
+                top: 0,
+                background: "white",
+                borderBottom: "1px solid var(--border-color)",
+                padding: "1rem 2rem",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                zIndex: 10,
+              }}
+            >
+              <h2 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
+                Article Preview
+              </h2>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setFullscreenPreview(false)}
+              >
+                <X size={20} />
+                Close Preview
+              </button>
+            </div>
+            <div
+              style={{
+                maxWidth: "900px",
+                margin: "0 auto",
+                padding: "3rem 2rem",
+              }}
+            >
+              <article>
+                <header style={{ marginBottom: "2rem" }}>
+                  <h1
+                    style={{
+                      fontSize: "2.5rem",
+                      fontWeight: "bold",
+                      marginBottom: "1rem",
+                      lineHeight: "1.2",
+                    }}
+                  >
+                    {formData.title}
+                  </h1>
+                  {formData.excerpt && (
+                    <p
+                      style={{
+                        fontSize: "1.25rem",
+                        color: "var(--text-secondary)",
+                        marginBottom: "1rem",
+                      }}
+                    >
+                      {formData.excerpt}
+                    </p>
+                  )}
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "1rem",
+                      alignItems: "center",
+                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    <span
+                      className={`badge badge-${
+                        formData.status === "published"
+                          ? "success"
+                          : formData.status === "draft"
+                          ? "warning"
+                          : "info"
+                      }`}
+                    >
+                      {formData.status}
+                    </span>
+                    {formData.category_id && (
+                      <span>
+                        Category:{" "}
+                        {categories.find(
+                          (c) => c.id === parseInt(formData.category_id)
+                        )?.name || "N/A"}
+                      </span>
+                    )}
+                  </div>
+                </header>
+                <div
+                  className="markdown-preview"
+                  style={{
+                    fontSize: "1.125rem",
+                    lineHeight: "1.8",
+                  }}
+                >
+                  <ReactMarkdown>
+                    {formData.content || "*No content available*"}
+                  </ReactMarkdown>
+                </div>
+              </article>
+            </div>
+          </div>
+        )}
       </DashboardLayout>
     </ProtectedRoute>
   );

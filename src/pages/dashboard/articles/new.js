@@ -241,7 +241,8 @@ export default function NewArticle() {
                   className="markdown-preview"
                 >
                   <ReactMarkdown>
-                    {formData.content || "*No content yet. Switch to Edit mode to write your article.*"}
+                    {formData.content ||
+                      "*No content yet. Switch to Edit mode to write your article.*"}
                   </ReactMarkdown>
                 </div>
               )}

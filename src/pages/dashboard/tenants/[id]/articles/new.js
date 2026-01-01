@@ -26,6 +26,7 @@ export default function NewArticle() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function NewArticle() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
@@ -59,17 +61,45 @@ export default function NewArticle() {
         tenant_id: tenantId,
       };
 
+      console.log("Creating article with data:", data);
       const response = await articleService.createArticle(data, tenantId);
-      router.push(
-        `/dashboard/tenants/${tenantId}/articles/${response.article.id}`
-      );
+      console.log("API Response:", response);
+
+      // Check if article was created successfully
+      // Handle both response.article.id and response.id
+      const articleId = response?.article?.id || response?.id;
+
+      if (articleId) {
+        // Successfully created
+        setSuccess("Article created successfully! Redirecting...");
+        console.log("Navigating to article:", articleId);
+
+        // Wait a moment to show success message before navigating
+        setTimeout(async () => {
+          await router.push(
+            `/dashboard/tenants/${tenantId}/articles/${articleId}`
+          );
+        }, 500);
+      } else {
+        // Log the full response for debugging
+        console.error("Unexpected response structure:", response);
+        throw new Error(
+          "Article created but unable to retrieve article ID from response"
+        );
+      }
     } catch (err) {
+      console.error("Article creation error:", err);
+      console.error("Error details:", {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+      });
       setError(
         err.response?.data?.message ||
           err.response?.data?.error ||
+          err.message ||
           "Failed to create article"
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -109,6 +139,7 @@ export default function NewArticle() {
           </h1>
 
           {error && <div className="alert alert-error">{error}</div>}
+          {success && <div className="alert alert-success">{success}</div>}
 
           <form onSubmit={handleSubmit}>
             <div className="card" style={{ marginBottom: "2rem" }}>
@@ -289,7 +320,8 @@ export default function NewArticle() {
                   className="markdown-preview"
                 >
                   <ReactMarkdown>
-                    {formData.content || "*No content yet. Switch to Edit mode to write your article.*"}
+                    {formData.content ||
+                      "*No content yet. Switch to Edit mode to write your article.*"}
                   </ReactMarkdown>
                 </div>
               )}

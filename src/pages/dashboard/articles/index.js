@@ -199,8 +199,17 @@ export default function ArticlesPage() {
                             {article.status}
                           </span>
                         </td>
-                        <td style={{ color: "var(--text-secondary)" }}>
-                          {article.category?.name || "-"}
+                        <td>
+                          {article.category?.name || article.category || (
+                            <span
+                              style={{
+                                color: "var(--text-secondary)",
+                                fontStyle: "italic",
+                              }}
+                            >
+                              No category
+                            </span>
+                          )}
                         </td>
                         <td style={{ color: "var(--text-secondary)" }}>
                           {new Date(article.created_at).toLocaleDateString()}

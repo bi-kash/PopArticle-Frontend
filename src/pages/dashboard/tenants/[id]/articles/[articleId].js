@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
+import CommentsSection from "@/components/CommentsSection";
 import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
 import { Save, Trash2, Eye, Edit3 } from "lucide-react";
@@ -505,6 +506,9 @@ export default function EditArticle() {
               </button>
             </div>
           </form>
+
+          {/* Comments Section */}
+          {articleId && <CommentsSection articleId={articleId} />}
         </div>
       </DashboardLayout>
     </ProtectedRoute>

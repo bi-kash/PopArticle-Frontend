@@ -12,6 +12,7 @@ Complete REST API reference for PopArticle content generation platform.
 - [API Key Management](#api-key-management)
 - [Article Endpoints](#article-endpoints)
 - [Category Endpoints](#category-endpoints)
+- [Comment Endpoints](#comment-endpoints)
 - [Tenant Management](#tenant-management)
 - [Invitation Endpoints](#invitation-endpoints)
 - [Health Check](#health-check)
@@ -909,6 +910,367 @@ X-Tenant-ID: <tenant_id> (optional)
 ```json
 {
   "error": "Cannot delete category with existing articles"
+}
+```
+
+---
+
+## Comment Endpoints
+
+### Get Article Comments
+
+```http
+GET /api/v1/comments/article/<article_id>
+```
+
+**Query Parameters:**
+
+- `limit` (optional): Maximum number of comments to return (default: 100, max: 200)
+- `offset` (optional): Number of comments to skip (default: 0)
+- `include_unapproved` (optional): Include unapproved comments (admin only, default: false)
+
+**Response (200):**
+
+```json
+{
+  "comments": [
+    {
+      "id": 1,
+      "article_id": 123,
+      "user": {
+        "id": 5,
+        "username": "johndoe",
+        "full_name": "John Doe",
+        "email": "john@example.com"
+      },
+      "content": "Great article! Very informative.",
+      "parent_id": null,
+      "is_approved": true,
+      "is_edited": false,
+      "created_at": "2025-12-31T12:00:00.000000",
+      "updated_at": "2025-12-31T12:00:00.000000",
+      "replies": [
+        {
+          "id": 2,
+          "article_id": 123,
+          "user": {
+            "id": 1,
+            "username": "janedoe",
+            "full_name": "Jane Doe",
+            "email": "jane@example.com"
+          },
+          "content": "Thank you! Glad you found it helpful.",
+          "parent_id": 1,
+          "is_approved": true,
+          "is_edited": false,
+          "created_at": "2025-12-31T12:05:00.000000",
+          "updated_at": "2025-12-31T12:05:00.000000"
+        }
+      ],
+      "reply_count": 1
+    }
+  ],
+  "total_count": 15,
+  "limit": 100,
+  "offset": 0
+}
+```
+
+### Create Comment
+
+```http
+POST /api/v1/comments/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "article_id": 123,
+  "content": "This is a great article!",
+  "parent_id": null
+}
+```
+
+**Request Body (Reply):**
+
+```json
+{
+  "article_id": 123,
+  "content": "I agree with your point!",
+  "parent_id": 1
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "message": "Comment created successfully",
+  "comment": {
+    "id": 3,
+    "article_id": 123,
+    "user": {
+      "id": 5,
+      "username": "johndoe",
+      "full_name": "John Doe",
+      "email": "john@example.com"
+    },
+    "content": "This is a great article!",
+    "parent_id": null,
+    "is_approved": true,
+    "is_edited": false,
+    "created_at": "2025-12-31T12:00:00.000000",
+    "updated_at": "2025-12-31T12:00:00.000000"
+  }
+}
+```
+
+**Error Responses:**
+
+**400 Bad Request:**
+
+```json
+{
+  "error": "article_id is required"
+}
+```
+
+```json
+{
+  "error": "content is required and cannot be empty"
+}
+```
+
+```json
+{
+  "error": "Comment content cannot exceed 5000 characters"
+}
+```
+
+```json
+{
+  "error": "Parent comment must belong to the same article"
+}
+```
+
+**401 Unauthorized:**
+
+```json
+{
+  "error": "Authentication required"
+}
+```
+
+### Get Comment by ID
+
+```http
+GET /api/v1/comments/<comment_id>
+```
+
+**Response (200):**
+
+```json
+{
+  "comment": {
+    "id": 1,
+    "article_id": 123,
+    "user": {
+      "id": 5,
+      "username": "johndoe",
+      "full_name": "John Doe",
+      "email": "john@example.com"
+    },
+    "content": "Great article!",
+    "parent_id": null,
+    "is_approved": true,
+    "is_edited": false,
+    "created_at": "2025-12-31T12:00:00.000000",
+    "updated_at": "2025-12-31T12:00:00.000000",
+    "replies": [],
+    "reply_count": 0
+  }
+}
+```
+
+### Update Comment
+
+```http
+PUT /api/v1/comments/<comment_id>
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "content": "Updated comment content"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Comment updated successfully",
+  "comment": {
+    "id": 1,
+    "article_id": 123,
+    "user": {
+      "id": 5,
+      "username": "johndoe",
+      "full_name": "John Doe",
+      "email": "john@example.com"
+    },
+    "content": "Updated comment content",
+    "parent_id": null,
+    "is_approved": true,
+    "is_edited": true,
+    "created_at": "2025-12-31T12:00:00.000000",
+    "updated_at": "2025-12-31T12:30:00.000000"
+  }
+}
+```
+
+**Error Responses:**
+
+**403 Forbidden:**
+
+```json
+{
+  "error": "You can only edit your own comments"
+}
+```
+
+**404 Not Found:**
+
+```json
+{
+  "error": "Comment not found"
+}
+```
+
+### Delete Comment
+
+```http
+DELETE /api/v1/comments/<comment_id>
+Authorization: Bearer <access_token>
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Comment deleted successfully"
+}
+```
+
+**Error Responses:**
+
+**403 Forbidden:**
+
+```json
+{
+  "error": "You can only delete your own comments"
+}
+```
+
+**404 Not Found:**
+
+```json
+{
+  "error": "Comment not found"
+}
+```
+
+### Get User Comments
+
+```http
+GET /api/v1/comments/user/<user_id>
+```
+
+**Query Parameters:**
+
+- `limit` (optional): Maximum number of comments to return (default: 50, max: 200)
+- `offset` (optional): Number of comments to skip (default: 0)
+
+**Response (200):**
+
+```json
+{
+  "comments": [
+    {
+      "id": 1,
+      "article_id": 123,
+      "user": {
+        "id": 5,
+        "username": "johndoe",
+        "full_name": "John Doe",
+        "email": "john@example.com"
+      },
+      "content": "Great article!",
+      "parent_id": null,
+      "is_approved": true,
+      "is_edited": false,
+      "created_at": "2025-12-31T12:00:00.000000",
+      "updated_at": "2025-12-31T12:00:00.000000"
+    }
+  ],
+  "limit": 50,
+  "offset": 0
+}
+```
+
+### Moderate Comment (Admin Only)
+
+```http
+PUT /api/v1/comments/<comment_id>/moderate
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "is_approved": true
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Comment moderated successfully",
+  "comment": {
+    "id": 1,
+    "article_id": 123,
+    "user": {
+      "id": 5,
+      "username": "johndoe",
+      "full_name": "John Doe",
+      "email": "john@example.com"
+    },
+    "content": "Great article!",
+    "parent_id": null,
+    "is_approved": true,
+    "is_edited": false,
+    "created_at": "2025-12-31T12:00:00.000000",
+    "updated_at": "2025-12-31T12:00:00.000000"
+  }
+}
+```
+
+**Error Responses:**
+
+**403 Forbidden:**
+
+```json
+{
+  "error": "Admin privileges required"
 }
 ```
 
