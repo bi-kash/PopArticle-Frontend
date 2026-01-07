@@ -45,14 +45,23 @@ export const articleService = {
   },
 
   // Create article
-  async createArticle(data, tenantId = null) {
+  async createArticle(data, tenantId = null, isFormData = false) {
     const config = {};
 
     // If tenant_id is provided, send it as X-Tenant-ID header
     // Priority: explicit tenantId parameter > data.tenant_id
-    const effectiveTenantId = tenantId || data.tenant_id;
+    const effectiveTenantId =
+      tenantId || data.tenant_id || data.get?.("tenant_id");
     if (effectiveTenantId) {
       config.headers = { "X-Tenant-ID": effectiveTenantId };
+    }
+
+    // Set Content-Type for FormData
+    if (isFormData) {
+      config.headers = {
+        ...config.headers,
+        "Content-Type": "multipart/form-data",
+      };
     }
 
     const response = await api.post("/api/v1/articles", data, config);
@@ -60,13 +69,22 @@ export const articleService = {
   },
 
   // Update article
-  async updateArticle(id, data, tenantId = null) {
+  async updateArticle(id, data, tenantId = null, isFormData = false) {
     const config = {};
 
     // If tenant_id is provided, send it as X-Tenant-ID header
-    const effectiveTenantId = tenantId || data.tenant_id;
+    const effectiveTenantId =
+      tenantId || data.tenant_id || data.get?.("tenant_id");
     if (effectiveTenantId) {
       config.headers = { "X-Tenant-ID": effectiveTenantId };
+    }
+
+    // Set Content-Type for FormData
+    if (isFormData) {
+      config.headers = {
+        ...config.headers,
+        "Content-Type": "multipart/form-data",
+      };
     }
 
     const response = await api.put(`/api/v1/articles/${id}`, data, config);

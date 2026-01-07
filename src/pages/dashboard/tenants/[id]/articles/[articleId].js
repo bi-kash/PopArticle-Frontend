@@ -25,6 +25,8 @@ export default function EditArticle() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
 
   useEffect(() => {
     if (articleId && tenantId) {
@@ -97,6 +99,7 @@ export default function EditArticle() {
       title: articleData.title || "",
       content: articleData.content || "",
       excerpt: articleData.excerpt || "",
+      image: articleData.image || "",
       category_id: categoryId,
       status: articleData.status || "draft",
       is_featured: articleData.is_featured || false,
@@ -104,6 +107,11 @@ export default function EditArticle() {
       meta_description: metaDescription,
       keywords: articleData.keywords || [],
     });
+
+    // Set image preview if exists
+    if (articleData.image) {
+      setImagePreview(articleData.image);
+    }
 
     setLoading(false);
   };
@@ -114,15 +122,45 @@ export default function EditArticle() {
     setSaving(true);
 
     try {
-      const data = {
-        ...formData,
-        category_id: formData.category_id
-          ? parseInt(formData.category_id)
-          : null,
-        is_featured: Boolean(formData.is_featured),
-      };
+      // Prepare form data - use FormData if there's a file, otherwise JSON
+      let dataToSend;
+      let isFormData = false;
 
-      await articleService.updateArticle(articleId, data, tenantId);
+      if (imageFile) {
+        // Use FormData for file upload
+        dataToSend = new FormData();
+        dataToSend.append("title", formData.title);
+        dataToSend.append("content", formData.content);
+        if (formData.excerpt) dataToSend.append("excerpt", formData.excerpt);
+        if (formData.category_id)
+          dataToSend.append("category_id", parseInt(formData.category_id));
+        dataToSend.append("status", formData.status);
+        dataToSend.append("is_featured", Boolean(formData.is_featured));
+        if (formData.meta_title)
+          dataToSend.append("meta_title", formData.meta_title);
+        if (formData.meta_description)
+          dataToSend.append("meta_description", formData.meta_description);
+        if (formData.keywords.length > 0)
+          dataToSend.append("keywords", JSON.stringify(formData.keywords));
+        dataToSend.append("image", imageFile);
+        isFormData = true;
+      } else {
+        // Use JSON for URL or no image
+        dataToSend = {
+          ...formData,
+          category_id: formData.category_id
+            ? parseInt(formData.category_id)
+            : null,
+          is_featured: Boolean(formData.is_featured),
+        };
+      }
+
+      await articleService.updateArticle(
+        articleId,
+        dataToSend,
+        tenantId,
+        isFormData
+      );
       router.push(`/dashboard/tenants/${tenantId}/articles`);
     } catch (err) {
       setError(
@@ -164,6 +202,34 @@ export default function EditArticle() {
       ...formData,
       keywords: formData.keywords.filter((k) => k !== keyword),
     });
+  };
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      // Clear image URL if file is selected
+      setFormData({ ...formData, image: "" });
+    }
+  };
+
+  const handleImageUrlChange = (url) => {
+    setFormData({ ...formData, image: url });
+    setImagePreview(url);
+    // Clear file if URL is provided
+    setImageFile(null);
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+    setFormData({ ...formData, image: "" });
   };
 
   if (loading) {
@@ -258,6 +324,96 @@ export default function EditArticle() {
                   }
                   rows="3"
                 />
+              </div>
+
+              {/* Image Upload Section */}
+              <div className="form-group">
+                <label className="label">Article Image</label>
+
+                {/* Image Preview */}
+                {imagePreview && (
+                  <div style={{ marginBottom: "1rem", position: "relative" }}>
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "300px",
+                        borderRadius: "0.375rem",
+                        border: "1px solid var(--border-color)",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="btn btn-danger"
+                      style={{
+                        position: "absolute",
+                        top: "0.5rem",
+                        right: "0.5rem",
+                        padding: "0.25rem 0.5rem",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+
+                {/* File Upload */}
+                <div style={{ marginBottom: "0.5rem" }}>
+                  <label
+                    className="label"
+                    style={{ fontSize: "0.875rem", marginBottom: "0.25rem" }}
+                  >
+                    Upload Image File
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    className="input"
+                    style={{ padding: "0.5rem" }}
+                  />
+                </div>
+
+                {/* OR */}
+                <div
+                  style={{
+                    textAlign: "center",
+                    margin: "0.5rem 0",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  OR
+                </div>
+
+                {/* Image URL */}
+                <div>
+                  <label
+                    className="label"
+                    style={{ fontSize: "0.875rem", marginBottom: "0.25rem" }}
+                  >
+                    Image URL
+                  </label>
+                  <input
+                    type="url"
+                    className="input"
+                    value={formData.image}
+                    onChange={(e) => handleImageUrlChange(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+
+                <small
+                  style={{
+                    color: "var(--text-secondary)",
+                    display: "block",
+                    marginTop: "0.5rem",
+                  }}
+                >
+                  Upload an image file or provide an image URL
+                </small>
               </div>
 
               <div
