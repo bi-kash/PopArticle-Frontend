@@ -12,6 +12,7 @@ import {
   Settings,
   ArrowLeft,
   Edit,
+  UserCog,
 } from "lucide-react";
 
 export default function TenantDetails() {
@@ -311,6 +312,16 @@ export default function TenantDetails() {
                 >
                   <Users size={20} />
                   Manage Members
+                </button>
+              </Link>
+
+              <Link href={`/dashboard/tenants/${id}/team`}>
+                <button
+                  className="btn btn-secondary"
+                  style={{ width: "100%", justifyContent: "flex-start" }}
+                >
+                  <UserCog size={20} />
+                  Team Management
                 </button>
               </Link>
 

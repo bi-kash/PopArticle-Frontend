@@ -14,6 +14,7 @@ import {
   Edit,
   Eye,
   FolderTree,
+  UserCog,
 } from "lucide-react";
 
 export default function TenantDashboard() {
@@ -327,6 +328,12 @@ export default function TenantDashboard() {
                 <button className="btn btn-secondary">
                   <Users size={20} />
                   Manage Members
+                </button>
+              </Link>
+              <Link href={`/dashboard/tenants/${id}/team`}>
+                <button className="btn btn-secondary">
+                  <UserCog size={20} />
+                  Team Management
                 </button>
               </Link>
             </div>

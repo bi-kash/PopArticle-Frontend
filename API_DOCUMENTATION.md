@@ -13,6 +13,7 @@ Complete REST API reference for PopArticle content generation platform.
 - [Article Endpoints](#article-endpoints)
 - [Category Endpoints](#category-endpoints)
 - [Comment Endpoints](#comment-endpoints)
+- [Team Management](#team-management)
 - [Tenant Management](#tenant-management)
 - [Invitation Endpoints](#invitation-endpoints)
 - [Health Check](#health-check)
@@ -486,6 +487,32 @@ X-Tenant-ID: <tenant_id> (optional)
 
 ---
 
+### Track Article View (NEW)
+
+```http
+POST /api/v1/articles/<id>/view
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**Description:**
+Increments the view count for the specified article. Call this endpoint when an article is displayed to a user.
+
+**Response (200):**
+
+```json
+{
+  "message": "View tracked successfully",
+  "view_count": 42
+}
+```
+
+**Notes:**
+
+- View count is only incremented via this endpoint (not on every GET)
+- No authentication required
+
+---
+
 ### List Articles
 
 ```http
@@ -501,6 +528,8 @@ X-Tenant-ID: <tenant_id> (optional)
 - `limit` (optional): Default 50, max 100
 - `offset` (optional): Default 0
 - `user_only` (optional): `true` - If authenticated, show only user's articles
+- `sort` (optional): `date` (default), `popularity`, `trending`, `title`, `comments`
+- `order` (optional): `desc` (default), `asc`
 
 **Response (200):**
 
@@ -509,6 +538,10 @@ X-Tenant-ID: <tenant_id> (optional)
   "total": 42,
   "limit": 10,
   "offset": 0,
+  "page": 1,
+  "per_page": 10,
+  "sort_by": "popularity",
+  "sort_order": "desc",
   "articles": [
     {
       "id": 1,
@@ -516,13 +549,12 @@ X-Tenant-ID: <tenant_id> (optional)
       "slug": "article-title",
       "excerpt": "Brief summary...",
       "image": "https://your-cdn.cloudfront.net/articles/123/main/abc123.jpg",
-      "category_id": 1,
-      "category_name": "Technology",
-      "user_id": 1,
-      "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+      "category": "Technology",
       "status": "published",
       "is_featured": true,
       "view_count": 150,
+      "comment_count": 12,
+      "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
       "created_at": "2025-01-01T00:00:00.000000",
       "updated_at": "2025-01-01T12:00:00.000000",
       "published_at": "2025-01-01T13:00:00.000000"
@@ -533,7 +565,8 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Notes:**
 
-- Authentication optional
+- Supports advanced sorting and pagination
+- `comment_count` and `view_count` are always included
 - With `X-Tenant-ID`: Returns tenant articles + global articles (tenant_id=NULL)
 - Without `X-Tenant-ID` or auth: Returns only published articles
 
@@ -557,20 +590,21 @@ X-Tenant-ID: <tenant_id> (optional)
     "content": "Full markdown content...",
     "excerpt": "Brief summary...",
     "image": "https://your-cdn.cloudfront.net/articles/123/main/abc123.jpg",
-    "category_id": 1,
-    "category_name": "Technology",
-    "user_id": 1,
-    "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+    "category": "Technology",
     "status": "published",
     "is_featured": true,
     "view_count": 151,
+    "comment_count": 8,
+    "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
     "created_at": "2025-01-01T00:00:00.000000",
     "updated_at": "2025-01-01T12:00:00.000000",
     "published_at": "2025-01-01T13:00:00.000000",
-    "seo_meta_title": "SEO Title",
-    "seo_meta_description": "SEO Description",
-    "seo_focus_keyword": "keyword",
-    "seo_summary": "Summary",
+    "seo": {
+      "meta_title": "SEO Title",
+      "meta_description": "SEO Description",
+      "summary": "Summary",
+      "focus_keyword": "keyword"
+    },
     "tags": ["tag1", "tag2"],
     "keywords": ["keyword1", "keyword2"]
   }
@@ -579,7 +613,8 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Notes:**
 
-- View count increments on each GET request
+- `view_count` and `comment_count` are always included
+- View count is NOT incremented on GET; use the `/view` endpoint to track views
 
 ---
 
@@ -720,6 +755,8 @@ X-Tenant-ID: <tenant_id> (optional)
 
 - `q` (required): Search query
 - `limit` (optional): Default 20, max 100
+- `sort` (optional): `relevance` (default), `date`, `popularity`, `trending`, `title`, `comments`
+- `order` (optional): `desc` (default), `asc`
 
 **Response (200):**
 
@@ -727,6 +764,8 @@ X-Tenant-ID: <tenant_id> (optional)
 {
   "query": "artificial intelligence",
   "total": 5,
+  "sort_by": "relevance",
+  "sort_order": "desc",
   "results": [
     {
       "id": 1,
@@ -734,11 +773,11 @@ X-Tenant-ID: <tenant_id> (optional)
       "slug": "article-title",
       "excerpt": "Brief summary...",
       "image": "https://your-cdn.cloudfront.net/articles/123/main/abc123.jpg",
-      "category_id": 1,
-      "category_name": "Technology",
+      "category": "Technology",
       "status": "published",
       "is_featured": false,
       "view_count": 150,
+      "comment_count": 8,
       "created_at": "2025-01-01T00:00:00.000000",
       "published_at": "2025-01-01T13:00:00.000000"
     }
@@ -748,8 +787,9 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Notes:**
 
-- Searches in title, content, and excerpt
-- Authentication optional
+- Supports advanced sorting and pagination
+- `comment_count` and `view_count` are always included
+- `sort_by` and `sort_order` reflect the applied sorting
 - Only searches published articles for non-authenticated users
 
 ---
@@ -1273,6 +1313,332 @@ Content-Type: application/json
   "error": "Admin privileges required"
 }
 ```
+
+---
+
+## Team Management
+
+Team Management allows tenant owners and admins to manage their team members. Team members can be:
+- Existing platform users (automatically linked)
+- Non-platform users (tenant-specific profiles only)
+
+**Permissions:** Only `owner` and `admin` roles can manage team members.
+
+### Create Team Member
+
+```http
+POST /api/v1/team
+Authorization: Bearer <access_token>
+Content-Type: application/json
+X-Tenant-ID: <tenant_id> (required)
+```
+
+**Request Body:**
+
+```json
+{
+  "full_name": "Jane Smith",
+  "role": "Editor",
+  "position": "Senior Content Editor",
+  "email": "jane@example.com",
+  "phone": "+1-555-0123",
+  "profile_photo": "https://example.com/photos/jane.jpg",
+  "bio": "Experienced editor with 10 years in digital content.",
+  "social_links": [
+    {
+      "platform": "linkedin",
+      "handle": "janesmith",
+      "url": "https://linkedin.com/in/janesmith"
+    },
+    {
+      "platform": "twitter",
+      "handle": "@janesmith",
+      "url": "https://twitter.com/janesmith"
+    }
+  ],
+  "user_id": 123,
+  "display_order": 1,
+  "is_active": true
+}
+```
+
+**Required Fields:**
+- `full_name`: Team member's full name
+- `role`: Role/position (e.g., "Editor", "Manager", "Secretary", "Contributor")
+
+**Optional Fields:**
+- `user_id`: Link to existing platform user (auto-fills from user account)
+- `position`: Additional role description
+- `email`: Contact email
+- `phone`: Contact phone
+- `profile_photo`: URL to profile photo
+- `bio`: Short biography
+- `social_links`: Array of social link objects. See **Social Links Format & Validation** below.
+- `display_order`: Order for display (default: 0)
+- `is_active`: Active status (default: true)
+
+### Social Links Format & Validation
+
+- Expected type: JSON array of objects. The endpoint accepts either a JSON list or a JSON string containing the list.
+- Each object MUST include the following keys:
+  - `social_website` (string) — identifier or name of the social site (e.g. `twitter`, `linkedin`).
+  - `handle` (string) — user's handle on that site (e.g. `@janesmith` or `janesmith`).
+- Optional keys allowed per object: `url` (string), `icon` (string), `label` (string).
+- Validation behavior: the API enforces the structure server-side. If `social_links` is not an array, or any item is not an object, or a required key is missing or not a non-empty string, the API will return `400 Bad Request` with an error message describing the problem.
+
+Example valid `social_links`:
+
+```json
+[
+  { "platform": "linkedin", "handle": "janesmith", "url": "https://linkedin.com/in/janesmith" },
+  { "platform": "twitter", "handle": "@janesmith" }
+]
+```
+
+Notes:
+- The server normalizes and strips surrounding whitespace from `social_website` and `handle` values.
+- Clients should prefer the `social_website` / `handle` keys to avoid validation errors.
+
+**Response (201):**
+
+```json
+{
+  "message": "Team member created successfully",
+  "team_member": {
+    "id": 1,
+    "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+    "user_id": 123,
+    "full_name": "Jane Smith",
+    "role": "Editor",
+    "position": "Senior Content Editor",
+    "email": "jane@example.com",
+    "phone": "+1-555-0123",
+    "profile_photo": "https://example.com/photos/jane.jpg",
+    "bio": "Experienced editor with 10 years in digital content.",
+    "social_links": [
+      {
+        "platform": "linkedin",
+        "handle": "janesmith",
+        "url": "https://linkedin.com/in/janesmith"
+      },
+      {
+        "platform": "twitter",
+        "handle": "@janesmith",
+        "url": "https://twitter.com/janesmith"
+      }
+    ],
+    "is_active": true,
+    "display_order": 1,
+    "created_at": "2026-01-09T00:00:00.000000",
+    "updated_at": "2026-01-09T00:00:00.000000",
+    "is_platform_user": true
+  }
+}
+```
+
+**Notes:**
+- Only owners and admins can create team members
+- If `user_id` is provided, checks if user exists
+- Prevents duplicate team entries for the same user
+
+---
+
+### List Team Members
+
+```http
+GET /api/v1/team
+X-Tenant-ID: <tenant_id> (required)
+```
+
+**Query Parameters:**
+- `include_inactive` (optional): `true` to include inactive team members (default: `false`)
+
+**Response (200):**
+
+```json
+{
+  "total": 5,
+  "team_members": [
+    {
+      "id": 1,
+      "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+      "user_id": 123,
+      "full_name": "Jane Smith",
+      "role": "Editor",
+      "position": "Senior Content Editor",
+      "email": "jane@example.com",
+      "phone": "+1-555-0123",
+      "profile_photo": "https://example.com/photos/jane.jpg",
+      "bio": "Experienced editor with 10 years in digital content.",
+      "social_links": [
+        {
+          "platform": "linkedin",
+          "handle": "janesmith",
+          "url": "https://linkedin.com/in/janesmith"
+        }
+      ],
+      "is_active": true,
+      "display_order": 1,
+      "created_at": "2026-01-09T00:00:00.000000",
+      "updated_at": "2026-01-09T00:00:00.000000",
+      "is_platform_user": true
+    }
+  ]
+}
+```
+
+**Notes:**
+- Public endpoint - no authentication required
+- Returns team members ordered by `display_order` then `created_at`
+- Only returns active members unless `include_inactive=true`
+
+---
+
+### Get Team Member
+
+```http
+GET /api/v1/team/<team_member_id>
+X-Tenant-ID: <tenant_id> (required)
+```
+
+**Response (200):**
+
+```json
+{
+  "team_member": {
+    "id": 1,
+    "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+    "user_id": 123,
+    "full_name": "Jane Smith",
+    "role": "Editor",
+    "position": "Senior Content Editor",
+    "email": "jane@example.com",
+    "phone": "+1-555-0123",
+    "profile_photo": "https://example.com/photos/jane.jpg",
+    "bio": "Experienced editor with 10 years in digital content.",
+    "social_links": [
+      {
+        "platform": "linkedin",
+        "handle": "janesmith",
+        "url": "https://linkedin.com/in/janesmith"
+      }
+    ],
+    "is_active": true,
+    "display_order": 1,
+    "created_at": "2026-01-09T00:00:00.000000",
+    "updated_at": "2026-01-09T00:00:00.000000",
+    "is_platform_user": true
+  }
+}
+```
+
+**Notes:**
+- Public endpoint - no authentication required
+
+---
+
+### Update Team Member
+
+```http
+PUT /api/v1/team/<team_member_id>
+Authorization: Bearer <access_token>
+Content-Type: application/json
+X-Tenant-ID: <tenant_id> (required)
+```
+
+**Request Body (all fields optional):**
+
+```json
+{
+  "full_name": "Jane M. Smith",
+  "role": "Chief Editor",
+  "position": "Head of Content",
+  "email": "jane.smith@example.com",
+  "phone": "+1-555-9999",
+  "profile_photo": "https://example.com/photos/jane-new.jpg",
+  "bio": "Updated biography...",
+  "social_links": [
+    {
+      "platform": "linkedin",
+      "handle": "janemsmith",
+      "url": "https://linkedin.com/in/janemsmith"
+    }
+  ],
+  "is_active": false,
+  "display_order": 5
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Team member updated successfully",
+  "team_member": {
+    "id": 1,
+    "full_name": "Jane M. Smith",
+    "role": "Chief Editor",
+    ...
+  }
+}
+```
+
+**Notes:**
+- Only owners and admins can update team members
+- All fields are optional - only provided fields are updated
+- Updating team profile does NOT affect the linked user's global account
+
+---
+
+### Delete Team Member
+
+```http
+DELETE /api/v1/team/<team_member_id>
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant_id> (required)
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Team member deleted successfully"
+}
+```
+
+**Notes:**
+- Only owners and admins can delete team members
+- Deleting team entry does NOT delete the user's platform account
+- Returns 404 if team member not found
+
+---
+
+### Sync Tenant Users
+
+```http
+POST /api/v1/team/sync-users
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant_id> (required)
+```
+
+**Description:**
+Auto-creates team member entries for all tenant members who don't have one yet. Useful for existing tenants to populate their team section.
+
+**Response (200):**
+
+```json
+{
+  "message": "Tenant users synced successfully",
+  "created": 5,
+  "skipped": 2,
+  "total": 7
+}
+```
+
+**Notes:**
+- Only owners and admins can sync users
+- Skips users who already have team entries
+- Auto-assigns role based on user's tenant membership role
 
 ---
 
