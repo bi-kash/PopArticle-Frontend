@@ -15,6 +15,7 @@ import {
   Eye,
   FolderTree,
   UserCog,
+  Mail,
 } from "lucide-react";
 
 export default function TenantDashboard() {
@@ -316,6 +317,12 @@ export default function TenantDashboard() {
                 <button className="btn btn-secondary">
                   <Eye size={20} />
                   View All Articles
+                </button>
+              </Link>
+              <Link href={`/dashboard/tenants/${id}/messages`}>
+                <button className="btn btn-secondary">
+                  <Mail size={20} />
+                  Messages
                 </button>
               </Link>
               <Link href={`/dashboard/tenants/${id}/categories`}>

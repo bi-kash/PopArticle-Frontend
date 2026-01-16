@@ -18,6 +18,13 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log("🔐 API Request:", {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      headers: config.headers,
+      params: config.params,
+      data: config.data,
+    });
     return config;
   },
   (error) => {
@@ -27,8 +34,21 @@ api.interceptors.request.use(
 
 // Response interceptor to handle token refresh
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log("✅ API Response Success:", {
+      status: response.status,
+      url: response.config.url,
+      data: response.data,
+    });
+    return response;
+  },
   async (error) => {
+    console.error("❌ API Response Error:", {
+      status: error.response?.status,
+      url: error.config?.url,
+      data: error.response?.data,
+      headers: error.config?.headers,
+    });
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {

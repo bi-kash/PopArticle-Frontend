@@ -2,6 +2,7 @@ import api from "./api";
 
 export const articleService = {
   // Generate article with AI
+  // Supports: generate_image, include_content_images parameters
   async generateArticle(data, tenantId = null) {
     const config = {};
 
@@ -12,7 +13,18 @@ export const articleService = {
       config.headers = { "X-Tenant-ID": effectiveTenantId };
     }
 
-    const response = await api.post("/api/v1/articles/generate", data, config);
+    // Ensure generate_image and include_content_images are included if not specified
+    const requestData = {
+      generate_image: true, // Default to true
+      include_content_images: false, // Default to false
+      ...data,
+    };
+
+    const response = await api.post(
+      "/api/v1/articles/generate",
+      requestData,
+      config
+    );
     return response.data;
   },
 

@@ -16,6 +16,8 @@ export default function GenerateArticle() {
     tone: "professional",
     length: "medium",
     tenant_id: "",
+    generate_image: true,
+    include_content_images: false,
   });
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -253,6 +255,89 @@ export default function GenerateArticle() {
                       <option value="medium">Medium (~1000 words)</option>
                       <option value="long">Long (~2000 words)</option>
                     </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="label">Image Generation Options</label>
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.75rem",
+                    }}
+                  >
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.generate_image}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            generate_image: e.target.checked,
+                          })
+                        }
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <span>Generate Featured Image with AI (DALL-E)</span>
+                    </label>
+                    <p
+                      style={{
+                        fontSize: "0.875rem",
+                        color: "var(--text-secondary)",
+                        marginLeft: "1.75rem",
+                      }}
+                    >
+                      Creates a custom featured image for your article (~$0.08
+                      per image)
+                    </p>
+
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.include_content_images}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            include_content_images: e.target.checked,
+                          })
+                        }
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <span>Include Images Within Content</span>
+                    </label>
+                    <p
+                      style={{
+                        fontSize: "0.875rem",
+                        color: "var(--text-secondary)",
+                        marginLeft: "1.75rem",
+                      }}
+                    >
+                      Adds relevant images throughout the article content
+                    </p>
                   </div>
                 </div>
               </div>

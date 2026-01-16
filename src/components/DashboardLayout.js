@@ -11,6 +11,8 @@ import {
   Menu,
   X,
   User,
+  Mail,
+  UserCircle,
 } from "lucide-react";
 
 export default function DashboardLayout({ children }) {
@@ -35,6 +37,8 @@ export default function DashboardLayout({ children }) {
     { icon: FileText, label: "Articles", href: "/dashboard/articles" },
     { icon: Building2, label: "Tenants", href: "/dashboard/tenants" },
     { icon: FolderTree, label: "Categories", href: "/dashboard/categories" },
+    { icon: Mail, label: "Messages", href: "/dashboard/messages" },
+    { icon: UserCircle, label: "Profile", href: "/dashboard/profile" },
   ];
 
   return (

@@ -22,6 +22,7 @@ body {
   --success-color: #10b981;
   --danger-color: #ef4444;
   --warning-color: #f59e0b;
+  --info-color: #3b82f6;
   --background: #ffffff;
   --surface: #f8fafc;
   --text-primary: #0f172a;
@@ -409,4 +410,9 @@ code {
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+/* Hover Background */
+.hover-bg:hover {
+  background: var(--surface) !important;
 }

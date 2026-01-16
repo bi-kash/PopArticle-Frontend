@@ -10,6 +10,8 @@ Complete REST API reference for PopArticle content generation platform.
 - [Authentication Endpoints](#authentication-endpoints)
 - [OAuth Endpoints](#oauth-endpoints)
 - [API Key Management](#api-key-management)
+- [Profile Management](#profile-management)
+- [Message/Contact Endpoints](#messagecontact-endpoints)
 - [Article Endpoints](#article-endpoints)
 - [Category Endpoints](#category-endpoints)
 - [Comment Endpoints](#comment-endpoints)
@@ -194,6 +196,8 @@ Authorization: Bearer <access_token>
     "username": "johndoe",
     "full_name": "John Doe",
     "oauth_provider": null,
+    "profile_image": "https://lh3.googleusercontent.com/a/ACg8ocKAGlZUsQHqPbvD-4wchKOtABOV7xXbTZwgAO0jyqjzyF3Ypiff=s96-c",
+    "role": "Admin",
     "is_verified": false,
     "is_platform_admin": false,
     "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -344,6 +348,283 @@ Authorization: Bearer <access_token>
 
 ---
 
+## Profile Management
+
+### Update User Profile
+
+```http
+PATCH /api/v1/auth/profile
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "full_name": "John Doe",
+  "username": "johndoe",
+  "profile_image": "https://example.com/profile.jpg"
+}
+```
+
+**All fields are optional. Only include fields you want to update.**
+
+**Response (200):**
+
+```json
+{
+  "message": "Profile updated successfully",
+  "user": {
+    "id": 123,
+    "email": "john@example.com",
+    "username": "johndoe",
+    "full_name": "John Doe",
+    "profile_image": "https://example.com/profile.jpg",
+    "role": "owner"
+  }
+}
+```
+
+**Validation Rules:**
+
+- `username`: Must be unique within tenant (or globally for platform admins)
+- `profile_image`: Must be a valid URL (http:// or https://)
+- `full_name`: Any string value
+
+**Error Responses:**
+
+```json
+{
+  "error": "Username already taken"
+}  // 400
+
+{
+  "error": "profile_image must be a valid URL"
+}  // 400
+
+{
+  "error": "No valid fields to update"
+}  // 400
+```
+
+---
+
+### Update Profile Image (File Upload)
+
+```http
+POST /api/v1/auth/profile/image
+Authorization: Bearer <access_token>
+Content-Type: multipart/form-data OR application/json
+```
+
+**This endpoint is specifically for file uploads and URL processing. For simple URL updates, use PATCH /api/v1/auth/profile instead.**
+
+**Method 1: File Upload**
+
+```http
+POST /api/v1/auth/profile/image
+Content-Type: multipart/form-data
+
+file: <image file>
+```
+
+**Method 2: Image URL (Downloads and uploads to S3)**
+
+```http
+POST /api/v1/auth/profile/image
+Content-Type: application/json
+
+{
+  "image_url": "https://example.com/my-profile-pic.jpg"
+}
+```
+
+**Method 3: OAuth Provider URL (Stored as-is)**
+
+```http
+POST /api/v1/auth/profile/image
+Content-Type: application/json
+
+{
+  "image_url": "https://lh3.googleusercontent.com/a/..."
+}
+```
+
+**Supported OAuth Domains (stored directly):**
+
+- `googleusercontent.com` (Google)
+- `githubusercontent.com` (GitHub)
+- `avatars.githubusercontent.com` (GitHub)
+- `licdn.com` (LinkedIn)
+- `fbcdn.net` (Facebook)
+- `facebook.com` (Facebook)
+
+**Response (200):**
+
+```json
+{
+  "message": "Profile image updated successfully",
+  "profile_image": "https://cdn.example.com/profile-images/20250114_12345678.jpg"
+}
+```
+
+**Validation:**
+
+- Allowed formats: jpg, jpeg, png, gif, webp
+- Maximum size: 5MB
+- Images automatically optimized and resized to max 800px width
+- OAuth provider images used directly without re-hosting
+
+**Error Responses:**
+
+```json
+{
+  "error": "No file selected"
+}  // 400
+
+{
+  "error": "Invalid file type. Allowed: jpg, jpeg, png, gif, webp"
+}  // 400
+
+{
+  "error": "Image too large. Maximum size: 5MB"
+}  // 400
+
+{
+  "error": "Failed to process image URL: Invalid image data"
+}  // 400
+```
+
+---
+
+### Remove Profile Image
+
+```http
+DELETE /api/v1/auth/profile/image
+Authorization: Bearer <access_token>
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Profile image removed successfully"
+}
+```
+
+---
+
+## Message/Contact Endpoints
+
+### Send Message
+
+```http
+POST /api/v1/messages
+Content-Type: application/json
+Authorization: Bearer <access_token> (optional)
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**For Non-Logged-In Users:**
+
+```json
+{
+  "email": "user@example.com",
+  "name": "John Doe",
+  "subject": "Question about pricing",
+  "message": "I would like to know more about your pricing plans."
+}
+```
+
+**For Logged-In Users (email auto-filled from session):**
+
+```json
+{
+  "subject": "Feature request",
+  "message": "Please add dark mode support."
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "message": "Message sent successfully",
+  "id": 123,
+  "created_at": "2026-01-14T12:00:00.000000"
+}
+```
+
+---
+
+### List Messages (Admin/Owner Only)
+
+```http
+GET /api/v1/messages
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**Query Parameters:**
+
+- `status`: Filter by status (pending, read, replied, archived, spam)
+- `page`: Page number (default: 1)
+- `limit`: Results per page (default: 50, max: 100)
+
+**Response (200):**
+
+```json
+{
+  "messages": [
+    {
+      "id": 123,
+      "sender_email": "john@example.com",
+      "subject": "Question",
+      "status": "pending",
+      "created_at": "2026-01-14T12:00:00.000000"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 100,
+    "pages": 2
+  },
+  "unread_count": 15
+}
+```
+
+---
+
+### Update Message (Admin/Owner Only)
+
+```http
+PATCH /api/v1/messages/<message_id>
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "status": "replied",
+  "reply_text": "Thank you for your inquiry..."
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Message updated successfully",
+  "data": { ... }
+}
+```
+
+---
+
 ## Article Endpoints
 
 ### Create Article (Manual)
@@ -442,39 +723,43 @@ X-Tenant-ID: <tenant_id> (optional)
   "topic": "The Future of Artificial Intelligence",
   "keywords": ["AI", "machine learning", "future tech"],
   "tone": "professional",
-  "length": "medium"
+  "length": "medium",
+  "generate_image": true,
+  "include_content_images": false
 }
 ```
+
+**Request Parameters:**
+
+- `category_id` (required): Category ID for the article
+- `topic` (required): Main topic/subject for the article
+- `keywords` (optional): Array of target keywords to include
+- `tone` (optional): Writing tone (default: "professional")
+- `length` (optional): Article length - "short", "medium", or "long" (default: "medium")
+- `generate_image` (optional): Whether to generate a main featured image using DALL-E (default: `true`)
+- `include_content_images` (optional): Whether to include relevant images within the content (default: `false`)
 
 **Response (201):**
 
 ```json
 {
-  "message": "Article generated successfully",
-  "article": {
-    "id": 1,
-    "title": "The Future of Artificial Intelligence: What Lies Ahead",
-    "slug": "the-future-of-artificial-intelligence-what-lies-ahead",
-    "content": "Full markdown content...",
-    "excerpt": "Explore the cutting-edge developments...",
-    "image": "https://your-cdn.cloudfront.net/articles/123/main/abc123.jpg",
-    "category_id": 1,
-    "category_name": "Technology",
-    "user_id": 1,
-    "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
-    "status": "draft",
-    "is_featured": false,
-    "view_count": 0,
-    "created_at": "2025-01-01T00:00:00.000000",
-    "updated_at": "2025-01-01T00:00:00.000000",
-    "published_at": null,
-    "seo_meta_title": "The Future of AI: What Lies Ahead in 2025",
-    "seo_meta_description": "Discover the latest trends...",
-    "seo_focus_keyword": "artificial intelligence",
-    "seo_summary": "Article summary",
-    "tags": ["AI", "Technology", "Future"],
-    "keywords": ["artificial intelligence", "machine learning", "AI trends"]
-  }
+  "id": 1,
+  "title": "The Future of Artificial Intelligence: What Lies Ahead",
+  "slug": "the-future-of-artificial-intelligence-what-lies-ahead",
+  "content": "Full markdown content...",
+  "excerpt": "Explore the cutting-edge developments...",
+  "image": "https://oaidalleapiprodscus.blob.core.windows.net/...",
+  "category": "Technology",
+  "status": "draft",
+  "is_featured": false,
+  "created_at": "2025-01-01T00:00:00.000000",
+  "seo": {
+    "meta_title": "The Future of AI: What Lies Ahead in 2025",
+    "meta_description": "Discover the latest trends..."
+  },
+  "tags": ["AI", "Technology", "Future"],
+  "keywords": ["artificial intelligence", "machine learning", "AI trends"],
+  "tenant_id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
@@ -484,6 +769,11 @@ X-Tenant-ID: <tenant_id> (optional)
 - Article created with status "draft"
 - Returns 429 if limit exceeded
 - Task runs asynchronously via Celery
+- **NEW**: AI-generated content no longer includes redundant title headers (starts directly with content)
+- **NEW**: Optional DALL-E image generation for main article featured image
+- **NEW**: Generated images are automatically processed and uploaded to S3/CDN
+- **DALL-E Costs**: Standard quality 1792x1024 images cost approximately $0.080 per image
+- Image URLs from DALL-E expire after 1 hour - they are automatically downloaded and uploaded to your S3 bucket
 
 ---
 
@@ -1319,6 +1609,7 @@ Content-Type: application/json
 ## Team Management
 
 Team Management allows tenant owners and admins to manage their team members. Team members can be:
+
 - Existing platform users (automatically linked)
 - Non-platform users (tenant-specific profiles only)
 
@@ -1363,10 +1654,12 @@ X-Tenant-ID: <tenant_id> (required)
 ```
 
 **Required Fields:**
+
 - `full_name`: Team member's full name
 - `role`: Role/position (e.g., "Editor", "Manager", "Secretary", "Contributor")
 
 **Optional Fields:**
+
 - `user_id`: Link to existing platform user (auto-fills from user account)
 - `position`: Additional role description
 - `email`: Contact email
@@ -1390,12 +1683,17 @@ Example valid `social_links`:
 
 ```json
 [
-  { "platform": "linkedin", "handle": "janesmith", "url": "https://linkedin.com/in/janesmith" },
+  {
+    "platform": "linkedin",
+    "handle": "janesmith",
+    "url": "https://linkedin.com/in/janesmith"
+  },
   { "platform": "twitter", "handle": "@janesmith" }
 ]
 ```
 
 Notes:
+
 - The server normalizes and strips surrounding whitespace from `social_website` and `handle` values.
 - Clients should prefer the `social_website` / `handle` keys to avoid validation errors.
 
@@ -1437,6 +1735,7 @@ Notes:
 ```
 
 **Notes:**
+
 - Only owners and admins can create team members
 - If `user_id` is provided, checks if user exists
 - Prevents duplicate team entries for the same user
@@ -1451,6 +1750,7 @@ X-Tenant-ID: <tenant_id> (required)
 ```
 
 **Query Parameters:**
+
 - `include_inactive` (optional): `true` to include inactive team members (default: `false`)
 
 **Response (200):**
@@ -1488,6 +1788,7 @@ X-Tenant-ID: <tenant_id> (required)
 ```
 
 **Notes:**
+
 - Public endpoint - no authentication required
 - Returns team members ordered by `display_order` then `created_at`
 - Only returns active members unless `include_inactive=true`
@@ -1533,6 +1834,7 @@ X-Tenant-ID: <tenant_id> (required)
 ```
 
 **Notes:**
+
 - Public endpoint - no authentication required
 
 ---
@@ -1584,6 +1886,7 @@ X-Tenant-ID: <tenant_id> (required)
 ```
 
 **Notes:**
+
 - Only owners and admins can update team members
 - All fields are optional - only provided fields are updated
 - Updating team profile does NOT affect the linked user's global account
@@ -1607,6 +1910,7 @@ X-Tenant-ID: <tenant_id> (required)
 ```
 
 **Notes:**
+
 - Only owners and admins can delete team members
 - Deleting team entry does NOT delete the user's platform account
 - Returns 404 if team member not found
@@ -1636,6 +1940,7 @@ Auto-creates team member entries for all tenant members who don't have one yet. 
 ```
 
 **Notes:**
+
 - Only owners and admins can sync users
 - Skips users who already have team entries
 - Auto-assigns role based on user's tenant membership role
