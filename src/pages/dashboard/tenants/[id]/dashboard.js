@@ -16,6 +16,7 @@ import {
   FolderTree,
   UserCog,
   Mail,
+  Calendar,
 } from "lucide-react";
 
 export default function TenantDashboard() {
@@ -79,7 +80,7 @@ export default function TenantDashboard() {
         const calculatedStats = {
           total_articles: articlesList.length,
           published_articles: articlesList.filter(
-            (a) => a.status === "published"
+            (a) => a.status === "published",
           ).length,
           draft_articles: articlesList.filter((a) => a.status === "draft")
             .length,
@@ -313,6 +314,12 @@ export default function TenantDashboard() {
                   Generate with AI
                 </button>
               </Link>
+              <Link href={`/dashboard/tenants/${id}/scheduling`}>
+                <button className="btn btn-info">
+                  <Calendar size={20} />
+                  Article Scheduling
+                </button>
+              </Link>
               <Link href={`/dashboard/tenants/${id}/articles`}>
                 <button className="btn btn-secondary">
                   <Eye size={20} />
@@ -456,8 +463,8 @@ export default function TenantDashboard() {
                                 article.status === "published"
                                   ? "var(--success-color)"
                                   : article.status === "draft"
-                                  ? "var(--warning-color)"
-                                  : "var(--surface)",
+                                    ? "var(--warning-color)"
+                                    : "var(--surface)",
                               color:
                                 article.status === "published" ||
                                 article.status === "draft"

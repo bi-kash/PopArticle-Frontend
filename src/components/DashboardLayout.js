@@ -13,6 +13,7 @@ import {
   User,
   Mail,
   UserCircle,
+  Calendar,
 } from "lucide-react";
 
 export default function DashboardLayout({ children }) {
@@ -35,6 +36,7 @@ export default function DashboardLayout({ children }) {
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
     { icon: FileText, label: "Articles", href: "/dashboard/articles" },
+    { icon: Calendar, label: "Scheduling", href: "/dashboard/scheduling" },
     { icon: Building2, label: "Tenants", href: "/dashboard/tenants" },
     { icon: FolderTree, label: "Categories", href: "/dashboard/categories" },
     { icon: Mail, label: "Messages", href: "/dashboard/messages" },

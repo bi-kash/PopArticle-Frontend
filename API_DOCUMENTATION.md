@@ -13,11 +13,13 @@ Complete REST API reference for PopArticle content generation platform.
 - [Profile Management](#profile-management)
 - [Message/Contact Endpoints](#messagecontact-endpoints)
 - [Article Endpoints](#article-endpoints)
+  - [Search Articles](#search-articles)
 - [Category Endpoints](#category-endpoints)
 - [Comment Endpoints](#comment-endpoints)
 - [Team Management](#team-management)
 - [Tenant Management](#tenant-management)
 - [Invitation Endpoints](#invitation-endpoints)
+- [Article Scheduling](#article-scheduling)
 - [Health Check](#health-check)
 - [Error Responses](#error-responses)
 
@@ -814,6 +816,7 @@ X-Tenant-ID: <tenant_id> (optional)
 
 - `status` (optional): `draft`, `published`, `archived`
 - `category_id` (optional): Filter by category
+- `category_slug` (optional): Filter by category using human-readable slug (frontend-friendly; resolves to `category_id` server-side)
 - `is_featured` (optional): `true`, `false`
 - `limit` (optional): Default 50, max 100
 - `offset` (optional): Default 0
@@ -859,6 +862,58 @@ X-Tenant-ID: <tenant_id> (optional)
 - `comment_count` and `view_count` are always included
 - With `X-Tenant-ID`: Returns tenant articles + global articles (tenant_id=NULL)
 - Without `X-Tenant-ID` or auth: Returns only published articles
+
+Additional: Filter by category slug
+
+- You can pass `category_slug` instead of `category_id` when calling `GET /api/v1/articles`. The backend resolves the slug to the category (respecting `X-Tenant-ID`) and returns the same response shape as the `category_id` filter. If the slug is not found the endpoint returns an empty `articles` array (200).
+
+---
+
+### Get Articles By Category Slug
+
+```http
+GET /api/v1/articles/category/<slug>
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+Use this dedicated endpoint when the frontend only knows the category slug (SEO-friendly URLs). It returns category metadata plus the articles in that category and supports the same filters as `GET /api/v1/articles`.
+
+**Query Parameters (supports same filters as `GET /api/v1/articles`):**
+
+- `status` (optional): `draft`, `published`, `archived`
+- `is_featured` (optional): `true`, `false`
+- `per_page` / `limit` (optional): Default 50
+- `offset` (optional): Default 0
+- `user_only` (optional): `true` - If authenticated, show only user's articles
+- `sort` / `order` (optional)
+
+**Response (200):**
+
+```json
+{
+  "category": {
+    "id": 1,
+    "name": "Technology",
+    "slug": "technology",
+    "description": "Technology related articles"
+  },
+  "total": 42,
+  "limit": 10,
+  "offset": 0,
+  "page": 1,
+  "per_page": 10,
+  "sort_by": "popularity",
+  "sort_order": "desc",
+  "articles": [
+    /* same article objects as List Articles */
+  ]
+}
+```
+
+**Notes:**
+
+- Respects `X-Tenant-ID`; returns tenant-specific + global articles when tenant present.
+- Returns `404` if category slug does not exist for the tenant scope.
 
 ---
 
@@ -1041,46 +1096,149 @@ GET /api/v1/articles/search
 X-Tenant-ID: <tenant_id> (optional)
 ```
 
+**Description:**
+Advanced full-text search across articles with support for filtering, sorting by relevance, and searching within specific fields. Results include highlighted snippets showing where matches were found.
+
 **Query Parameters:**
 
-- `q` (required): Search query
-- `limit` (optional): Default 20, max 100
-- `sort` (optional): `relevance` (default), `date`, `popularity`, `trending`, `title`, `comments`
-- `order` (optional): `desc` (default), `asc`
+| Parameter            | Type    | Required | Default       | Description                                                 |
+| -------------------- | ------- | -------- | ------------- | ----------------------------------------------------------- |
+| `q`                  | string  | Yes      | -             | Search query (2-200 characters)                             |
+| `limit` / `per_page` | integer | No       | 20            | Results per page (max 100)                                  |
+| `offset`             | integer | No       | 0             | Number of results to skip                                   |
+| `page`               | integer | No       | 1             | Page number (alternative to offset)                         |
+| `status`             | string  | No       | `published`\* | Filter by status: `draft`, `published`, `archived`          |
+| `category_id`        | integer | No       | -             | Filter by category ID                                       |
+| `category_slug`      | string  | No       | -             | Filter by category slug (alternative to category_id)        |
+| `is_featured`        | boolean | No       | -             | Filter featured articles: `true` / `false`                  |
+| `date_from`          | string  | No       | -             | Filter by creation date (ISO 8601: `YYYY-MM-DD`)            |
+| `date_to`            | string  | No       | -             | Filter by creation date (ISO 8601: `YYYY-MM-DD`)            |
+| `sort`               | string  | No       | `relevance`   | Sort by: `relevance`, `date`, `popularity`, `title`         |
+| `order`              | string  | No       | `desc`        | Sort order: `asc`, `desc`                                   |
+| `search_in`          | string  | No       | `all`         | Search scope: `all`, `title`, `content`, `tags`, `keywords` |
+
+\* Non-authenticated users can only search published articles
+
+**Example Request:**
+
+```http
+GET /api/v1/articles/search?q=artificial%20intelligence&sort=relevance&limit=10&status=published&search_in=all
+```
 
 **Response (200):**
 
 ```json
 {
   "query": "artificial intelligence",
-  "total": 5,
+  "total": 15,
+  "limit": 10,
+  "offset": 0,
+  "page": 1,
+  "per_page": 10,
+  "total_pages": 2,
+  "has_next": true,
+  "has_prev": false,
   "sort_by": "relevance",
   "sort_order": "desc",
-  "results": [
+  "search_in": "all",
+  "filters": {
+    "status": "published",
+    "category_id": null,
+    "is_featured": null,
+    "date_from": null,
+    "date_to": null
+  },
+  "articles": [
     {
       "id": 1,
-      "title": "Article Title",
-      "slug": "article-title",
-      "excerpt": "Brief summary...",
+      "title": "The Future of Artificial Intelligence",
+      "slug": "the-future-of-artificial-intelligence",
+      "excerpt": "Explore the cutting-edge developments in AI...",
+      "highlight": "...the rapid advancement of **artificial intelligence** is transforming industries...",
       "image": "https://your-cdn.cloudfront.net/articles/123/main/abc123.jpg",
-      "category": "Technology",
+      "category": {
+        "id": 1,
+        "name": "Technology",
+        "slug": "technology"
+      },
       "status": "published",
-      "is_featured": false,
-      "view_count": 150,
-      "comment_count": 8,
-      "created_at": "2025-01-01T00:00:00.000000",
-      "published_at": "2025-01-01T13:00:00.000000"
+      "is_featured": true,
+      "view_count": 1250,
+      "comment_count": 23,
+      "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+      "tags": ["AI", "Machine Learning", "Technology"],
+      "keywords": [
+        "artificial intelligence",
+        "neural networks",
+        "deep learning"
+      ],
+      "created_at": "2025-01-15T10:30:00.000000",
+      "updated_at": "2025-01-20T14:00:00.000000",
+      "published_at": "2025-01-15T12:00:00.000000"
     }
   ]
 }
 ```
 
+**Error Response (400):**
+
+```json
+{
+  "error": "Search query is required",
+  "message": "Please provide a search term using the \"q\" parameter"
+}
+```
+
+```json
+{
+  "error": "Search query too short",
+  "message": "Search query must be at least 2 characters"
+}
+```
+
+**Relevance Scoring:**
+
+When `sort=relevance`, results are ranked by:
+
+1. **100 points**: Exact title match
+2. **80 points**: Title starts with query
+3. **60 points**: Title contains query
+4. **40 points**: Excerpt contains query
+5. **20 points**: Content or other fields contain query
+
+**Search Scopes:**
+
+| Scope      | Description                                          |
+| ---------- | ---------------------------------------------------- |
+| `all`      | Searches title, content, excerpt, tags, and keywords |
+| `title`    | Searches only in article titles                      |
+| `content`  | Searches in content and excerpt                      |
+| `tags`     | Searches only in associated tags                     |
+| `keywords` | Searches only in associated keywords                 |
+
+**Highlight Field:**
+
+The `highlight` field contains a snippet from the article (excerpt or content) showing where the search term was found, with approximately 50 characters before and 150 characters after the match. This is useful for displaying search results with context.
+
 **Notes:**
 
-- Supports advanced sorting and pagination
-- `comment_count` and `view_count` are always included
-- `sort_by` and `sort_order` reflect the applied sorting
-- Only searches published articles for non-authenticated users
+- Minimum query length: 2 characters
+- Maximum query length: 200 characters
+- Maximum results per page: 100
+- Results are cached for a short duration to improve performance
+- Non-authenticated users can only search `published` articles
+- With `X-Tenant-ID`: Returns tenant articles + global articles (tenant_id=NULL)
+- Without `X-Tenant-ID`: Returns only global articles
+- The search is case-insensitive
+- Supports partial matches (e.g., "intell" matches "intelligence")
+
+**Best Practices:**
+
+1. **For blog search bars**: Use `search_in=all` with `sort=relevance`
+2. **For tag-based filtering**: Use `search_in=tags` to find articles by topic
+3. **For SEO keyword analysis**: Use `search_in=keywords`
+4. **For date-ranged searches**: Combine `date_from` and `date_to` for time-based queries
+5. **For infinite scroll**: Use `offset` pagination; for page numbers, use `page` parameter
 
 ---
 
@@ -1142,6 +1300,34 @@ X-Tenant-ID: <tenant_id> (optional)
 ```
 
 ---
+
+### Get Category By Slug
+
+```http
+GET /api/v1/categories/slug/<slug>
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+Fetch a category by its human-readable `slug`. This endpoint mirrors `GET /api/v1/categories/<id>` but accepts the slug instead of the numeric ID. When `X-Tenant-ID` is present the server resolves the slug within the tenant scope (and will also return global categories when appropriate).
+
+**Response (200):**
+
+```json
+{
+  "id": 1,
+  "name": "Technology",
+  "slug": "technology",
+  "description": "Technology related articles",
+  "tenant_id": null,
+  "created_at": "2025-01-01T00:00:00.000000",
+  "article_count": 42
+}
+```
+
+**Notes:**
+
+- Returns `404` if slug not found within the resolved tenant/global scope.
+- Useful for frontend routing and SEO-friendly category pages.
 
 ### Create Category
 
@@ -2472,6 +2658,298 @@ Content-Type: application/json
 - Requires authentication (user must be logged in)
 - The logged-in user's email must match the invitation email
 - Upon success, user becomes a member of the tenant with the specified role
+
+---
+
+## Article Scheduling
+
+Article Scheduling allows automated creation and publishing of articles per category on a daily schedule. Configuration is stored in the database and executed by Celery Beat.
+
+**Permissions:** Requires authentication. Tenant-aware (optional `X-Tenant-ID` header).
+
+### List Scheduling Configurations
+
+```http
+GET /api/v1/scheduling/configs
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**Query Parameters:**
+
+| Parameter      | Type    | Default | Description                        |
+| -------------- | ------- | ------- | ---------------------------------- |
+| `enabled_only` | boolean | false   | Filter to only enabled configs     |
+| `limit`        | integer | 100     | Maximum number of results          |
+
+**Response (200):**
+
+```json
+{
+  "total": 2,
+  "configs": [
+    {
+      "id": 1,
+      "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+      "category_id": 5,
+      "category_name": "Technology",
+      "articles_per_day": 3,
+      "scheduled_hour": 8,
+      "scheduled_minute": 0,
+      "scheduled_time": "08:00 UTC",
+      "default_topic": "Latest Technology Trends",
+      "target_keywords": ["technology", "innovation", "AI"],
+      "word_count": 1500,
+      "tone": "professional",
+      "generate_image": true,
+      "auto_publish": false,
+      "is_enabled": true,
+      "priority": 1,
+      "last_run_at": "2025-01-30T08:00:00.000000",
+      "last_error": null,
+      "total_articles_generated": 45,
+      "created_at": "2025-01-01T00:00:00.000000",
+      "updated_at": "2025-01-30T08:00:00.000000"
+    }
+  ]
+}
+```
+
+### Get Scheduling Configuration
+
+```http
+GET /api/v1/scheduling/configs/<config_id>
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**Response (200):**
+
+```json
+{
+  "id": 1,
+  "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+  "category_id": 5,
+  "category_name": "Technology",
+  "articles_per_day": 3,
+  "scheduled_hour": 8,
+  "scheduled_minute": 0,
+  "scheduled_time": "08:00 UTC",
+  "default_topic": "Latest Technology Trends",
+  "target_keywords": ["technology", "innovation", "AI"],
+  "word_count": 1500,
+  "tone": "professional",
+  "generate_image": true,
+  "auto_publish": false,
+  "is_enabled": true,
+  "priority": 1,
+  "last_run_at": "2025-01-30T08:00:00.000000",
+  "last_error": null,
+  "total_articles_generated": 45,
+  "created_at": "2025-01-01T00:00:00.000000",
+  "updated_at": "2025-01-30T08:00:00.000000"
+}
+```
+
+### Get Scheduling Configuration by Category
+
+```http
+GET /api/v1/scheduling/configs/category/<category_id>
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**Response (200):** Same format as Get Scheduling Configuration.
+
+### Create Scheduling Configuration
+
+```http
+POST /api/v1/scheduling/configs
+Authorization: Bearer <access_token>
+Content-Type: application/json
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**Request Body:**
+
+```json
+{
+  "category_id": 5,
+  "articles_per_day": 3,
+  "scheduled_hour": 8,
+  "scheduled_minute": 0,
+  "default_topic": "Latest Technology Trends",
+  "target_keywords": ["technology", "innovation", "AI"],
+  "word_count": 1500,
+  "tone": "professional",
+  "generate_image": true,
+  "auto_publish": false,
+  "is_enabled": true,
+  "priority": 1
+}
+```
+
+**Required Fields:**
+
+| Field         | Type    | Description                              |
+| ------------- | ------- | ---------------------------------------- |
+| `category_id` | integer | Category ID to schedule articles for     |
+
+**Optional Fields:**
+
+| Field              | Type    | Default        | Description                                       |
+| ------------------ | ------- | -------------- | ------------------------------------------------- |
+| `articles_per_day` | integer | 1              | Number of articles to generate daily (1-10)       |
+| `scheduled_hour`   | integer | 6              | Hour in UTC (0-23) to run                         |
+| `scheduled_minute` | integer | 0              | Minute (0-59) to run                              |
+| `default_topic`    | string  | null           | Default topic/theme for article generation        |
+| `target_keywords`  | array   | null           | List of target keywords for SEO                   |
+| `word_count`       | integer | 1000           | Target word count for generated articles          |
+| `tone`             | string  | "professional" | Writing tone (e.g., professional, casual, formal) |
+| `generate_image`   | boolean | true           | Generate main article image using DALL-E          |
+| `auto_publish`     | boolean | false          | Auto-publish articles or save as draft            |
+| `is_enabled`       | boolean | true           | Enable/disable scheduling                         |
+| `priority`         | integer | 0              | Processing priority (higher = processed first)    |
+
+**Response (201):** Same format as Get Scheduling Configuration.
+
+**Error Responses:**
+
+- `400`: Missing `category_id`, invalid hour/minute range, or invalid `articles_per_day`
+- `400`: Scheduling config already exists for this category
+
+### Update Scheduling Configuration
+
+```http
+PUT /api/v1/scheduling/configs/<config_id>
+Authorization: Bearer <access_token>
+Content-Type: application/json
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**Request Body:** All fields are optional. Only provided fields will be updated.
+
+```json
+{
+  "articles_per_day": 5,
+  "scheduled_hour": 10,
+  "scheduled_minute": 30,
+  "is_enabled": false,
+  "auto_publish": true
+}
+```
+
+**Response (200):** Same format as Get Scheduling Configuration.
+
+### Delete Scheduling Configuration
+
+```http
+DELETE /api/v1/scheduling/configs/<config_id>
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**Response (204):** No content on success.
+
+### Trigger Article Generation Manually
+
+```http
+POST /api/v1/scheduling/configs/<config_id>/trigger
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+Triggers article generation for a specific config immediately, outside the normal schedule.
+
+**Response (202):**
+
+```json
+{
+  "message": "Article generation triggered",
+  "config_id": 1,
+  "task_id": "abc123-task-id-456"
+}
+```
+
+### List Generation Logs
+
+```http
+GET /api/v1/scheduling/logs
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**Query Parameters:**
+
+| Parameter   | Type    | Default | Description                                    |
+| ----------- | ------- | ------- | ---------------------------------------------- |
+| `config_id` | integer | null    | Filter by scheduling config ID                 |
+| `status`    | string  | null    | Filter by status (success, failed, skipped)    |
+| `limit`     | integer | 50      | Maximum number of results                      |
+
+**Response (200):**
+
+```json
+{
+  "total": 10,
+  "logs": [
+    {
+      "id": 1,
+      "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+      "config_id": 1,
+      "category_id": 5,
+      "category_name": "Technology",
+      "article_id": 123,
+      "status": "success",
+      "topic_used": "Latest Technology Trends",
+      "error_message": null,
+      "generation_time_ms": 4523,
+      "created_at": "2025-01-30T08:00:05.000000"
+    },
+    {
+      "id": 2,
+      "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+      "config_id": 1,
+      "category_id": 5,
+      "category_name": "Technology",
+      "article_id": null,
+      "status": "failed",
+      "topic_used": "AI Innovations",
+      "error_message": "OpenAI API rate limit exceeded",
+      "generation_time_ms": 1200,
+      "created_at": "2025-01-30T08:00:10.000000"
+    }
+  ]
+}
+```
+
+### Get Generation Statistics
+
+```http
+GET /api/v1/scheduling/stats
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**Query Parameters:**
+
+| Parameter | Type    | Default | Description                    |
+| --------- | ------- | ------- | ------------------------------ |
+| `days`    | integer | 7       | Number of days to look back    |
+
+**Response (200):**
+
+```json
+{
+  "period_days": 7,
+  "statistics": {
+    "total": 50,
+    "success": 45,
+    "failed": 3,
+    "skipped": 2
+  }
+}
+```
 
 ---
 
