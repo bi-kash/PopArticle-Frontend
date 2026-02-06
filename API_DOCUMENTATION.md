@@ -20,6 +20,7 @@ Complete REST API reference for PopArticle content generation platform.
 - [Tenant Management](#tenant-management)
 - [Invitation Endpoints](#invitation-endpoints)
 - [Article Scheduling](#article-scheduling)
+- [Social Media Posting](#social-media-posting)
 - [Health Check](#health-check)
 - [Error Responses](#error-responses)
 
@@ -2950,6 +2951,757 @@ X-Tenant-ID: <tenant_id> (optional)
   }
 }
 ```
+
+---
+
+## Social Media Posting
+
+Automated social media posting for articles via Meta (Facebook, Instagram) with AI-generated content. This system allows you to:
+- Configure Facebook Pages and Instagram Business accounts for automated posting
+- Generate AI-powered engaging posts from article content
+- Post immediately or schedule for later
+- Track posting history and statistics
+
+### Configuration Endpoints
+
+#### List Social Media Configurations
+
+```http
+GET /api/v1/social-media/configs
+Authorization: Bearer <token>
+X-Tenant-ID: <tenant_id>
+```
+
+**Query Parameters:**
+
+| Parameter     | Type    | Description                                    |
+|--------------|---------|------------------------------------------------|
+| platform     | string  | Filter by platform ('facebook', 'instagram', 'facebook_page') |
+| active_only  | boolean | Only return active configurations (default: false) |
+
+**Response (200):**
+
+```json
+{
+  "total": 2,
+  "configs": [
+    {
+      "id": 1,
+      "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+      "platform": "facebook_page",
+      "account_name": "My Business Page",
+      "account_id": "123456789",
+      "token_expires_at": "2026-04-01T00:00:00.000000",
+      "platform_data": { "page_category": "Business" },
+      "default_hashtags": ["tech", "news"],
+      "post_template": null,
+      "auto_post_enabled": false,
+      "is_active": true,
+      "last_verified_at": "2026-01-31T12:00:00.000000",
+      "created_at": "2026-01-15T10:00:00.000000",
+      "updated_at": "2026-01-31T12:00:00.000000"
+    }
+  ]
+}
+```
+
+#### Get Configuration by ID
+
+```http
+GET /api/v1/social-media/configs/<config_id>
+Authorization: Bearer <token>
+X-Tenant-ID: <tenant_id>
+```
+
+**Response (200):**
+
+```json
+{
+  "id": 1,
+  "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+  "platform": "facebook_page",
+  "account_name": "My Business Page",
+  "account_id": "123456789",
+  "token_expires_at": "2026-04-01T00:00:00.000000",
+  "platform_data": null,
+  "default_hashtags": ["tech", "news"],
+  "post_template": null,
+  "auto_post_enabled": false,
+  "is_active": true,
+  "last_verified_at": "2026-01-31T12:00:00.000000",
+  "created_at": "2026-01-15T10:00:00.000000",
+  "updated_at": "2026-01-31T12:00:00.000000"
+}
+```
+
+#### Create Configuration
+
+```http
+POST /api/v1/social-media/configs
+Authorization: Bearer <token>
+X-Tenant-ID: <tenant_id>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "platform": "facebook_page",
+  "account_name": "My Business Page",
+  "account_id": "123456789",
+  "access_token": "EAAxxxxxx...",
+  "token_expires_at": "2026-04-01T00:00:00Z",
+  "refresh_token": "optional_refresh_token",
+  "platform_data": { "page_category": "Business" },
+  "default_hashtags": ["tech", "news"],
+  "post_template": "Check out our latest article: {title}",
+  "auto_post_enabled": false
+}
+```
+
+**Required Fields:**
+
+| Field        | Type   | Description                                           |
+|-------------|--------|-------------------------------------------------------|
+| platform    | string | One of: 'facebook', 'facebook_page', 'instagram'      |
+| account_name| string | Friendly name for the account                         |
+| account_id  | string | Platform-specific account or page ID                  |
+| access_token| string | OAuth access token from Meta                          |
+
+**Optional Fields:**
+
+| Field            | Type    | Description                                      |
+|-----------------|---------|--------------------------------------------------|
+| token_expires_at | string  | Token expiration (ISO format)                    |
+| refresh_token    | string  | Refresh token if available                       |
+| platform_data    | object  | Additional platform-specific data                |
+| default_hashtags | array   | Default hashtags to include in posts             |
+| post_template    | string  | Custom template for posts                        |
+| auto_post_enabled| boolean | Auto-post new articles (default: false)          |
+
+**Response (201):**
+
+```json
+{
+  "id": 1,
+  "platform": "facebook_page",
+  "account_name": "My Business Page",
+  "account_id": "123456789",
+  "is_active": true,
+  "created_at": "2026-01-31T15:00:00.000000"
+}
+```
+
+#### Update Configuration
+
+```http
+PUT /api/v1/social-media/configs/<config_id>
+Authorization: Bearer <token>
+X-Tenant-ID: <tenant_id>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "account_name": "Updated Page Name",
+  "auto_post_enabled": true,
+  "default_hashtags": ["updated", "hashtags"],
+  "is_active": true
+}
+```
+
+**Response (200):** Returns updated configuration object.
+
+#### Delete Configuration
+
+```http
+DELETE /api/v1/social-media/configs/<config_id>
+Authorization: Bearer <token>
+X-Tenant-ID: <tenant_id>
+```
+
+**Response (204):** No content.
+
+#### Verify Token
+
+Verify that a configuration's access token is still valid with Meta's API.
+
+```http
+POST /api/v1/social-media/configs/<config_id>/verify
+Authorization: Bearer <token>
+X-Tenant-ID: <tenant_id>
+```
+
+**Response (200):**
+
+```json
+{
+  "valid": true,
+  "expires_at": 1735689600,
+  "scopes": ["pages_manage_posts", "pages_read_engagement"],
+  "last_verified_at": "2026-01-31T15:00:00.000000"
+}
+```
+
+### Content Generation Endpoints
+
+#### Generate AI Post
+
+Generate an AI-powered social media post from an article.
+
+```http
+POST /api/v1/social-media/generate-post
+Authorization: Bearer <token>
+X-Tenant-ID: <tenant_id>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "article_id": 123,
+  "platform": "facebook",
+  "style": "engaging",
+  "include_link": true,
+  "custom_hashtags": ["extra", "tags"],
+  "article_url": "https://myblog.com/articles/my-article"
+}
+```
+
+**Parameters:**
+
+| Field          | Type    | Required | Description                                              |
+|---------------|---------|----------|----------------------------------------------------------|
+| article_id    | integer | Yes      | ID of the article to generate post for                   |
+| platform      | string  | No       | Target platform (default: 'facebook')                    |
+| style         | string  | No       | Post style: 'engaging', 'professional', 'casual', 'clickbait' |
+| include_link  | boolean | No       | Include article link in post (default: true)             |
+| custom_hashtags| array  | No       | Additional hashtags to include                           |
+| article_url   | string  | No       | Custom URL to use for the article link                   |
+
+**Response (200):**
+
+```json
+{
+  "article_id": 123,
+  "platform": "facebook",
+  "generated_post": {
+    "text": "🚀 You won't believe what we discovered about AI technology! This changes everything...",
+    "hashtags": ["AI", "technology", "innovation"],
+    "call_to_action": "Read the full story!",
+    "emoji_enhanced": true
+  },
+  "formatted_content": "🚀 You won't believe what we discovered about AI technology! This changes everything...\n\n👉 Read the full story!\n\n🔗 https://myblog.com/articles/my-article\n\n#AI #technology #innovation",
+  "character_count": 195
+}
+```
+
+#### Regenerate Post with Feedback
+
+Regenerate a post based on user feedback.
+
+```http
+POST /api/v1/social-media/regenerate-post
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "original_post": "Original post text here...",
+  "feedback": "Make it more exciting and add more emojis",
+  "platform": "instagram"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "regenerated_post": {
+    "text": "🔥💡 BREAKING: Revolutionary AI discovery! 🤯",
+    "hashtags": ["AI", "tech", "future"],
+    "call_to_action": "Tap the link to learn more!"
+  },
+  "formatted_content": "🔥💡 BREAKING: Revolutionary AI discovery! 🤯...",
+  "character_count": 150
+}
+```
+
+### Posting Endpoints
+
+#### Post to Social Media
+
+Post content to a configured social media platform.
+
+```http
+POST /api/v1/social-media/post
+Authorization: Bearer <token>
+X-Tenant-ID: <tenant_id>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "config_id": 1,
+  "article_id": 123,
+  "post_content": "Check out our latest article on AI technology! 🚀\n\n#AI #tech",
+  "image_url": "https://example.com/image.jpg",
+  "link_url": "https://myblog.com/articles/ai-technology",
+  "hashtags": ["AI", "tech"],
+  "scheduled_for": "2026-02-01T10:00:00Z",
+  "ai_generated": true,
+  "was_edited": false
+}
+```
+
+**Required Fields:**
+
+| Field        | Type    | Description                           |
+|-------------|---------|---------------------------------------|
+| config_id   | integer | Social media configuration ID         |
+| article_id  | integer | Article being shared                  |
+| post_content| string  | The post text content                 |
+
+**Optional Fields:**
+
+| Field         | Type    | Description                                    |
+|--------------|---------|------------------------------------------------|
+| image_url    | string  | Image URL to include (required for Instagram)  |
+| link_url     | string  | Article link to share                          |
+| hashtags     | array   | Additional hashtags                            |
+| scheduled_for| string  | Schedule post for later (ISO datetime)         |
+| ai_generated | boolean | Whether content was AI-generated (default: true)|
+| was_edited   | boolean | Whether user edited content (default: false)   |
+
+**Response (201) - Immediate Post:**
+
+```json
+{
+  "success": true,
+  "log_id": 45,
+  "platform_post_id": "123456789_987654321",
+  "platform_post_url": "https://facebook.com/123456789/posts/987654321"
+}
+```
+
+**Response (201) - Scheduled Post:**
+
+```json
+{
+  "success": true,
+  "log_id": 46,
+  "scheduled_for": "2026-02-01T10:00:00.000000",
+  "message": "Post scheduled successfully"
+}
+```
+
+**Response (400) - Failed Post:**
+
+```json
+{
+  "success": false,
+  "log_id": 47,
+  "error": "Invalid access token",
+  "error_code": "190"
+}
+```
+
+### Log Endpoints
+
+#### List Post Logs
+
+```http
+GET /api/v1/social-media/logs
+Authorization: Bearer <token>
+X-Tenant-ID: <tenant_id>
+```
+
+**Query Parameters:**
+
+| Parameter   | Type    | Description                                |
+|------------|---------|-------------------------------------------|
+| config_id  | integer | Filter by configuration                    |
+| article_id | integer | Filter by article                          |
+| status     | string  | Filter by status: 'pending', 'success', 'failed', 'scheduled' |
+| limit      | integer | Maximum results (default: 50)              |
+| offset     | integer | Pagination offset                          |
+
+**Response (200):**
+
+```json
+{
+  "total": 25,
+  "logs": [
+    {
+      "id": 45,
+      "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+      "config_id": 1,
+      "platform": "facebook_page",
+      "account_name": "My Business Page",
+      "article_id": 123,
+      "article_title": "AI Technology Breakthrough",
+      "post_content": "Check out our latest article! 🚀",
+      "ai_generated": true,
+      "was_edited": false,
+      "status": "success",
+      "platform_post_id": "123456789_987654321",
+      "platform_post_url": "https://facebook.com/123456789/posts/987654321",
+      "error_message": null,
+      "error_code": null,
+      "scheduled_for": null,
+      "posted_at": "2026-01-31T15:30:00.000000",
+      "retry_count": 0,
+      "created_at": "2026-01-31T15:29:55.000000",
+      "updated_at": "2026-01-31T15:30:00.000000"
+    }
+  ]
+}
+```
+
+#### Get Post Log by ID
+
+```http
+GET /api/v1/social-media/logs/<log_id>
+Authorization: Bearer <token>
+X-Tenant-ID: <tenant_id>
+```
+
+**Response (200):** Returns single log object.
+
+#### Get Posting Statistics
+
+```http
+GET /api/v1/social-media/stats
+Authorization: Bearer <token>
+X-Tenant-ID: <tenant_id>
+```
+
+**Query Parameters:**
+
+| Parameter | Type    | Description                      |
+|----------|---------|----------------------------------|
+| days     | integer | Days to look back (default: 30)  |
+
+**Response (200):**
+
+```json
+{
+  "period_days": 30,
+  "statistics": {
+    "total": 50,
+    "success": 45,
+    "failed": 3,
+    "pending": 1,
+    "scheduled": 1,
+    "success_rate": 90.0,
+    "by_platform": {
+      "facebook_page": { "total": 30, "success": 28, "failed": 2 },
+      "instagram": { "total": 20, "success": 17, "failed": 1 }
+    }
+  }
+}
+```
+
+### Meta OAuth Flow Endpoints
+
+These endpoints provide a complete OAuth flow for connecting Facebook and Instagram accounts without manual token management.
+
+#### Connect Facebook/Instagram (OAuth)
+
+Initiate the OAuth flow to connect Facebook Pages and Instagram Business accounts. This redirects the user to Facebook's authorization page.
+
+**Supports both GET and POST methods.**
+
+```http
+GET /api/v1/social-media/oauth/connect?access_token=<jwt_token>&frontend_callback=<url>
+```
+
+or
+
+```http
+POST /api/v1/social-media/oauth/connect
+Content-Type: application/json
+
+{
+  "access_token": "<jwt_token>",
+  "frontend_callback": "https://myapp.com/settings/social",
+  "tenant_id": "optional-tenant-uuid"
+}
+```
+
+**Authentication (checked in order):**
+
+| Source                  | Example                                          |
+|------------------------|--------------------------------------------------|
+| Authorization header   | `Authorization: Bearer <jwt_token>`              |
+| POST body              | `{"access_token": "<jwt_token>"}`                |
+| Query parameter        | `?access_token=<jwt_token>`                      |
+
+**Parameters (query or POST body):**
+
+| Parameter          | Type   | Description                                      |
+|-------------------|--------|--------------------------------------------------|
+| access_token      | string | JWT access token (if not in Authorization header)|
+| frontend_callback | string | URL to redirect to after OAuth completes         |
+| tenant_id         | string | Optional tenant ID (can also be in header/JWT)   |
+
+**Behavior:**
+1. Redirects user to Facebook OAuth dialog
+2. Requests permissions: `pages_show_list`, `pages_manage_posts`, `instagram_basic`, `instagram_content_publish`
+3. After user grants permission, redirects to callback endpoint
+4. Callback automatically creates configurations for all accessible Pages and Instagram accounts
+5. Redirects to `frontend_callback` URL with results
+
+**Example Flows:**
+
+Using query parameter (recommended for browser redirects):
+```javascript
+// Get the token from your auth context
+const token = getAccessToken();
+
+// Redirect to OAuth connect with token in query
+window.location.href = '/api/v1/social-media/oauth/connect' +
+  '?access_token=' + encodeURIComponent(token) +
+  '&frontend_callback=' + encodeURIComponent(window.location.origin + '/settings/social');
+
+// After OAuth completes, user is redirected to:
+// /settings/social?success=true&pages=2&instagram=1&created=3
+```
+
+Using POST (for programmatic access):
+```javascript
+// First POST to get the redirect URL
+fetch('/api/v1/social-media/oauth/connect', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    access_token: token,
+    frontend_callback: window.location.origin + '/settings/social'
+  })
+}).then(response => {
+  // Handle redirect
+  window.location.href = response.url;
+});
+```
+
+#### OAuth Callback
+
+Internal endpoint that handles the OAuth callback from Facebook. Not called directly by clients.
+
+```http
+GET /api/v1/social-media/oauth/callback
+```
+
+**Query Parameters (from Facebook):**
+
+| Parameter | Description                                |
+|----------|--------------------------------------------|
+| code     | Authorization code (on success)            |
+| error    | Error code (on failure)                    |
+| error_description | Error description                 |
+
+**Redirect Query Parameters (to frontend_callback):**
+
+On success:
+| Parameter | Description                                |
+|----------|--------------------------------------------|
+| success  | `true`                                     |
+| pages    | Number of Facebook Pages found             |
+| instagram| Number of Instagram accounts found         |
+| created  | Number of new configurations created       |
+
+On error:
+| Parameter | Description                                |
+|----------|--------------------------------------------|
+| error    | Error type (e.g., `access_denied`, `meta_api_error`) |
+| message  | Human-readable error message               |
+
+#### Check OAuth Status
+
+Check the current connection status and list connected accounts.
+
+```http
+GET /api/v1/social-media/oauth/status
+Authorization: ******
+X-Tenant-ID: <tenant_id>
+```
+
+**Response (200):**
+
+```json
+{
+  "connected": true,
+  "total_accounts": 3,
+  "accounts_by_platform": {
+    "facebook_page": [
+      {
+        "id": 1,
+        "account_name": "My Business Page",
+        "account_id": "123456789",
+        "is_active": true,
+        "last_verified_at": "2026-01-31T15:00:00.000000"
+      }
+    ],
+    "instagram": [
+      {
+        "id": 2,
+        "account_name": "mybusiness",
+        "account_id": "17841400000000000",
+        "is_active": true,
+        "last_verified_at": "2026-01-31T15:00:00.000000"
+      }
+    ]
+  },
+  "expiring_soon": [],
+  "oauth_url": "https://api.example.com/api/v1/social-media/oauth/connect"
+}
+```
+
+#### Disconnect Account
+
+Disconnect (remove) a social media account configuration.
+
+```http
+POST /api/v1/social-media/oauth/disconnect/<config_id>
+Authorization: ******
+X-Tenant-ID: <tenant_id>
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Account disconnected successfully"
+}
+```
+
+**Response (404):**
+
+```json
+{
+  "error": "Configuration not found"
+}
+```
+
+### Meta OAuth Helper Endpoints
+
+These endpoints help with Meta (Facebook/Instagram) OAuth flow and account discovery.
+
+#### Get Facebook Pages
+
+Get Facebook Pages that the user can manage.
+
+```http
+POST /api/v1/social-media/meta/pages
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "user_access_token": "EAAxxxxxx..."
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "pages": [
+    {
+      "id": "123456789",
+      "name": "My Business Page",
+      "category": "Blog",
+      "picture": "https://graph.facebook.com/123456789/picture",
+      "access_token": "EAAxxxx_page_token..."
+    }
+  ]
+}
+```
+
+#### Get Instagram Business Accounts
+
+Get Instagram Business accounts connected to user's Facebook Pages.
+
+```http
+POST /api/v1/social-media/meta/instagram-accounts
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "user_access_token": "EAAxxxxxx..."
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "accounts": [
+    {
+      "id": "17841400000000000",
+      "username": "mybusiness",
+      "profile_picture_url": "https://...",
+      "followers_count": 5000,
+      "facebook_page_id": "123456789",
+      "facebook_page_name": "My Business Page",
+      "page_access_token": "EAAxxxx_page_token..."
+    }
+  ]
+}
+```
+
+#### Exchange Short-Lived Token
+
+Exchange a short-lived token for a long-lived access token.
+
+```http
+POST /api/v1/social-media/meta/exchange-token
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "short_lived_token": "EAAxxxxxx..."
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "access_token": "EAAxxxx_long_lived...",
+  "expires_at": "2026-04-01T00:00:00.000000"
+}
+```
+
+### Environment Configuration
+
+The following environment variables are required for Meta API integration:
+
+| Variable         | Description                                      |
+|-----------------|--------------------------------------------------|
+| META_APP_ID     | Facebook/Meta App ID (can use FACEBOOK_APP_ID)   |
+| META_APP_SECRET | Facebook/Meta App Secret                         |
+| META_API_VERSION| Graph API version (default: v18.0)               |
 
 ---
 

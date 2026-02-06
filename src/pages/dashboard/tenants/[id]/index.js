@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   Edit,
   UserCog,
+  Share2,
 } from "lucide-react";
 
 export default function TenantDetails() {
@@ -332,6 +333,16 @@ export default function TenantDetails() {
                 >
                   <Settings size={20} />
                   Tenant Settings
+                </button>
+              </Link>
+
+              <Link href={`/dashboard/tenants/${id}/social-media`}>
+                <button
+                  className="btn btn-secondary"
+                  style={{ width: "100%", justifyContent: "flex-start" }}
+                >
+                  <Share2 size={20} />
+                  Social Media
                 </button>
               </Link>
             </div>

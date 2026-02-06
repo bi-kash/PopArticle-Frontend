@@ -17,6 +17,7 @@ import {
   UserCog,
   Mail,
   Calendar,
+  Share2,
 } from "lucide-react";
 
 export default function TenantDashboard() {
@@ -348,6 +349,12 @@ export default function TenantDashboard() {
                 <button className="btn btn-secondary">
                   <UserCog size={20} />
                   Team Management
+                </button>
+              </Link>
+              <Link href={`/dashboard/tenants/${id}/social-media`}>
+                <button className="btn btn-secondary">
+                  <Share2 size={20} />
+                  Social Media
                 </button>
               </Link>
             </div>
