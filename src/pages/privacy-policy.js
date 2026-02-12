@@ -12,6 +12,14 @@ export default function PrivacyPolicy() {
           name="description"
           content="Privacy Policy for PopArticle - AI-Powered Content Platform"
         />
+
+        {/* Open Graph */}
+        <meta property="og:title" content="Privacy Policy - PopArticle" />
+        <meta
+          property="og:description"
+          content="Privacy Policy for PopArticle - AI-Powered Content Platform"
+        />
+        <meta property="og:image" content="/og-default.svg" />
       </Head>
 
       <Navbar />

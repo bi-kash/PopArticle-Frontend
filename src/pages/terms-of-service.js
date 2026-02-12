@@ -12,6 +12,14 @@ export default function TermsOfService() {
           name="description"
           content="Terms of Service for PopArticle - AI-Powered Content Platform"
         />
+
+        {/* Open Graph */}
+        <meta property="og:title" content="Terms of Service - PopArticle" />
+        <meta
+          property="og:description"
+          content="Terms of Service for PopArticle - AI-Powered Content Platform"
+        />
+        <meta property="og:image" content="/og-default.svg" />
       </Head>
 
       <Navbar />
