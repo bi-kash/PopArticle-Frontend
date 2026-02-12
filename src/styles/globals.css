@@ -426,3 +426,28 @@ code {
 .hover-bg:hover {
   background: var(--surface) !important;
 }
+
+/* Responsive Navbar */
+@media (max-width: 768px) {
+  .desktop-nav > a {
+    display: none !important;
+  }
+  .desktop-nav > .account-dropdown-container {
+    display: none !important;
+  }
+  .desktop-nav > div:not(.mobile-menu-btn) {
+    display: none !important;
+  }
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-menu {
+    display: none !important;
+  }
+  .mobile-menu-btn {
+    display: none !important;
+  }
+}

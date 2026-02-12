@@ -61,7 +61,9 @@ const authService = {
   async fetchCurrentUser() {
     try {
       const response = await api.get("/api/v1/auth/me");
-      const user = response.data;
+      const data = response.data;
+      // API returns { user: {...} } - extract the user object
+      const user = data.user || data;
       // Store user in cookies
       if (user) {
         Cookies.set("user", JSON.stringify(user), { expires: 30 });

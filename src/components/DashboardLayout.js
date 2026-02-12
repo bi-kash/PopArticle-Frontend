@@ -14,6 +14,8 @@ import {
   Mail,
   UserCircle,
   Calendar,
+  ChevronDown,
+  Settings,
 } from "lucide-react";
 
 export default function DashboardLayout({ children }) {
@@ -21,12 +23,32 @@ export default function DashboardLayout({ children }) {
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const userData = authService.getCurrentUser();
-    setUser(userData);
+    // Load cached user immediately
+    const cachedUser = authService.getCurrentUser();
+    setUser(cachedUser);
+
+    // Fetch fresh user data from API
+    authService.fetchCurrentUser().then((freshUser) => {
+      if (freshUser) {
+        setUser(freshUser);
+      }
+    });
   }, []);
+
+  // Close account menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (accountMenuOpen && !e.target.closest(".sidebar-account-container")) {
+        setAccountMenuOpen(false);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [accountMenuOpen]);
 
   const handleLogout = () => {
     authService.logout();
@@ -122,6 +144,7 @@ export default function DashboardLayout({ children }) {
 
           {/* User Section */}
           <div
+            className="sidebar-account-container"
             style={{
               position: "absolute",
               bottom: "1rem",
@@ -129,35 +152,253 @@ export default function DashboardLayout({ children }) {
               right: "1rem",
             }}
           >
-            <div
+            <button
+              onClick={() => setAccountMenuOpen(!accountMenuOpen)}
               style={{
-                padding: "1rem",
+                width: "100%",
+                padding: "0.75rem",
                 background: "rgba(255,255,255,0.1)",
                 borderRadius: "0.375rem",
                 marginBottom: "0.5rem",
+                border: "none",
+                color: "white",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "background 0.2s",
               }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "rgba(255,255,255,0.15)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "rgba(255,255,255,0.1)")
+              }
             >
               <div
                 suppressHydrationWarning
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.5rem",
-                  marginBottom: "0.5rem",
+                  gap: "0.75rem",
                 }}
               >
-                <User size={16} />
-                <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>
-                  {user?.full_name || "User"}
-                </span>
+                {user?.profile_image ? (
+                  <img
+                    src={user.profile_image}
+                    alt=""
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      border: "2px solid rgba(255,255,255,0.3)",
+                      flexShrink: 0,
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      background:
+                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "0.8rem",
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {(user?.full_name || user?.username || "U")
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()
+                      .slice(0, 2)}
+                  </div>
+                )}
+                <div style={{ overflow: "hidden", flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: "0.875rem",
+                      fontWeight: 600,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {user?.full_name || user?.username || "User"}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.7rem",
+                      opacity: 0.7,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {user?.email || ""}
+                  </div>
+                </div>
+                <ChevronDown
+                  size={14}
+                  style={{
+                    flexShrink: 0,
+                    transform: accountMenuOpen ? "rotate(180deg)" : "rotate(0)",
+                    transition: "transform 0.2s",
+                  }}
+                />
               </div>
-              <span
-                suppressHydrationWarning
-                style={{ fontSize: "0.75rem", opacity: 0.7 }}
+            </button>
+
+            {/* Account Details Popup */}
+            {accountMenuOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "calc(100% + 0.25rem)",
+                  left: 0,
+                  right: 0,
+                  background: "white",
+                  borderRadius: "0.5rem",
+                  boxShadow: "0 -4px 20px rgba(0,0,0,0.25)",
+                  overflow: "hidden",
+                  animation: "slideIn 0.15s ease-out",
+                  zIndex: 1100,
+                }}
               >
-                {user?.email || ""}
-              </span>
-            </div>
+                {/* User Card */}
+                <div
+                  style={{
+                    padding: "1rem",
+                    borderBottom: "1px solid var(--border-color)",
+                    display: "flex",
+                    gap: "0.75rem",
+                    alignItems: "center",
+                  }}
+                >
+                  {user?.profile_image ? (
+                    <img
+                      src={user.profile_image}
+                      alt=""
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        border: "2px solid var(--border-color)",
+                        flexShrink: 0,
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: "50%",
+                        background:
+                          "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "white",
+                        fontSize: "1.1rem",
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {(user?.full_name || user?.username || "U")
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </div>
+                  )}
+                  <div style={{ overflow: "hidden" }}>
+                    {user?.full_name && (
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        {user.full_name}
+                      </div>
+                    )}
+                    {user?.username && (
+                      <div
+                        style={{
+                          color: "var(--text-secondary)",
+                          fontSize: "0.8rem",
+                        }}
+                      >
+                        @{user.username}
+                      </div>
+                    )}
+                    {user?.email && (
+                      <div
+                        style={{
+                          color: "var(--text-secondary)",
+                          fontSize: "0.8rem",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {user.email}
+                      </div>
+                    )}
+                    {user?.role && (
+                      <span
+                        style={{
+                          display: "inline-block",
+                          marginTop: "0.3rem",
+                          fontSize: "0.7rem",
+                          fontWeight: 600,
+                          padding: "0.1rem 0.5rem",
+                          borderRadius: "9999px",
+                          background: "#dbeafe",
+                          color: "#1e40af",
+                        }}
+                      >
+                        {user.role}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Links */}
+                <div style={{ padding: "0.375rem 0" }}>
+                  <Link href="/dashboard/profile">
+                    <div
+                      style={{
+                        padding: "0.5rem 1rem",
+                        color: "var(--text-primary)",
+                        fontSize: "0.85rem",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        transition: "background 0.15s",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = "var(--surface)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "transparent")
+                      }
+                    >
+                      <Settings size={15} />
+                      Profile Settings
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            )}
 
             <button
               onClick={handleLogout}
@@ -222,9 +463,52 @@ export default function DashboardLayout({ children }) {
 
             <div
               suppressHydrationWarning
-              style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                fontSize: "0.875rem",
+                color: "var(--text-secondary)",
+              }}
             >
-              {user?.email || ""}
+              {user?.profile_image ? (
+                <img
+                  src={user.profile_image}
+                  alt=""
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    background:
+                      "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontSize: "0.65rem",
+                    fontWeight: 700,
+                  }}
+                >
+                  {(user?.full_name || user?.username || "U")
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </div>
+              )}
+              <span>
+                {user?.full_name || user?.username || user?.email || ""}
+              </span>
             </div>
           </div>
         </header>

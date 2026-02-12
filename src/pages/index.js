@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { authService } from "@/lib/authService";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   const router = useRouter();
@@ -17,42 +19,7 @@ export default function Home() {
       style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
     >
       {/* Header */}
-      <header
-        style={{
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          color: "white",
-          padding: "1rem 0",
-        }}
-      >
-        <div
-          className="container"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <h1 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>PopArticle</h1>
-          <nav style={{ display: "flex", gap: "1rem" }}>
-            <Link href="/login">
-              <button
-                className="btn"
-                style={{ background: "rgba(255,255,255,0.2)", color: "white" }}
-              >
-                Login
-              </button>
-            </Link>
-            <Link href="/register">
-              <button
-                className="btn"
-                style={{ background: "white", color: "#667eea" }}
-              >
-                Sign Up
-              </button>
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Hero Section */}
       <main
@@ -153,18 +120,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer
-        style={{
-          background: "var(--text-primary)",
-          color: "white",
-          padding: "2rem 0",
-          textAlign: "center",
-        }}
-      >
-        <div className="container">
-          <p>&copy; 2025 PopArticle. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
