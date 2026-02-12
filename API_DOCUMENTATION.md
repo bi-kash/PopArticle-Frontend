@@ -2678,10 +2678,10 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Query Parameters:**
 
-| Parameter      | Type    | Default | Description                        |
-| -------------- | ------- | ------- | ---------------------------------- |
-| `enabled_only` | boolean | false   | Filter to only enabled configs     |
-| `limit`        | integer | 100     | Maximum number of results          |
+| Parameter      | Type    | Default | Description                    |
+| -------------- | ------- | ------- | ------------------------------ |
+| `enabled_only` | boolean | false   | Filter to only enabled configs |
+| `limit`        | integer | 100     | Maximum number of results      |
 
 **Response (200):**
 
@@ -2792,9 +2792,9 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Required Fields:**
 
-| Field         | Type    | Description                              |
-| ------------- | ------- | ---------------------------------------- |
-| `category_id` | integer | Category ID to schedule articles for     |
+| Field         | Type    | Description                          |
+| ------------- | ------- | ------------------------------------ |
+| `category_id` | integer | Category ID to schedule articles for |
 
 **Optional Fields:**
 
@@ -2882,11 +2882,11 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Query Parameters:**
 
-| Parameter   | Type    | Default | Description                                    |
-| ----------- | ------- | ------- | ---------------------------------------------- |
-| `config_id` | integer | null    | Filter by scheduling config ID                 |
-| `status`    | string  | null    | Filter by status (success, failed, skipped)    |
-| `limit`     | integer | 50      | Maximum number of results                      |
+| Parameter   | Type    | Default | Description                                 |
+| ----------- | ------- | ------- | ------------------------------------------- |
+| `config_id` | integer | null    | Filter by scheduling config ID              |
+| `status`    | string  | null    | Filter by status (success, failed, skipped) |
+| `limit`     | integer | 50      | Maximum number of results                   |
 
 **Response (200):**
 
@@ -2934,9 +2934,9 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Query Parameters:**
 
-| Parameter | Type    | Default | Description                    |
-| --------- | ------- | ------- | ------------------------------ |
-| `days`    | integer | 7       | Number of days to look back    |
+| Parameter | Type    | Default | Description                 |
+| --------- | ------- | ------- | --------------------------- |
+| `days`    | integer | 7       | Number of days to look back |
 
 **Response (200):**
 
@@ -2957,10 +2957,19 @@ X-Tenant-ID: <tenant_id> (optional)
 ## Social Media Posting
 
 Automated social media posting for articles via Meta (Facebook, Instagram) with AI-generated content. This system allows you to:
+
 - Configure Facebook Pages and Instagram Business accounts for automated posting
 - Generate AI-powered engaging posts from article content
 - Post immediately or schedule for later
 - Track posting history and statistics
+
+### User-Level Ownership and Tenant Sharing
+
+Social media accounts are connected at the **user level**. This means:
+- Users own their connected social media accounts
+- The same account can be shared across multiple tenants
+- Per-tenant settings (article_base_url, auto_post_enabled) can override defaults
+- Users can attach/detach their accounts from tenants they have access to
 
 ### Configuration Endpoints
 
@@ -2974,10 +2983,11 @@ X-Tenant-ID: <tenant_id>
 
 **Query Parameters:**
 
-| Parameter     | Type    | Description                                    |
-|--------------|---------|------------------------------------------------|
-| platform     | string  | Filter by platform ('facebook', 'instagram', 'facebook_page') |
-| active_only  | boolean | Only return active configurations (default: false) |
+| Parameter   | Type    | Description                                                              |
+| ----------- | ------- | ------------------------------------------------------------------------ |
+| platform    | string  | Filter by platform ('facebook', 'instagram', 'facebook_page')            |
+| active_only | boolean | Only return active configurations (default: false)                       |
+| scope       | string  | 'user' (owned), 'tenant' (shared with tenant), 'all' (both, default)     |
 
 **Response (200):**
 
@@ -2987,6 +2997,7 @@ X-Tenant-ID: <tenant_id>
   "configs": [
     {
       "id": 1,
+      "user_id": 5,
       "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
       "platform": "facebook_page",
       "account_name": "My Business Page",
@@ -2997,6 +3008,7 @@ X-Tenant-ID: <tenant_id>
       "post_template": null,
       "auto_post_enabled": false,
       "is_active": true,
+      "is_owner": true,
       "last_verified_at": "2026-01-31T12:00:00.000000",
       "created_at": "2026-01-15T10:00:00.000000",
       "updated_at": "2026-01-31T12:00:00.000000"
@@ -3054,6 +3066,7 @@ Content-Type: application/json
   "token_expires_at": "2026-04-01T00:00:00Z",
   "refresh_token": "optional_refresh_token",
   "platform_data": { "page_category": "Business" },
+  "article_base_url": "https://www.example.com/article/",
   "default_hashtags": ["tech", "news"],
   "post_template": "Check out our latest article: {title}",
   "auto_post_enabled": false
@@ -3062,23 +3075,40 @@ Content-Type: application/json
 
 **Required Fields:**
 
-| Field        | Type   | Description                                           |
-|-------------|--------|-------------------------------------------------------|
-| platform    | string | One of: 'facebook', 'facebook_page', 'instagram'      |
-| account_name| string | Friendly name for the account                         |
-| account_id  | string | Platform-specific account or page ID                  |
-| access_token| string | OAuth access token from Meta                          |
+| Field        | Type   | Description                                      |
+| ------------ | ------ | ------------------------------------------------ |
+| platform     | string | One of: 'facebook', 'facebook_page', 'instagram' |
+| account_name | string | Friendly name for the account                    |
+| account_id   | string | Platform-specific account or page ID             |
+| access_token | string | OAuth access token from Meta                     |
 
 **Optional Fields:**
 
-| Field            | Type    | Description                                      |
-|-----------------|---------|--------------------------------------------------|
-| token_expires_at | string  | Token expiration (ISO format)                    |
-| refresh_token    | string  | Refresh token if available                       |
-| platform_data    | object  | Additional platform-specific data                |
-| default_hashtags | array   | Default hashtags to include in posts             |
-| post_template    | string  | Custom template for posts                        |
-| auto_post_enabled| boolean | Auto-post new articles (default: false)          |
+| Field             | Type    | Description                                                       |
+| ----------------- | ------- | ----------------------------------------------------------------- |
+| token_expires_at  | string  | Token expiration (ISO format)                                     |
+| refresh_token     | string  | Refresh token if available                                        |
+| platform_data     | object  | Additional platform-specific data                                 |
+| article_base_url  | string  | Base URL for articles (e.g., "https://example.com/article/")      |
+| default_hashtags  | array   | Default hashtags to include in posts                              |
+| post_template     | string  | Custom template for posts                                         |
+| auto_post_enabled | boolean | Auto-post new articles when generated (default: false)            |
+
+**Auto-Posting on Article Generation:**
+
+When `auto_post_enabled` is set to `true`, the system will automatically:
+1. Generate AI-powered engaging content for the article
+2. Post to this social media account immediately after article creation
+3. Use the configured `article_base_url` to construct the article link
+
+This happens asynchronously in the background when `/api/v1/articles/generate` is called.
+
+**Article URL Construction:**
+
+When `article_base_url` is configured, article links are automatically constructed:
+- Base URL: `https://www.booxtore.com/article/`
+- Article slug: `my-article-title`
+- Final URL: `https://www.booxtore.com/article/my-article-title`
 
 **Response (201):**
 
@@ -3117,13 +3147,104 @@ Content-Type: application/json
 
 #### Delete Configuration
 
+Only the owner can delete a configuration. Non-owners can only detach from their tenant.
+
 ```http
 DELETE /api/v1/social-media/configs/<config_id>
 Authorization: Bearer <token>
 X-Tenant-ID: <tenant_id>
 ```
 
-**Response (204):** No content.
+**Response (204):** No content (if owner deleted the config).
+
+**Response (200):** Config detached from tenant (if non-owner).
+
+```json
+{
+  "message": "Configuration detached from tenant"
+}
+```
+
+#### Attach Configuration to Tenant
+
+Attach a social media config you own to a tenant.
+
+```http
+POST /api/v1/social-media/configs/<config_id>/attach
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+  "article_base_url": "https://www.example.com/article/",
+  "auto_post_enabled": true
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Configuration attached to tenant"
+}
+```
+
+#### Detach Configuration from Tenant
+
+Remove a config from a tenant (does not delete the config).
+
+```http
+POST /api/v1/social-media/configs/<config_id>/detach
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "tenant_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Configuration detached from tenant"
+}
+```
+
+#### List Tenants for Configuration
+
+List all tenants a configuration is attached to (owner only).
+
+```http
+GET /api/v1/social-media/configs/<config_id>/tenants
+Authorization: Bearer <token>
+```
+
+**Response (200):**
+
+```json
+{
+  "total": 2,
+  "tenants": [
+    {
+      "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+      "tenant_name": "My Website",
+      "tenant_slug": "my-website",
+      "article_base_url": "https://mywebsite.com/article/",
+      "auto_post_enabled": true,
+      "attached_at": "2026-02-01T10:00:00.000000"
+    }
+  ]
+}
+```
 
 #### Verify Token
 
@@ -3164,24 +3285,32 @@ Content-Type: application/json
 ```json
 {
   "article_id": 123,
+  "config_id": 1,
   "platform": "facebook",
   "style": "engaging",
   "include_link": true,
-  "custom_hashtags": ["extra", "tags"],
-  "article_url": "https://myblog.com/articles/my-article"
+  "custom_hashtags": ["extra", "tags"]
 }
 ```
 
 **Parameters:**
 
-| Field          | Type    | Required | Description                                              |
-|---------------|---------|----------|----------------------------------------------------------|
-| article_id    | integer | Yes      | ID of the article to generate post for                   |
-| platform      | string  | No       | Target platform (default: 'facebook')                    |
-| style         | string  | No       | Post style: 'engaging', 'professional', 'casual', 'clickbait' |
-| include_link  | boolean | No       | Include article link in post (default: true)             |
-| custom_hashtags| array  | No       | Additional hashtags to include                           |
-| article_url   | string  | No       | Custom URL to use for the article link                   |
+| Field           | Type    | Required | Description                                                   |
+| --------------- | ------- | -------- | ------------------------------------------------------------- |
+| article_id      | integer | Yes      | ID of the article to generate post for                        |
+| config_id       | integer | No       | Config ID (uses config's article_base_url for link)           |
+| platform        | string  | No       | Target platform (default: 'facebook')                         |
+| style           | string  | No       | Post style: 'engaging', 'professional', 'casual', 'clickbait' |
+| include_link    | boolean | No       | Include article link in post (default: true)                  |
+| custom_hashtags | array   | No       | Additional hashtags to include                                |
+| article_url     | string  | No       | Override URL (if not provided, uses config's base URL + slug) |
+
+**URL Construction:**
+
+The article link is determined in this order:
+1. If `article_url` is provided, use it directly
+2. If `config_id` is provided and config has `article_base_url`, construct URL as: `{article_base_url}/{article.slug}`
+3. Otherwise, use a placeholder URL
 
 **Response (200):**
 
@@ -3195,8 +3324,8 @@ Content-Type: application/json
     "call_to_action": "Read the full story!",
     "emoji_enhanced": true
   },
-  "formatted_content": "🚀 You won't believe what we discovered about AI technology! This changes everything...\n\n👉 Read the full story!\n\n🔗 https://myblog.com/articles/my-article\n\n#AI #technology #innovation",
-  "character_count": 195
+  "formatted_content": "🚀 You won't believe what we discovered about AI technology! This changes everything...\n\n👉 Read the full story!\n\n🔗 https://www.booxtore.com/article/ai-technology-discovery\n\n#AI #technology #innovation",
+  "character_count": 210
 }
 ```
 
@@ -3265,22 +3394,22 @@ Content-Type: application/json
 
 **Required Fields:**
 
-| Field        | Type    | Description                           |
-|-------------|---------|---------------------------------------|
-| config_id   | integer | Social media configuration ID         |
-| article_id  | integer | Article being shared                  |
-| post_content| string  | The post text content                 |
+| Field        | Type    | Description                   |
+| ------------ | ------- | ----------------------------- |
+| config_id    | integer | Social media configuration ID |
+| article_id   | integer | Article being shared          |
+| post_content | string  | The post text content         |
 
 **Optional Fields:**
 
-| Field         | Type    | Description                                    |
-|--------------|---------|------------------------------------------------|
-| image_url    | string  | Image URL to include (required for Instagram)  |
-| link_url     | string  | Article link to share                          |
-| hashtags     | array   | Additional hashtags                            |
-| scheduled_for| string  | Schedule post for later (ISO datetime)         |
-| ai_generated | boolean | Whether content was AI-generated (default: true)|
-| was_edited   | boolean | Whether user edited content (default: false)   |
+| Field         | Type    | Description                                      |
+| ------------- | ------- | ------------------------------------------------ |
+| image_url     | string  | Image URL to include (required for Instagram)    |
+| link_url      | string  | Article link to share                            |
+| hashtags      | array   | Additional hashtags                              |
+| scheduled_for | string  | Schedule post for later (ISO datetime)           |
+| ai_generated  | boolean | Whether content was AI-generated (default: true) |
+| was_edited    | boolean | Whether user edited content (default: false)     |
 
 **Response (201) - Immediate Post:**
 
@@ -3327,13 +3456,13 @@ X-Tenant-ID: <tenant_id>
 
 **Query Parameters:**
 
-| Parameter   | Type    | Description                                |
-|------------|---------|-------------------------------------------|
-| config_id  | integer | Filter by configuration                    |
-| article_id | integer | Filter by article                          |
+| Parameter  | Type    | Description                                                   |
+| ---------- | ------- | ------------------------------------------------------------- |
+| config_id  | integer | Filter by configuration                                       |
+| article_id | integer | Filter by article                                             |
 | status     | string  | Filter by status: 'pending', 'success', 'failed', 'scheduled' |
-| limit      | integer | Maximum results (default: 50)              |
-| offset     | integer | Pagination offset                          |
+| limit      | integer | Maximum results (default: 50)                                 |
+| offset     | integer | Pagination offset                                             |
 
 **Response (200):**
 
@@ -3387,9 +3516,9 @@ X-Tenant-ID: <tenant_id>
 
 **Query Parameters:**
 
-| Parameter | Type    | Description                      |
-|----------|---------|----------------------------------|
-| days     | integer | Days to look back (default: 30)  |
+| Parameter | Type    | Description                     |
+| --------- | ------- | ------------------------------- |
+| days      | integer | Days to look back (default: 30) |
 
 **Response (200):**
 
@@ -3440,21 +3569,22 @@ Content-Type: application/json
 
 **Authentication (checked in order):**
 
-| Source                  | Example                                          |
-|------------------------|--------------------------------------------------|
-| Authorization header   | `Authorization: Bearer <jwt_token>`              |
-| POST body              | `{"access_token": "<jwt_token>"}`                |
-| Query parameter        | `?access_token=<jwt_token>`                      |
+| Source               | Example                             |
+| -------------------- | ----------------------------------- |
+| Authorization header | `Authorization: Bearer <jwt_token>` |
+| POST body            | `{"access_token": "<jwt_token>"}`   |
+| Query parameter      | `?access_token=<jwt_token>`         |
 
 **Parameters (query or POST body):**
 
-| Parameter          | Type   | Description                                      |
-|-------------------|--------|--------------------------------------------------|
-| access_token      | string | JWT access token (if not in Authorization header)|
-| frontend_callback | string | URL to redirect to after OAuth completes         |
-| tenant_id         | string | Optional tenant ID (can also be in header/JWT)   |
+| Parameter         | Type   | Description                                       |
+| ----------------- | ------ | ------------------------------------------------- |
+| access_token      | string | JWT access token (if not in Authorization header) |
+| frontend_callback | string | URL to redirect to after OAuth completes          |
+| tenant_id         | string | Optional tenant ID (can also be in header/JWT)    |
 
 **Behavior:**
+
 1. Redirects user to Facebook OAuth dialog
 2. Requests permissions: `pages_show_list`, `pages_manage_posts`, `instagram_basic`, `instagram_content_publish`
 3. After user grants permission, redirects to callback endpoint
@@ -3464,30 +3594,35 @@ Content-Type: application/json
 **Example Flows:**
 
 Using query parameter (recommended for browser redirects):
+
 ```javascript
 // Get the token from your auth context
 const token = getAccessToken();
 
 // Redirect to OAuth connect with token in query
-window.location.href = '/api/v1/social-media/oauth/connect' +
-  '?access_token=' + encodeURIComponent(token) +
-  '&frontend_callback=' + encodeURIComponent(window.location.origin + '/settings/social');
+window.location.href =
+  "/api/v1/social-media/oauth/connect" +
+  "?access_token=" +
+  encodeURIComponent(token) +
+  "&frontend_callback=" +
+  encodeURIComponent(window.location.origin + "/settings/social");
 
 // After OAuth completes, user is redirected to:
 // /settings/social?success=true&pages=2&instagram=1&created=3
 ```
 
 Using POST (for programmatic access):
+
 ```javascript
 // First POST to get the redirect URL
-fetch('/api/v1/social-media/oauth/connect', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+fetch("/api/v1/social-media/oauth/connect", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     access_token: token,
-    frontend_callback: window.location.origin + '/settings/social'
-  })
-}).then(response => {
+    frontend_callback: window.location.origin + "/settings/social",
+  }),
+}).then((response) => {
   // Handle redirect
   window.location.href = response.url;
 });
@@ -3503,27 +3638,27 @@ GET /api/v1/social-media/oauth/callback
 
 **Query Parameters (from Facebook):**
 
-| Parameter | Description                                |
-|----------|--------------------------------------------|
-| code     | Authorization code (on success)            |
-| error    | Error code (on failure)                    |
-| error_description | Error description                 |
+| Parameter         | Description                     |
+| ----------------- | ------------------------------- |
+| code              | Authorization code (on success) |
+| error             | Error code (on failure)         |
+| error_description | Error description               |
 
 **Redirect Query Parameters (to frontend_callback):**
 
 On success:
-| Parameter | Description                                |
+| Parameter | Description |
 |----------|--------------------------------------------|
-| success  | `true`                                     |
-| pages    | Number of Facebook Pages found             |
-| instagram| Number of Instagram accounts found         |
-| created  | Number of new configurations created       |
+| success | `true` |
+| pages | Number of Facebook Pages found |
+| instagram| Number of Instagram accounts found |
+| created | Number of new configurations created |
 
 On error:
-| Parameter | Description                                |
+| Parameter | Description |
 |----------|--------------------------------------------|
-| error    | Error type (e.g., `access_denied`, `meta_api_error`) |
-| message  | Human-readable error message               |
+| error | Error type (e.g., `access_denied`, `meta_api_error`) |
+| message | Human-readable error message |
 
 #### Check OAuth Status
 
@@ -3697,11 +3832,36 @@ Content-Type: application/json
 
 The following environment variables are required for Meta API integration:
 
-| Variable         | Description                                      |
-|-----------------|--------------------------------------------------|
-| META_APP_ID     | Facebook/Meta App ID (can use FACEBOOK_APP_ID)   |
-| META_APP_SECRET | Facebook/Meta App Secret                         |
-| META_API_VERSION| Graph API version (default: v18.0)               |
+| Variable          | Description                                    |
+| ----------------- | ---------------------------------------------- |
+| META_APP_ID       | Facebook/Meta App ID (can use FACEBOOK_APP_ID) |
+| META_APP_SECRET   | Facebook/Meta App Secret                       |
+| META_API_VERSION  | Graph API version (default: v18.0)             |
+| META_OAUTH_SCOPES | OAuth scopes (comma-separated). See below.     |
+
+**OAuth Scopes Configuration:**
+
+The `META_OAUTH_SCOPES` variable controls which permissions are requested during OAuth.
+
+Default value (works in Development mode for app admins/testers):
+
+```
+public_profile,pages_show_list,pages_manage_posts
+```
+
+Full scopes for production (requires Meta App Review):
+
+```
+public_profile,pages_show_list,pages_manage_posts,pages_read_engagement,instagram_content_publish,instagram_manage_insights,business_management
+```
+
+**Important Notes:**
+
+- The `email` scope is not needed (user email is included with `public_profile`)
+- The `instagram_basic` scope is deprecated - use `instagram_manage_insights` instead
+- In Development mode, only app admins, developers, and testers can use advanced permissions
+- For regular users, your app must pass [Meta App Review](https://developers.facebook.com/docs/app-review)
+- If you see "Invalid Scopes" errors, verify you're using the correct scope names from the [Facebook Login Permissions documentation](https://developers.facebook.com/docs/facebook-login/permissions)
 
 ---
 

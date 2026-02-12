@@ -16,7 +16,14 @@ api.interceptors.request.use(
   (config) => {
     const token = Cookies.get("access_token");
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      // Sanitize token to prevent "Header values must not contain newline characters" errors
+      config.headers.Authorization = `Bearer ${token.replace(/[\r\n]/g, "")}`;
+    }
+    // Sanitize any X-Tenant-ID header value
+    if (config.headers["X-Tenant-ID"]) {
+      config.headers["X-Tenant-ID"] = String(config.headers["X-Tenant-ID"])
+        .replace(/[\r\n]/g, "")
+        .trim();
     }
     console.log("🔐 API Request:", {
       method: config.method?.toUpperCase(),
@@ -29,7 +36,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor to handle token refresh
@@ -61,7 +68,7 @@ api.interceptors.response.use(
             `${API_BASE_URL}/api/v1/auth/refresh`,
             {
               refresh_token: refreshToken,
-            }
+            },
           );
 
           const { access_token } = response.data;
@@ -80,7 +87,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

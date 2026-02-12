@@ -4,6 +4,7 @@ export const socialMediaService = {
   // ========== Configuration Endpoints ==========
 
   // Get all social media configurations
+  // scope: 'user' (owned by user), 'tenant' (attached to tenant), 'all' (both)
   async getConfigs(params = {}, tenantId = null) {
     const { tenant_id, ...queryParams } = params;
     const config = { params: queryParams };
@@ -32,7 +33,7 @@ export const socialMediaService = {
     return response.data;
   },
 
-  // Create configuration
+  // Create configuration (user-level, optionally attached to tenant)
   async createConfig(data, tenantId = null) {
     const config = {};
 
@@ -66,7 +67,7 @@ export const socialMediaService = {
     return response.data;
   },
 
-  // Delete configuration
+  // Delete configuration (owner deletes, non-owner detaches from tenant)
   async deleteConfig(id, tenantId = null) {
     const config = {};
 
@@ -77,6 +78,35 @@ export const socialMediaService = {
     const response = await api.delete(
       `/api/v1/social-media/configs/${id}`,
       config,
+    );
+    return response.data;
+  },
+
+  // Attach configuration to a tenant
+  async attachToTenant(configId, tenantId, data = {}) {
+    const response = await api.post(
+      `/api/v1/social-media/configs/${configId}/attach`,
+      {
+        tenant_id: tenantId,
+        ...data,
+      },
+    );
+    return response.data;
+  },
+
+  // Detach configuration from a tenant
+  async detachFromTenant(configId, tenantId) {
+    const response = await api.post(
+      `/api/v1/social-media/configs/${configId}/detach`,
+      { tenant_id: tenantId },
+    );
+    return response.data;
+  },
+
+  // List tenants a configuration is attached to (owner only)
+  async getConfigTenants(configId) {
+    const response = await api.get(
+      `/api/v1/social-media/configs/${configId}/tenants`,
     );
     return response.data;
   },
@@ -185,7 +215,7 @@ export const socialMediaService = {
     return response.data;
   },
 
-  // ========== Meta OAuth Helper Endpoints ==========
+  // ========== Meta OAuth Endpoints ==========
 
   // Get OAuth connect URL - initiates Facebook OAuth flow
   getOAuthConnectUrl(frontendCallback, tenantId = null, accessToken = null) {
@@ -231,50 +261,30 @@ export const socialMediaService = {
     return response.data;
   },
 
+  // ========== Meta Helper Endpoints ==========
+
   // Get Facebook pages
-  async getFacebookPages(userAccessToken, tenantId = null) {
-    const config = {};
-
-    if (tenantId) {
-      config.headers = { "X-Tenant-ID": tenantId };
-    }
-
-    const response = await api.post(
-      "/api/v1/social-media/meta/pages",
-      { user_access_token: userAccessToken },
-      config,
-    );
+  async getFacebookPages(userAccessToken) {
+    const response = await api.post("/api/v1/social-media/meta/pages", {
+      user_access_token: userAccessToken,
+    });
     return response.data;
   },
 
   // Get Instagram business accounts
-  async getInstagramAccounts(userAccessToken, tenantId = null) {
-    const config = {};
-
-    if (tenantId) {
-      config.headers = { "X-Tenant-ID": tenantId };
-    }
-
+  async getInstagramAccounts(userAccessToken) {
     const response = await api.post(
       "/api/v1/social-media/meta/instagram-accounts",
       { user_access_token: userAccessToken },
-      config,
     );
     return response.data;
   },
 
   // Exchange short-lived token for long-lived
-  async exchangeToken(shortLivedToken, tenantId = null) {
-    const config = {};
-
-    if (tenantId) {
-      config.headers = { "X-Tenant-ID": tenantId };
-    }
-
+  async exchangeToken(shortLivedToken) {
     const response = await api.post(
       "/api/v1/social-media/meta/exchange-token",
       { short_lived_token: shortLivedToken },
-      config,
     );
     return response.data;
   },
