@@ -21,6 +21,7 @@ Complete REST API reference for PopArticle content generation platform.
 - [Invitation Endpoints](#invitation-endpoints)
 - [Article Scheduling](#article-scheduling)
 - [Social Media Posting](#social-media-posting)
+- [Subscription Endpoints](#subscription-endpoints)
 - [Health Check](#health-check)
 - [Error Responses](#error-responses)
 
@@ -3862,6 +3863,191 @@ public_profile,pages_show_list,pages_manage_posts,pages_read_engagement,instagra
 - In Development mode, only app admins, developers, and testers can use advanced permissions
 - For regular users, your app must pass [Meta App Review](https://developers.facebook.com/docs/app-review)
 - If you see "Invalid Scopes" errors, verify you're using the correct scope names from the [Facebook Login Permissions documentation](https://developers.facebook.com/docs/facebook-login/permissions)
+
+---
+
+## Subscription Endpoints
+
+PopArticle uses Paddle for subscription-based billing. These endpoints allow tenants to manage subscriptions and create checkout sessions. All endpoints that act on tenant subscriptions require `Authorization: Bearer <token>` and `X-Tenant-ID: <tenant-id>`.
+
+### Get Subscription Status
+
+```http
+GET /api/v1/subscriptions/status
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant-id>
+```
+
+Response (200):
+
+```json
+{
+  "has_subscription": true,
+  "plan": "pro",
+  "status": "active",
+  "article_limit": 200,
+  "billing_cycle": { "interval": "month", "frequency": 1 },
+  "current_period": { "start": "2024-01-01T00:00:00Z", "end": "2024-02-01T00:00:00Z" }
+}
+```
+
+### Get Available Plans
+
+```http
+GET /api/v1/subscriptions/plans
+```
+
+Response (200):
+
+```json
+{
+  "plans": [
+    { "name": "free", "display_name": "Free", "price": "0", "article_limit": 10 },
+    { "name": "basic", "display_name": "Basic", "price": "19", "article_limit": 50 },
+    { "name": "pro", "display_name": "Pro", "price": "49", "article_limit": 200 },
+    { "name": "enterprise", "display_name": "Enterprise", "price": "199", "article_limit": 1000 }
+  ]
+}
+```
+
+### Create Checkout Session
+
+```http
+POST /api/v1/subscriptions/checkout
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant-id>
+Content-Type: application/json
+```
+
+Request Body:
+
+```json
+{
+  "plan": "pro",
+  "success_url": "https://yourapp.com/subscription/success",
+  "cancel_url": "https://yourapp.com/subscription/cancel"
+}
+```
+
+Response (201):
+
+```json
+{
+  "checkout_url": "https://checkout.paddle.com/...",
+  "plan": "pro",
+  "message": "Redirect to checkout_url to complete subscription"
+}
+```
+
+### Cancel Subscription
+
+```http
+POST /api/v1/subscriptions/cancel
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant-id>
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{ "effective_from": "next_billing_period" } // or "immediately"
+```
+
+### Upgrade / Downgrade Subscription
+
+```http
+POST /api/v1/subscriptions/upgrade
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant-id>
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{ "plan": "enterprise", "proration": "prorated_immediately" }
+```
+
+### Pause Subscription
+
+```http
+POST /api/v1/subscriptions/pause
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant-id>
+```
+
+### Resume Subscription
+
+```http
+POST /api/v1/subscriptions/resume
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant-id>
+```
+
+### Get Subscription History
+
+```http
+GET /api/v1/subscriptions/history
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant-id>
+```
+
+### Subscription Plans & Monthly Limits
+
+| Plan | Monthly Article Limit |
+|------|-----------------------|
+| Free | 10 |
+| Basic | 50 |
+| Pro | 200 |
+| Enterprise | 1000 |
+
+---
+
+## Paddle Webhooks
+
+Webhook Endpoint (public, verifies signature):
+
+```http
+POST /api/v1/webhooks/paddle
+Content-Type: application/x-www-form-urlencoded
+```
+
+Security:
+
+- Paddle sends a `Paddle-Signature` header with format: `ts=timestamp;h1=signature`.
+- Verify using the `PADDLE_WEBHOOK_SECRET` and the raw request body before processing.
+
+Handled Events (examples):
+
+- `subscription.created`
+- `subscription.updated`
+- `subscription.canceled`
+- `subscription.paused`
+- `subscription.resumed`
+- `subscription.past_due`
+- `transaction.completed`
+
+Notes:
+
+- Include `tenant_id` in `custom_data` when creating checkout sessions to link Paddle subscriptions to tenants.
+- Webhooks are used to create/update the local `subscriptions` record and adjust `monthly_article_limit` accordingly.
+- Do not log sensitive payment information. Persist events to `subscription_events` for auditing and retries.
+
+### Environment Variables
+
+Configure these environment variables (see `PADDLE_INTEGRATION.md`):
+
+- `PADDLE_API_KEY` - Paddle API key
+- `PADDLE_WEBHOOK_SECRET` - Webhook verification secret
+- `PADDLE_ENVIRONMENT` - `sandbox` or `production`
+- `PADDLE_PRICE_ID_BASIC`, `PADDLE_PRICE_ID_PRO`, `PADDLE_PRICE_ID_ENTERPRISE` - Price IDs from Paddle
+
+### Testing
+
+- Use `PADDLE_ENVIRONMENT=sandbox` locally.
+- Expose local server via `ngrok` for webhook testing.
+- Sandbox test card numbers: success `4242 4242 4242 4242`, decline `4000 0000 0000 0002`.
 
 ---
 

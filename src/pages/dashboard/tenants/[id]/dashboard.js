@@ -18,6 +18,7 @@ import {
   Mail,
   Calendar,
   Share2,
+  CreditCard,
 } from "lucide-react";
 
 export default function TenantDashboard() {
@@ -355,6 +356,12 @@ export default function TenantDashboard() {
                 <button className="btn btn-secondary">
                   <Share2 size={20} />
                   Social Media
+                </button>
+              </Link>
+              <Link href={`/dashboard/tenants/${id}/subscription`}>
+                <button className="btn btn-secondary">
+                  <CreditCard size={20} />
+                  Subscription
                 </button>
               </Link>
             </div>
