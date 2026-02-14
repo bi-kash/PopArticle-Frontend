@@ -42,17 +42,34 @@ export default function TenantSubscription() {
     try {
       setLoading(true);
       setError("");
+      console.log("=== Loading Subscription Data ===");
+      console.log("Tenant ID:", id);
+
       const [tenantData, subscriptionData, plansData] = await Promise.all([
         tenantService.getTenant(id),
-        subscriptionService.getStatus(id).catch(() => null),
-        subscriptionService.getPlans().catch(() => ({ plans: [] })),
+        subscriptionService.getStatus(id).catch((err) => {
+          console.error(
+            "Subscription status error:",
+            err.response?.data || err.message,
+          );
+          return null;
+        }),
+        subscriptionService.getPlans().catch((err) => {
+          console.error("Plans error:", err.response?.data || err.message);
+          return { plans: [] };
+        }),
       ]);
+
+      console.log("Tenant data:", tenantData);
+      console.log("Subscription data:", subscriptionData);
       console.log("Plans data from API:", plansData);
+
       setTenant(tenantData.tenant || tenantData);
       setSubscription(subscriptionData);
       setPlans(plansData.plans || []);
     } catch (err) {
       console.error("Failed to load subscription data:", err);
+      console.error("Error response:", err.response?.data);
       setError(err.response?.data?.error || "Failed to load subscription data");
     } finally {
       setLoading(false);
@@ -63,10 +80,12 @@ export default function TenantSubscription() {
     try {
       setActionLoading(true);
       setError("");
+      setSuccessMessage(""); // Clear any existing success messages
       const normalizedPlan = planName?.toLowerCase().trim();
       console.log("Subscribing to plan:", {
         original: planName,
         normalized: normalizedPlan,
+        tenantId: id,
       });
       const baseUrl = window.location.origin;
       const checkoutData = await subscriptionService.createCheckout(id, {
@@ -75,16 +94,28 @@ export default function TenantSubscription() {
         cancel_url: `${baseUrl}/dashboard/tenants/${id}/subscription?canceled=true`,
       });
 
+      console.log("Checkout response received:", checkoutData);
+
       // Redirect to Paddle checkout
       if (checkoutData.checkout_url) {
+        console.log("Redirecting to Paddle:", checkoutData.checkout_url);
+        // Don't set loading to false - we're redirecting
         window.location.href = checkoutData.checkout_url;
+      } else {
+        console.error("No checkout_url in response:", checkoutData);
+        setError(
+          "No checkout URL received. Please ensure Paddle is configured correctly in the backend.",
+        );
+        setActionLoading(false);
       }
     } catch (err) {
       console.error("Failed to create checkout:", err);
+      console.error("Error details:", err.response);
       setError(
-        err.response?.data?.error || "Failed to create checkout session",
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Failed to create checkout session. Please check backend Paddle configuration.",
       );
-    } finally {
       setActionLoading(false);
     }
   };
@@ -158,15 +189,20 @@ export default function TenantSubscription() {
   // Check for success/cancel query params
   useEffect(() => {
     if (router.query.success === "true") {
-      setSuccessMessage(
-        "Subscription successful! Your plan has been activated.",
-      );
+      console.log("User returned from successful checkout");
+      // Reload subscription data first
+      loadData().then(() => {
+        setSuccessMessage(
+          "Subscription successful! Your plan has been activated.",
+        );
+      });
       // Remove query params from URL
       router.replace(`/dashboard/tenants/${id}/subscription`, undefined, {
         shallow: true,
       });
     }
     if (router.query.canceled === "true") {
+      console.log("User canceled checkout");
       setError("Checkout was canceled. You can try again when ready.");
       router.replace(`/dashboard/tenants/${id}/subscription`, undefined, {
         shallow: true,
