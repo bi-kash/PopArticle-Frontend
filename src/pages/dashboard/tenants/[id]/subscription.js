@@ -26,6 +26,7 @@ export default function TenantSubscription() {
   const [tenant, setTenant] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [plans, setPlans] = useState([]);
+  const [isPaddleConfigured, setIsPaddleConfigured] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
@@ -67,6 +68,14 @@ export default function TenantSubscription() {
       setTenant(tenantData.tenant || tenantData);
       setSubscription(subscriptionData);
       setPlans(plansData.plans || []);
+      setIsPaddleConfigured(plansData.is_paddle_configured || false);
+
+      if (!plansData.is_paddle_configured) {
+        console.warn("⚠️ Paddle is NOT configured on the backend!");
+        setError(
+          "Paddle payment gateway is not configured. Please contact support.",
+        );
+      }
     } catch (err) {
       console.error("Failed to load subscription data:", err);
       console.error("Error response:", err.response?.data);
@@ -82,41 +91,90 @@ export default function TenantSubscription() {
       setError("");
       setSuccessMessage(""); // Clear any existing success messages
       const normalizedPlan = planName?.toLowerCase().trim();
+      console.log("=== SUBSCRIBE BUTTON CLICKED ===");
       console.log("Subscribing to plan:", {
         original: planName,
         normalized: normalizedPlan,
         tenantId: id,
       });
       const baseUrl = window.location.origin;
-      const checkoutData = await subscriptionService.createCheckout(id, {
+      const requestData = {
         plan: normalizedPlan,
         success_url: `${baseUrl}/dashboard/tenants/${id}/subscription?success=true`,
         cancel_url: `${baseUrl}/dashboard/tenants/${id}/subscription?canceled=true`,
-      });
+      };
 
-      console.log("Checkout response received:", checkoutData);
+      console.log("Checkout request data:", requestData);
+
+      const checkoutData = await subscriptionService.createCheckout(
+        id,
+        requestData,
+      );
+
+      console.log("=== CHECKOUT API RESPONSE ===");
+      console.log("Full response:", checkoutData);
+      console.log("checkout_url:", checkoutData?.checkout_url);
+      console.log("Response keys:", Object.keys(checkoutData || {}));
 
       // Redirect to Paddle checkout
-      if (checkoutData.checkout_url) {
-        console.log("Redirecting to Paddle:", checkoutData.checkout_url);
+      if (checkoutData?.checkout_url) {
+        console.log("✅ Redirecting to Paddle:", checkoutData.checkout_url);
         // Don't set loading to false - we're redirecting
         window.location.href = checkoutData.checkout_url;
       } else {
-        console.error("No checkout_url in response:", checkoutData);
-        setError(
-          "No checkout URL received. Please ensure Paddle is configured correctly in the backend.",
+        console.error("❌ No checkout_url in response");
+        console.error(
+          "Full response object:",
+          JSON.stringify(checkoutData, null, 2),
         );
+
+        // Display the actual error from backend if present
+        const errorMsg =
+          checkoutData?.error ||
+          checkoutData?.message ||
+          "No checkout URL received from backend. Backend response: " +
+            JSON.stringify(checkoutData);
+
+        setError(errorMsg);
         setActionLoading(false);
+
+        // Also show an alert for immediate visibility
+        alert(
+          "Checkout Failed!\n\n" +
+            errorMsg +
+            "\n\nCheck browser console for details.",
+        );
       }
     } catch (err) {
-      console.error("Failed to create checkout:", err);
-      console.error("Error details:", err.response);
-      setError(
+      console.error("=== CHECKOUT ERROR ===");
+      console.error("Error object:", err);
+      console.error("Error response:", err.response);
+      console.error("Error data:", err.response?.data);
+      console.error("Status code:", err.response?.status);
+
+      const errorMessage =
         err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Failed to create checkout session. Please check backend Paddle configuration.",
-      );
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to create checkout session. Please check backend Paddle configuration.";
+
+      setError(errorMessage);
       setActionLoading(false);
+
+      // Show alert with full error details
+      alert(
+        "Checkout API Error!\n\n" +
+          "Status: " +
+          (err.response?.status || "Unknown") +
+          "\n" +
+          "Error: " +
+          errorMessage +
+          "\n\n" +
+          "Backend Response: " +
+          JSON.stringify(err.response?.data, null, 2) +
+          "\n\n" +
+          "Check browser console for full details.",
+      );
     }
   };
 
@@ -349,6 +407,46 @@ export default function TenantSubscription() {
               >
                 <Check size={20} style={{ color: "var(--success-color)" }} />
                 <p style={{ color: "#166534" }}>{successMessage}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Paddle Configuration Status */}
+          {!isPaddleConfigured && (
+            <div
+              className="card"
+              style={{
+                background: "#fef3c7",
+                borderColor: "#fcd34d",
+                marginBottom: "1.5rem",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                }}
+              >
+                <AlertCircle
+                  size={20}
+                  style={{ color: "var(--warning-color)" }}
+                />
+                <div>
+                  <p style={{ color: "#92400e", fontWeight: "600" }}>
+                    Paddle Payment Gateway Not Configured
+                  </p>
+                  <p
+                    style={{
+                      color: "#92400e",
+                      fontSize: "0.875rem",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    The payment system is not set up. Subscriptions cannot be
+                    processed until Paddle is configured on the backend.
+                  </p>
+                </div>
               </div>
             </div>
           )}
