@@ -16,6 +16,7 @@ import {
   Calendar,
   ChevronDown,
   Settings,
+  CreditCard,
 } from "lucide-react";
 
 export default function DashboardLayout({ children }) {
@@ -62,6 +63,11 @@ export default function DashboardLayout({ children }) {
     { icon: Building2, label: "Tenants", href: "/dashboard/tenants" },
     { icon: FolderTree, label: "Categories", href: "/dashboard/categories" },
     { icon: Mail, label: "Messages", href: "/dashboard/messages" },
+    {
+      icon: CreditCard,
+      label: "Subscription",
+      href: "/dashboard/subscription",
+    },
     { icon: UserCircle, label: "Profile", href: "/dashboard/profile" },
   ];
 

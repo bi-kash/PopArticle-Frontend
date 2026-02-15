@@ -11,7 +11,6 @@ export default function EditTenant() {
   const [formData, setFormData] = useState({
     name: "",
     primary_domain: "",
-    plan: "free",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -31,7 +30,6 @@ export default function EditTenant() {
       setFormData({
         name: tenant.name || "",
         primary_domain: tenant.primary_domain || "",
-        plan: tenant.plan || "free",
       });
     } catch (err) {
       console.error("Failed to load tenant:", err);
@@ -54,7 +52,7 @@ export default function EditTenant() {
       setError(
         err.response?.data?.message ||
           err.response?.data?.error ||
-          "Failed to update tenant"
+          "Failed to update tenant",
       );
     } finally {
       setSaving(false);
@@ -136,22 +134,6 @@ export default function EditTenant() {
                   required
                   placeholder="example.com"
                 />
-              </div>
-
-              <div className="form-group">
-                <label className="label">Plan</label>
-                <select
-                  className="select"
-                  value={formData.plan}
-                  onChange={(e) =>
-                    setFormData({ ...formData, plan: e.target.value })
-                  }
-                >
-                  <option value="free">Free</option>
-                  <option value="basic">Basic</option>
-                  <option value="pro">Pro</option>
-                  <option value="enterprise">Enterprise</option>
-                </select>
               </div>
 
               <div style={{ display: "flex", gap: "1rem" }}>

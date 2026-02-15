@@ -2167,10 +2167,8 @@ Content-Type: application/json
     "slug": "my-awesome-blog",
     "primary_domain": "myblog.com",
     "allowed_domains": ["myblog.com"],
-    "plan": "free",
     "is_active": true,
     "is_verified": false,
-    "monthly_article_limit": 10,
     "settings": {},
     "branding": {},
     "api_key_prefix": "mab_",
@@ -2179,18 +2177,12 @@ Content-Type: application/json
 }
 ```
 
-**Plans:**
-
-- `free`: 10 articles/month
-- `starter`: 50 articles/month
-- `professional`: 200 articles/month
-- `enterprise`: Unlimited
-
 **Notes:**
 
 - Authenticated user becomes owner
 - Domain must be unique and format: "domain.com" (no protocol)
 - API key prefix generated from first 3 chars of slug
+- Article limits are tracked at the user/subscription level, not per-tenant
 
 ---
 
@@ -2240,15 +2232,11 @@ Authorization: Bearer <access_token>
     "slug": "my-awesome-blog",
     "primary_domain": "myblog.com",
     "allowed_domains": ["myblog.com", "www.myblog.com"],
-    "plan": "free",
     "is_active": true,
     "is_verified": true,
-    "monthly_article_limit": 10,
-    "monthly_article_count": 5,
     "settings": {},
     "branding": {},
     "webhook_url": null,
-    "billing_email": null,
     "created_at": "2025-01-01T00:00:00.000000",
     "api_key_prefix": "mab_"
   },
@@ -2296,14 +2284,11 @@ Content-Type: application/json
     "slug": "updated-blog-name",
     "primary_domain": "myblog.com",
     "allowed_domains": ["myblog.com", "www.myblog.com"],
-    "plan": "free",
     "is_active": true,
     "is_verified": true,
-    "monthly_article_limit": 10,
     "settings": {},
     "branding": {},
     "webhook_url": "https://myblog.com/webhooks",
-    "billing_email": "billing@myblog.com",
     "created_at": "2025-01-01T00:00:00.000000",
     "updated_at": "2025-01-01T12:00:00.000000",
     "api_key_prefix": "upd_"
@@ -2967,6 +2952,7 @@ Automated social media posting for articles via Meta (Facebook, Instagram) with 
 ### User-Level Ownership and Tenant Sharing
 
 Social media accounts are connected at the **user level**. This means:
+
 - Users own their connected social media accounts
 - The same account can be shared across multiple tenants
 - Per-tenant settings (article_base_url, auto_post_enabled) can override defaults
@@ -2984,11 +2970,11 @@ X-Tenant-ID: <tenant_id>
 
 **Query Parameters:**
 
-| Parameter   | Type    | Description                                                              |
-| ----------- | ------- | ------------------------------------------------------------------------ |
-| platform    | string  | Filter by platform ('facebook', 'instagram', 'facebook_page')            |
-| active_only | boolean | Only return active configurations (default: false)                       |
-| scope       | string  | 'user' (owned), 'tenant' (shared with tenant), 'all' (both, default)     |
+| Parameter   | Type    | Description                                                          |
+| ----------- | ------- | -------------------------------------------------------------------- |
+| platform    | string  | Filter by platform ('facebook', 'instagram', 'facebook_page')        |
+| active_only | boolean | Only return active configurations (default: false)                   |
+| scope       | string  | 'user' (owned), 'tenant' (shared with tenant), 'all' (both, default) |
 
 **Response (200):**
 
@@ -3085,19 +3071,20 @@ Content-Type: application/json
 
 **Optional Fields:**
 
-| Field             | Type    | Description                                                       |
-| ----------------- | ------- | ----------------------------------------------------------------- |
-| token_expires_at  | string  | Token expiration (ISO format)                                     |
-| refresh_token     | string  | Refresh token if available                                        |
-| platform_data     | object  | Additional platform-specific data                                 |
-| article_base_url  | string  | Base URL for articles (e.g., "https://example.com/article/")      |
-| default_hashtags  | array   | Default hashtags to include in posts                              |
-| post_template     | string  | Custom template for posts                                         |
-| auto_post_enabled | boolean | Auto-post new articles when generated (default: false)            |
+| Field             | Type    | Description                                                  |
+| ----------------- | ------- | ------------------------------------------------------------ |
+| token_expires_at  | string  | Token expiration (ISO format)                                |
+| refresh_token     | string  | Refresh token if available                                   |
+| platform_data     | object  | Additional platform-specific data                            |
+| article_base_url  | string  | Base URL for articles (e.g., "https://example.com/article/") |
+| default_hashtags  | array   | Default hashtags to include in posts                         |
+| post_template     | string  | Custom template for posts                                    |
+| auto_post_enabled | boolean | Auto-post new articles when generated (default: false)       |
 
 **Auto-Posting on Article Generation:**
 
 When `auto_post_enabled` is set to `true`, the system will automatically:
+
 1. Generate AI-powered engaging content for the article
 2. Post to this social media account immediately after article creation
 3. Use the configured `article_base_url` to construct the article link
@@ -3107,6 +3094,7 @@ This happens asynchronously in the background when `/api/v1/articles/generate` i
 **Article URL Construction:**
 
 When `article_base_url` is configured, article links are automatically constructed:
+
 - Base URL: `https://www.booxtore.com/article/`
 - Article slug: `my-article-title`
 - Final URL: `https://www.booxtore.com/article/my-article-title`
@@ -3309,6 +3297,7 @@ Content-Type: application/json
 **URL Construction:**
 
 The article link is determined in this order:
+
 1. If `article_url` is provided, use it directly
 2. If `config_id` is provided and config has `article_base_url`, construct URL as: `{article_base_url}/{article.slug}`
 3. Otherwise, use a placeholder URL
@@ -3868,14 +3857,15 @@ public_profile,pages_show_list,pages_manage_posts,pages_read_engagement,instagra
 
 ## Subscription Endpoints
 
-PopArticle uses Paddle for subscription-based billing. These endpoints allow tenants to manage subscriptions and create checkout sessions. All endpoints that act on tenant subscriptions require `Authorization: Bearer <token>` and `X-Tenant-ID: <tenant-id>`.
+PopArticle uses Paddle for subscription-based billing. Subscriptions are **user/owner-based**, meaning a single subscription applies across all tenants owned by that user. This approach reduces friction and aligns with modern SaaS pricing standards.
+
+All subscription endpoints require `Authorization: Bearer <token>`. No `X-Tenant-ID` header is needed for subscription management.
 
 ### Get Subscription Status
 
 ```http
 GET /api/v1/subscriptions/status
 Authorization: Bearer <access_token>
-X-Tenant-ID: <tenant-id>
 ```
 
 Response (200):
@@ -3883,11 +3873,40 @@ Response (200):
 ```json
 {
   "has_subscription": true,
+  "subscription_id": 1,
+  "paddle_subscription_id": "sub_xxx",
   "plan": "pro",
   "status": "active",
   "article_limit": 200,
+  "articles_used": 45,
+  "articles_remaining": 155,
   "billing_cycle": { "interval": "month", "frequency": 1 },
-  "current_period": { "start": "2024-01-01T00:00:00Z", "end": "2024-02-01T00:00:00Z" }
+  "current_period": {
+    "start": "2024-01-01T00:00:00Z",
+    "end": "2024-02-01T00:00:00Z"
+  },
+  "pricing": {
+    "amount": "49.00",
+    "currency": "USD"
+  },
+  "billing_email": "billing@example.com",
+  "canceled_at": null,
+  "paused_at": null,
+  "created_at": "2024-01-01T00:00:00Z"
+}
+```
+
+Response when on free tier (no subscription):
+
+```json
+{
+  "has_subscription": false,
+  "plan": "free",
+  "status": "active",
+  "article_limit": 10,
+  "articles_used": 0,
+  "articles_remaining": 10,
+  "message": "You are on the free plan"
 }
 ```
 
@@ -3902,11 +3921,73 @@ Response (200):
 ```json
 {
   "plans": [
-    { "name": "free", "display_name": "Free", "price": "0", "article_limit": 10 },
-    { "name": "basic", "display_name": "Basic", "price": "19", "article_limit": 50 },
-    { "name": "pro", "display_name": "Pro", "price": "49", "article_limit": 200 },
-    { "name": "enterprise", "display_name": "Enterprise", "price": "199", "article_limit": 1000 }
-  ]
+    {
+      "name": "free",
+      "display_name": "Free",
+      "price": "0",
+      "currency": "USD",
+      "billing_cycle": null,
+      "article_limit": 10,
+      "features": [
+        "Up to 10 articles per month",
+        "Basic AI article generation",
+        "Single user",
+        "Community support"
+      ]
+    },
+    {
+      "name": "basic",
+      "display_name": "Basic",
+      "price": "19",
+      "currency": "USD",
+      "billing_cycle": "month",
+      "article_limit": 50,
+      "price_id": "pri_xxx",
+      "features": [
+        "Up to 50 articles per month",
+        "Advanced AI article generation",
+        "Up to 3 team members",
+        "Email support",
+        "SEO optimization"
+      ]
+    },
+    {
+      "name": "pro",
+      "display_name": "Pro",
+      "price": "49",
+      "currency": "USD",
+      "billing_cycle": "month",
+      "article_limit": 200,
+      "price_id": "pri_xxx",
+      "features": [
+        "Up to 200 articles per month",
+        "Premium AI article generation",
+        "Unlimited team members",
+        "Priority support",
+        "Advanced SEO & analytics",
+        "Custom branding"
+      ]
+    },
+    {
+      "name": "enterprise",
+      "display_name": "Enterprise",
+      "price": "199",
+      "currency": "USD",
+      "billing_cycle": "month",
+      "article_limit": 1000,
+      "price_id": "pri_xxx",
+      "features": [
+        "Up to 1000 articles per month",
+        "Enterprise AI article generation",
+        "Unlimited team members",
+        "Dedicated support",
+        "White-label solution",
+        "API access",
+        "Custom integrations"
+      ]
+    }
+  ],
+  "is_paddle_configured": true
 }
 ```
 
@@ -3915,7 +3996,6 @@ Response (200):
 ```http
 POST /api/v1/subscriptions/checkout
 Authorization: Bearer <access_token>
-X-Tenant-ID: <tenant-id>
 Content-Type: application/json
 ```
 
@@ -3925,11 +4005,12 @@ Request Body:
 {
   "plan": "pro",
   "success_url": "https://yourapp.com/subscription/success",
-  "cancel_url": "https://yourapp.com/subscription/cancel"
+  "cancel_url": "https://yourapp.com/subscription/cancel",
+  "billing_email": "billing@example.com"
 }
 ```
 
-Response (201):
+Response (200):
 
 ```json
 {
@@ -3939,19 +4020,39 @@ Response (201):
 }
 ```
 
+Error Response (409 - Already subscribed):
+
+```json
+{
+  "error": "You already have an active subscription. Use upgrade endpoint to change plans.",
+  "current_plan": "basic"
+}
+```
+
 ### Cancel Subscription
 
 ```http
 POST /api/v1/subscriptions/cancel
 Authorization: Bearer <access_token>
-X-Tenant-ID: <tenant-id>
 Content-Type: application/json
 ```
 
-Body:
+Request Body:
 
 ```json
-{ "effective_from": "next_billing_period" } // or "immediately"
+{
+  "effective_from": "next_billing_period"
+}
+```
+
+Response (200):
+
+```json
+{
+  "message": "Subscription cancellation initiated",
+  "effective_from": "next_billing_period",
+  "plan_after_cancellation": "free"
+}
 ```
 
 ### Upgrade / Downgrade Subscription
@@ -3959,14 +4060,27 @@ Body:
 ```http
 POST /api/v1/subscriptions/upgrade
 Authorization: Bearer <access_token>
-X-Tenant-ID: <tenant-id>
 Content-Type: application/json
 ```
 
-Body:
+Request Body:
 
 ```json
-{ "plan": "enterprise", "proration": "prorated_immediately" }
+{
+  "plan": "enterprise",
+  "proration": "prorated_immediately"
+}
+```
+
+Response (200):
+
+```json
+{
+  "message": "Subscription upgraded successfully",
+  "old_plan": "pro",
+  "new_plan": "enterprise",
+  "new_article_limit": 1000
+}
 ```
 
 ### Pause Subscription
@@ -3974,7 +4088,15 @@ Body:
 ```http
 POST /api/v1/subscriptions/pause
 Authorization: Bearer <access_token>
-X-Tenant-ID: <tenant-id>
+```
+
+Response (200):
+
+```json
+{
+  "message": "Subscription pause initiated",
+  "status": "paused"
+}
 ```
 
 ### Resume Subscription
@@ -3982,7 +4104,15 @@ X-Tenant-ID: <tenant-id>
 ```http
 POST /api/v1/subscriptions/resume
 Authorization: Bearer <access_token>
-X-Tenant-ID: <tenant-id>
+```
+
+Response (200):
+
+```json
+{
+  "message": "Subscription resumed",
+  "status": "active"
+}
 ```
 
 ### Get Subscription History
@@ -3990,17 +4120,40 @@ X-Tenant-ID: <tenant-id>
 ```http
 GET /api/v1/subscriptions/history
 Authorization: Bearer <access_token>
-X-Tenant-ID: <tenant-id>
+```
+
+Response (200):
+
+```json
+{
+  "subscription_id": 1,
+  "events": [
+    {
+      "id": 1,
+      "event_type": "subscription.created",
+      "occurred_at": "2024-01-01T00:00:00Z",
+      "created_at": "2024-01-01T00:00:00Z",
+      "processed": true
+    },
+    {
+      "id": 2,
+      "event_type": "subscription.updated",
+      "occurred_at": "2024-02-01T00:00:00Z",
+      "created_at": "2024-02-01T00:00:00Z",
+      "processed": true
+    }
+  ]
+}
 ```
 
 ### Subscription Plans & Monthly Limits
 
-| Plan | Monthly Article Limit |
-|------|-----------------------|
-| Free | 10 |
-| Basic | 50 |
-| Pro | 200 |
-| Enterprise | 1000 |
+| Plan       | Monthly Article Limit | Price/Month |
+| ---------- | --------------------- | ----------- |
+| Free       | 10                    | $0          |
+| Basic      | 50                    | $19         |
+| Pro        | 200                   | $49         |
+| Enterprise | 1000                  | $199        |
 
 ---
 
@@ -4010,7 +4163,7 @@ Webhook Endpoint (public, verifies signature):
 
 ```http
 POST /api/v1/webhooks/paddle
-Content-Type: application/x-www-form-urlencoded
+Content-Type: application/json
 ```
 
 Security:
@@ -4018,19 +4171,19 @@ Security:
 - Paddle sends a `Paddle-Signature` header with format: `ts=timestamp;h1=signature`.
 - Verify using the `PADDLE_WEBHOOK_SECRET` and the raw request body before processing.
 
-Handled Events (examples):
+Handled Events:
 
-- `subscription.created`
-- `subscription.updated`
-- `subscription.canceled`
-- `subscription.paused`
-- `subscription.resumed`
-- `subscription.past_due`
-- `transaction.completed`
+- `subscription.created` - New subscription started
+- `subscription.updated` - Subscription plan or details changed
+- `subscription.canceled` - Subscription was canceled
+- `subscription.paused` - Subscription was paused
+- `subscription.resumed` - Subscription was resumed
+- `subscription.past_due` - Payment failed, subscription past due
+- `transaction.completed` - Payment was successful
 
 Notes:
 
-- Include `tenant_id` in `custom_data` when creating checkout sessions to link Paddle subscriptions to tenants.
+- Include `user_id` in `custom_data` when creating checkout sessions to link Paddle subscriptions to users.
 - Webhooks are used to create/update the local `subscriptions` record and adjust `monthly_article_limit` accordingly.
 - Do not log sensitive payment information. Persist events to `subscription_events` for auditing and retries.
 

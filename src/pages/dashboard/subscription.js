@@ -4,10 +4,8 @@ import Link from "next/link";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { subscriptionService } from "@/lib/subscriptionService";
-import { tenantService } from "@/lib/tenantService";
 import {
   CreditCard,
-  ArrowLeft,
   Check,
   Crown,
   Zap,
@@ -20,10 +18,8 @@ import {
   Receipt,
 } from "lucide-react";
 
-export default function TenantSubscription() {
+export default function Subscription() {
   const router = useRouter();
-  const { id } = router.query;
-  const [tenant, setTenant] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [plans, setPlans] = useState([]);
   const [isPaddleConfigured, setIsPaddleConfigured] = useState(false);
@@ -34,21 +30,35 @@ export default function TenantSubscription() {
   const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      loadData();
+    loadData();
+  }, []);
+
+  // Check for success/cancel query params
+  useEffect(() => {
+    if (router.query.success === "true") {
+      console.log("User returned from successful checkout");
+      loadData().then(() => {
+        setSuccessMessage(
+          "Subscription successful! Your plan has been activated.",
+        );
+      });
+      router.replace("/dashboard/subscription", undefined, { shallow: true });
     }
-  }, [id]);
+    if (router.query.canceled === "true") {
+      console.log("User canceled checkout");
+      setError("Checkout was canceled. You can try again when ready.");
+      router.replace("/dashboard/subscription", undefined, { shallow: true });
+    }
+  }, [router.query]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError("");
       console.log("=== Loading Subscription Data ===");
-      console.log("Tenant ID:", id);
 
-      const [tenantData, subscriptionData, plansData] = await Promise.all([
-        tenantService.getTenant(id),
-        subscriptionService.getStatus(id).catch((err) => {
+      const [subscriptionData, plansData] = await Promise.all([
+        subscriptionService.getStatus().catch((err) => {
           console.error(
             "Subscription status error:",
             err.response?.data || err.message,
@@ -61,20 +71,15 @@ export default function TenantSubscription() {
         }),
       ]);
 
-      console.log("Tenant data:", tenantData);
       console.log("Subscription data:", subscriptionData);
       console.log("Plans data from API:", plansData);
 
-      setTenant(tenantData.tenant || tenantData);
       setSubscription(subscriptionData);
       setPlans(plansData.plans || []);
       setIsPaddleConfigured(plansData.is_paddle_configured || false);
 
       if (!plansData.is_paddle_configured) {
         console.warn("⚠️ Paddle is NOT configured on the backend!");
-        setError(
-          "Paddle payment gateway is not configured. Please contact support.",
-        );
       }
     } catch (err) {
       console.error("Failed to load subscription data:", err);
@@ -89,92 +94,51 @@ export default function TenantSubscription() {
     try {
       setActionLoading(true);
       setError("");
-      setSuccessMessage(""); // Clear any existing success messages
+      setSuccessMessage("");
       const normalizedPlan = planName?.toLowerCase().trim();
       console.log("=== SUBSCRIBE BUTTON CLICKED ===");
-      console.log("Subscribing to plan:", {
-        original: planName,
-        normalized: normalizedPlan,
-        tenantId: id,
-      });
+      console.log("Subscribing to plan:", normalizedPlan);
+
       const baseUrl = window.location.origin;
       const requestData = {
         plan: normalizedPlan,
-        success_url: `${baseUrl}/dashboard/tenants/${id}/subscription?success=true`,
-        cancel_url: `${baseUrl}/dashboard/tenants/${id}/subscription?canceled=true`,
+        success_url: `${baseUrl}/dashboard/subscription?success=true`,
+        cancel_url: `${baseUrl}/dashboard/subscription?canceled=true`,
       };
 
       console.log("Checkout request data:", requestData);
 
-      const checkoutData = await subscriptionService.createCheckout(
-        id,
-        requestData,
-      );
+      const checkoutData =
+        await subscriptionService.createCheckout(requestData);
 
       console.log("=== CHECKOUT API RESPONSE ===");
       console.log("Full response:", checkoutData);
-      console.log("checkout_url:", checkoutData?.checkout_url);
-      console.log("Response keys:", Object.keys(checkoutData || {}));
 
-      // Redirect to Paddle checkout
       if (checkoutData?.checkout_url) {
         console.log("✅ Redirecting to Paddle:", checkoutData.checkout_url);
-        // Don't set loading to false - we're redirecting
         window.location.href = checkoutData.checkout_url;
       } else {
         console.error("❌ No checkout_url in response");
-        console.error(
-          "Full response object:",
-          JSON.stringify(checkoutData, null, 2),
-        );
-
-        // Display the actual error from backend if present
         const errorMsg =
           checkoutData?.error ||
           checkoutData?.message ||
-          "No checkout URL received from backend. Backend response: " +
-            JSON.stringify(checkoutData);
-
+          "No checkout URL received from backend.";
         setError(errorMsg);
         setActionLoading(false);
-
-        // Also show an alert for immediate visibility
-        alert(
-          "Checkout Failed!\n\n" +
-            errorMsg +
-            "\n\nCheck browser console for details.",
-        );
       }
     } catch (err) {
       console.error("=== CHECKOUT ERROR ===");
-      console.error("Error object:", err);
-      console.error("Error response:", err.response);
-      console.error("Error data:", err.response?.data);
-      console.error("Status code:", err.response?.status);
+      console.error("Error:", err);
+      console.error("Response:", err.response?.data);
 
       const errorMessage =
         err.response?.data?.error ||
         err.response?.data?.message ||
         err.message ||
-        "Failed to create checkout session. Please check backend Paddle configuration.";
+        "Failed to create checkout session.";
 
       setError(errorMessage);
       setActionLoading(false);
-
-      // Show alert with full error details
-      alert(
-        "Checkout API Error!\n\n" +
-          "Status: " +
-          (err.response?.status || "Unknown") +
-          "\n" +
-          "Error: " +
-          errorMessage +
-          "\n\n" +
-          "Backend Response: " +
-          JSON.stringify(err.response?.data, null, 2) +
-          "\n\n" +
-          "Check browser console for full details.",
-      );
     }
   };
 
@@ -182,7 +146,7 @@ export default function TenantSubscription() {
     try {
       setActionLoading(true);
       setError("");
-      await subscriptionService.upgradeSubscription(id, {
+      await subscriptionService.upgradeSubscription({
         plan: planName,
         proration: "prorated_immediately",
       });
@@ -200,7 +164,7 @@ export default function TenantSubscription() {
     try {
       setActionLoading(true);
       setError("");
-      await subscriptionService.cancelSubscription(id, {
+      await subscriptionService.cancelSubscription({
         effective_from: effectiveFrom,
       });
       setSuccessMessage("Subscription canceled successfully");
@@ -218,7 +182,7 @@ export default function TenantSubscription() {
     try {
       setActionLoading(true);
       setError("");
-      await subscriptionService.pauseSubscription(id);
+      await subscriptionService.pauseSubscription();
       setSuccessMessage("Subscription paused successfully");
       await loadData();
     } catch (err) {
@@ -233,7 +197,7 @@ export default function TenantSubscription() {
     try {
       setActionLoading(true);
       setError("");
-      await subscriptionService.resumeSubscription(id);
+      await subscriptionService.resumeSubscription();
       setSuccessMessage("Subscription resumed successfully");
       await loadData();
     } catch (err) {
@@ -243,30 +207,6 @@ export default function TenantSubscription() {
       setActionLoading(false);
     }
   };
-
-  // Check for success/cancel query params
-  useEffect(() => {
-    if (router.query.success === "true") {
-      console.log("User returned from successful checkout");
-      // Reload subscription data first
-      loadData().then(() => {
-        setSuccessMessage(
-          "Subscription successful! Your plan has been activated.",
-        );
-      });
-      // Remove query params from URL
-      router.replace(`/dashboard/tenants/${id}/subscription`, undefined, {
-        shallow: true,
-      });
-    }
-    if (router.query.canceled === "true") {
-      console.log("User canceled checkout");
-      setError("Checkout was canceled. You can try again when ready.");
-      router.replace(`/dashboard/tenants/${id}/subscription`, undefined, {
-        shallow: true,
-      });
-    }
-  }, [router.query, id]);
 
   const getPlanIcon = (planName) => {
     switch (planName?.toLowerCase()) {
@@ -321,18 +261,6 @@ export default function TenantSubscription() {
     <ProtectedRoute>
       <DashboardLayout>
         <div>
-          {/* Back button */}
-          <div style={{ marginBottom: "2rem" }}>
-            <button
-              className="btn btn-secondary"
-              onClick={() => router.push(`/dashboard/tenants/${id}`)}
-              style={{ marginBottom: "1rem" }}
-            >
-              <ArrowLeft size={20} />
-              Back to Tenant
-            </button>
-          </div>
-
           {/* Header */}
           <div
             style={{
@@ -348,14 +276,14 @@ export default function TenantSubscription() {
               <CreditCard size={32} style={{ color: "var(--primary-color)" }} />
               <div>
                 <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
-                  Subscription Management
+                  Subscription & Billing
                 </h1>
                 <p style={{ color: "var(--text-secondary)" }}>
-                  {tenant?.name} - Manage your subscription and billing
+                  Manage your subscription plan and billing
                 </p>
               </div>
             </div>
-            <Link href={`/dashboard/tenants/${id}/billing-history`}>
+            <Link href="/dashboard/billing-history">
               <button className="btn btn-secondary">
                 <Receipt size={18} />
                 Billing History
@@ -411,7 +339,7 @@ export default function TenantSubscription() {
             </div>
           )}
 
-          {/* Paddle Configuration Status */}
+          {/* Paddle Warning */}
           {!isPaddleConfigured && (
             <div
               className="card"
@@ -434,7 +362,7 @@ export default function TenantSubscription() {
                 />
                 <div>
                   <p style={{ color: "#92400e", fontWeight: "600" }}>
-                    Paddle Payment Gateway Not Configured
+                    Payment Gateway Not Configured
                   </p>
                   <p
                     style={{
@@ -443,8 +371,7 @@ export default function TenantSubscription() {
                       marginTop: "0.25rem",
                     }}
                   >
-                    The payment system is not set up. Subscriptions cannot be
-                    processed until Paddle is configured on the backend.
+                    The payment system is not set up. Please contact support.
                   </p>
                 </div>
               </div>
@@ -683,7 +610,7 @@ export default function TenantSubscription() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
                 gap: "1.5rem",
               }}
             >
@@ -749,36 +676,9 @@ export default function TenantSubscription() {
                   </div>
 
                   <ul style={{ marginBottom: "1.5rem", listStyle: "none" }}>
-                    <li
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                        marginBottom: "0.5rem",
-                      }}
-                    >
-                      <Check
-                        size={16}
-                        style={{ color: "var(--success-color)" }}
-                      />
-                      <span>{plan.article_limit} articles/month</span>
-                    </li>
-                    <li
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                        marginBottom: "0.5rem",
-                      }}
-                    >
-                      <Check
-                        size={16}
-                        style={{ color: "var(--success-color)" }}
-                      />
-                      <span>AI-powered content generation</span>
-                    </li>
-                    {plan.name !== "free" && (
+                    {(plan.features || []).map((feature, idx) => (
                       <li
+                        key={idx}
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -788,42 +688,14 @@ export default function TenantSubscription() {
                       >
                         <Check
                           size={16}
-                          style={{ color: "var(--success-color)" }}
+                          style={{
+                            color: "var(--success-color)",
+                            flexShrink: 0,
+                          }}
                         />
-                        <span>Priority support</span>
+                        <span style={{ fontSize: "0.875rem" }}>{feature}</span>
                       </li>
-                    )}
-                    {(plan.name === "pro" || plan.name === "enterprise") && (
-                      <li
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          marginBottom: "0.5rem",
-                        }}
-                      >
-                        <Check
-                          size={16}
-                          style={{ color: "var(--success-color)" }}
-                        />
-                        <span>Advanced analytics</span>
-                      </li>
-                    )}
-                    {plan.name === "enterprise" && (
-                      <li
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                        }}
-                      >
-                        <Check
-                          size={16}
-                          style={{ color: "var(--success-color)" }}
-                        />
-                        <span>Dedicated account manager</span>
-                      </li>
-                    )}
+                    ))}
                   </ul>
 
                   {isCurrentPlan(plan.name) ? (
@@ -865,7 +737,7 @@ export default function TenantSubscription() {
                       className="btn btn-primary"
                       style={{ width: "100%", justifyContent: "center" }}
                       onClick={() => handleSubscribe(plan.name)}
-                      disabled={actionLoading}
+                      disabled={actionLoading || !isPaddleConfigured}
                     >
                       {actionLoading ? (
                         <Loader2 size={18} className="animate-spin" />

@@ -4,13 +4,11 @@ import Link from "next/link";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { subscriptionService } from "@/lib/subscriptionService";
-import { tenantService } from "@/lib/tenantService";
 import {
   Receipt,
   ArrowLeft,
   Calendar,
   CreditCard,
-  Download,
   AlertCircle,
   TrendingUp,
   TrendingDown,
@@ -18,27 +16,21 @@ import {
 
 export default function BillingHistory() {
   const router = useRouter();
-  const { id } = router.query;
-  const [tenant, setTenant] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (id) {
-      loadData();
-    }
-  }, [id]);
+    loadData();
+  }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError("");
-      const [tenantData, historyData] = await Promise.all([
-        tenantService.getTenant(id),
-        subscriptionService.getHistory(id).catch(() => ({ history: [] })),
-      ]);
-      setTenant(tenantData.tenant || tenantData);
+      const historyData = await subscriptionService
+        .getHistory()
+        .catch(() => ({ history: [] }));
       setHistory(historyData.history || historyData.events || []);
     } catch (err) {
       console.error("Failed to load billing history:", err);
@@ -122,9 +114,7 @@ export default function BillingHistory() {
           <div style={{ marginBottom: "2rem" }}>
             <button
               className="btn btn-secondary"
-              onClick={() =>
-                router.push(`/dashboard/tenants/${id}/subscription`)
-              }
+              onClick={() => router.push("/dashboard/subscription")}
               style={{ marginBottom: "1rem" }}
             >
               <ArrowLeft size={20} />
@@ -147,7 +137,7 @@ export default function BillingHistory() {
                 Billing History
               </h1>
               <p style={{ color: "var(--text-secondary)" }}>
-                {tenant?.name} - View your subscription and payment history
+                View your subscription and payment history
               </p>
             </div>
           </div>
@@ -211,7 +201,7 @@ export default function BillingHistory() {
                   Your billing history will appear here once you subscribe to a
                   plan.
                 </p>
-                <Link href={`/dashboard/tenants/${id}/subscription`}>
+                <Link href="/dashboard/subscription">
                   <button className="btn btn-primary">
                     <CreditCard size={18} />
                     View Plans
@@ -307,17 +297,6 @@ export default function BillingHistory() {
                           <span style={{ textTransform: "capitalize" }}>
                             {event.plan}
                           </span>
-                        </p>
-                      )}
-                      {event.description && (
-                        <p
-                          style={{
-                            marginTop: "0.5rem",
-                            fontSize: "0.875rem",
-                            color: "var(--text-secondary)",
-                          }}
-                        >
-                          {event.description}
                         </p>
                       )}
                     </div>

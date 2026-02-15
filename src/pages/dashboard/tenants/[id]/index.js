@@ -14,7 +14,6 @@ import {
   Edit,
   UserCog,
   Share2,
-  CreditCard,
 } from "lucide-react";
 
 export default function TenantDetails() {
@@ -205,24 +204,6 @@ export default function TenantDetails() {
                     color: "var(--text-secondary)",
                   }}
                 >
-                  <Settings size={16} />
-                  <span style={{ fontSize: "0.875rem" }}>Plan</span>
-                </div>
-                <p style={{ fontWeight: 500, textTransform: "capitalize" }}>
-                  {tenant.plan || "Free"}
-                </p>
-              </div>
-
-              <div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    marginBottom: "0.5rem",
-                    color: "var(--text-secondary)",
-                  }}
-                >
                   <Calendar size={16} />
                   <span style={{ fontSize: "0.875rem" }}>Created</span>
                 </div>
@@ -344,16 +325,6 @@ export default function TenantDetails() {
                 >
                   <Share2 size={20} />
                   Social Media
-                </button>
-              </Link>
-
-              <Link href={`/dashboard/tenants/${id}/subscription`}>
-                <button
-                  className="btn btn-secondary"
-                  style={{ width: "100%", justifyContent: "flex-start" }}
-                >
-                  <CreditCard size={20} />
-                  Subscription & Billing
                 </button>
               </Link>
             </div>

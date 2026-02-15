@@ -158,12 +158,6 @@ export default function TenantsPage() {
                       fontSize: "0.875rem",
                     }}
                   >
-                    <div>
-                      <span style={{ color: "var(--text-secondary)" }}>
-                        Plan:{" "}
-                      </span>
-                      <span style={{ fontWeight: 500 }}>{tenant.plan}</span>
-                    </div>
                     {tenant.member_count !== undefined && (
                       <div>
                         <span style={{ color: "var(--text-secondary)" }}>

@@ -2,14 +2,11 @@ import api from "./api";
 
 export const subscriptionService = {
   /**
-   * Get subscription status for a tenant
-   * @param {string} tenantId - The tenant ID
+   * Get subscription status for the current user
    * @returns {Promise} Subscription status data
    */
-  async getStatus(tenantId) {
-    const response = await api.get("/api/v1/subscriptions/status", {
-      headers: { "X-Tenant-ID": tenantId },
-    });
+  async getStatus() {
+    const response = await api.get("/api/v1/subscriptions/status");
     return response.data;
   },
 
@@ -24,91 +21,66 @@ export const subscriptionService = {
 
   /**
    * Create a checkout session for subscription
-   * @param {string} tenantId - The tenant ID
    * @param {object} data - Checkout data { plan, success_url, cancel_url }
    * @returns {Promise} Checkout session with checkout_url
    */
-  async createCheckout(tenantId, data) {
+  async createCheckout(data) {
     const payload = {
       ...data,
       plan: data.plan?.toLowerCase().trim(),
     };
-    const response = await api.post("/api/v1/subscriptions/checkout", payload, {
-      headers: { "X-Tenant-ID": tenantId },
-    });
+    const response = await api.post("/api/v1/subscriptions/checkout", payload);
     return response.data;
   },
 
   /**
    * Cancel subscription
-   * @param {string} tenantId - The tenant ID
    * @param {object} data - Cancel data { effective_from: "next_billing_period" | "immediately" }
    * @returns {Promise} Cancellation result
    */
-  async cancelSubscription(
-    tenantId,
-    data = { effective_from: "next_billing_period" },
-  ) {
-    const response = await api.post("/api/v1/subscriptions/cancel", data, {
-      headers: { "X-Tenant-ID": tenantId },
-    });
+  async cancelSubscription(data = { effective_from: "next_billing_period" }) {
+    const response = await api.post("/api/v1/subscriptions/cancel", data);
     return response.data;
   },
 
   /**
    * Upgrade or downgrade subscription
-   * @param {string} tenantId - The tenant ID
    * @param {object} data - Upgrade data { plan, proration }
    * @returns {Promise} Upgrade result
    */
-  async upgradeSubscription(tenantId, data) {
+  async upgradeSubscription(data) {
     const payload = {
       ...data,
       plan: data.plan?.toLowerCase().trim(),
     };
-    const response = await api.post("/api/v1/subscriptions/upgrade", payload, {
-      headers: { "X-Tenant-ID": tenantId },
-    });
+    const response = await api.post("/api/v1/subscriptions/upgrade", payload);
     return response.data;
   },
 
   /**
    * Pause subscription
-   * @param {string} tenantId - The tenant ID
    * @returns {Promise} Pause result
    */
-  async pauseSubscription(tenantId) {
-    const response = await api.post(
-      "/api/v1/subscriptions/pause",
-      {},
-      { headers: { "X-Tenant-ID": tenantId } },
-    );
+  async pauseSubscription() {
+    const response = await api.post("/api/v1/subscriptions/pause", {});
     return response.data;
   },
 
   /**
    * Resume subscription
-   * @param {string} tenantId - The tenant ID
    * @returns {Promise} Resume result
    */
-  async resumeSubscription(tenantId) {
-    const response = await api.post(
-      "/api/v1/subscriptions/resume",
-      {},
-      { headers: { "X-Tenant-ID": tenantId } },
-    );
+  async resumeSubscription() {
+    const response = await api.post("/api/v1/subscriptions/resume", {});
     return response.data;
   },
 
   /**
    * Get subscription history
-   * @param {string} tenantId - The tenant ID
    * @returns {Promise} Subscription history
    */
-  async getHistory(tenantId) {
-    const response = await api.get("/api/v1/subscriptions/history", {
-      headers: { "X-Tenant-ID": tenantId },
-    });
+  async getHistory() {
+    const response = await api.get("/api/v1/subscriptions/history");
     return response.data;
   },
 };
