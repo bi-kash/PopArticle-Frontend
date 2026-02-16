@@ -19,21 +19,13 @@ const DEFAULT_OG_IMAGE = SITE_URL
   ? `${SITE_URL.replace(/\/$/, "")}/og-default.svg`
   : "/og-default.svg";
 
-// Paddle client-side token for checkout
-const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
+// Paddle environment (safe to expose)
 const PADDLE_ENVIRONMENT =
   process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT || "sandbox";
 
 export default function App({ Component, pageProps }) {
   // Initialize Paddle.js for payments
   useEffect(() => {
-    if (!PADDLE_CLIENT_TOKEN) {
-      console.warn(
-        "⚠️ NEXT_PUBLIC_PADDLE_CLIENT_TOKEN is not set. Paddle checkout will not work.",
-      );
-      return;
-    }
-
     // Check if Paddle is already loaded
     if (window.Paddle) {
       return;
@@ -44,17 +36,39 @@ export default function App({ Component, pageProps }) {
     script.async = true;
     document.body.appendChild(script);
 
-    script.onload = () => {
-      if (window.Paddle) {
-        // Set environment (sandbox for testing, production for live)
-        if (PADDLE_ENVIRONMENT === "sandbox") {
-          window.Paddle.Environment.set("sandbox");
+    script.onload = async () => {
+      if (!window.Paddle) return;
+
+      // Set environment (sandbox for testing, production for live)
+      if (PADDLE_ENVIRONMENT === "sandbox") {
+        window.Paddle.Environment.set("sandbox");
+      }
+
+      // Fetch the client token from a secure server-side route so it is not
+      // embedded at build time in the client bundle. You can add auth checks
+      // to the API route if you want the server to gate access.
+      try {
+        const resp = await fetch("/api/paddle-token");
+        if (!resp.ok) {
+          console.warn("Failed to fetch Paddle client token from server");
+          return;
+        }
+
+        const data = await resp.json();
+        const token = data.token;
+        if (!token) {
+          console.warn("No Paddle token returned from server");
+          return;
         }
 
         window.Paddle.Initialize({
-          token: PADDLE_CLIENT_TOKEN,
+          token,
         });
-        console.log("✅ Paddle initialized successfully");
+        console.log(
+          "✅ Paddle initialized successfully (token fetched from server)",
+        );
+      } catch (err) {
+        console.error("Error fetching Paddle token:", err);
       }
     };
 
