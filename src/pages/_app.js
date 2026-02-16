@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import "@/styles/globals.css";
 import "react-quill/dist/quill.snow.css";
 import "easymde/dist/easymde.min.css";
@@ -18,7 +19,57 @@ const DEFAULT_OG_IMAGE = SITE_URL
   ? `${SITE_URL.replace(/\/$/, "")}/og-default.svg`
   : "/og-default.svg";
 
+// Paddle client-side token for checkout
+const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
+const PADDLE_ENVIRONMENT =
+  process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT || "sandbox";
+
 export default function App({ Component, pageProps }) {
+  // Initialize Paddle.js for payments
+  useEffect(() => {
+    if (!PADDLE_CLIENT_TOKEN) {
+      console.warn(
+        "⚠️ NEXT_PUBLIC_PADDLE_CLIENT_TOKEN is not set. Paddle checkout will not work.",
+      );
+      return;
+    }
+
+    // Check if Paddle is already loaded
+    if (window.Paddle) {
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://cdn.paddle.com/paddle/v2/paddle.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      if (window.Paddle) {
+        // Set environment (sandbox for testing, production for live)
+        if (PADDLE_ENVIRONMENT === "sandbox") {
+          window.Paddle.Environment.set("sandbox");
+        }
+
+        window.Paddle.Initialize({
+          token: PADDLE_CLIENT_TOKEN,
+        });
+        console.log("✅ Paddle initialized successfully");
+      }
+    };
+
+    script.onerror = () => {
+      console.error("❌ Failed to load Paddle.js script");
+    };
+
+    return () => {
+      // Cleanup script on unmount (though this rarely happens for _app)
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
+
   return (
     <>
       <Head>

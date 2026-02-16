@@ -3991,7 +3991,10 @@ Response (200):
 }
 ```
 
-### Create Checkout Session
+### Get Checkout Settings (for Frontend paddle.js)
+
+Returns checkout settings for the frontend to use with `Paddle.Checkout.open()`.
+This endpoint does NOT create a checkout URL - the frontend uses paddle.js with a client token to display the checkout overlay.
 
 ```http
 POST /api/v1/subscriptions/checkout
@@ -4004,9 +4007,7 @@ Request Body:
 ```json
 {
   "plan": "pro",
-  "success_url": "https://yourapp.com/subscription/success",
-  "cancel_url": "https://yourapp.com/subscription/cancel",
-  "billing_email": "billing@example.com"
+  "billing_email": "billing@example.com"  // Optional, defaults to user email
 }
 ```
 
@@ -4014,10 +4015,32 @@ Response (200):
 
 ```json
 {
-  "checkout_url": "https://checkout.paddle.com/...",
+  "checkout_settings": {
+    "items": [{ "priceId": "pri_xxx", "quantity": 1 }],
+    "customData": { "user_id": "123" },
+    "customer": { "email": "user@example.com" },
+    "settings": {
+      "displayMode": "overlay",
+      "theme": "light",
+      "locale": "en",
+      "allowLogout": true
+    }
+  },
   "plan": "pro",
-  "message": "Redirect to checkout_url to complete subscription"
+  "price_id": "pri_xxx",
+  "message": "Use these settings with Paddle.Checkout.open() on the frontend"
 }
+```
+
+Frontend usage:
+```javascript
+// After fetching checkout settings
+window.Paddle.Checkout.open({
+  items: data.checkout_settings.items,
+  customData: data.checkout_settings.customData,
+  customer: data.checkout_settings.customer,
+  settings: data.checkout_settings.settings
+});
 ```
 
 Error Response (409 - Already subscribed):

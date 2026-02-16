@@ -33,7 +33,89 @@ export default function Subscription() {
     loadData();
   }, []);
 
-  // Check for success/cancel query params
+  // Set up Paddle event callbacks
+  useEffect(() => {
+    // Wait for Paddle to be available
+    const setupPaddleEvents = () => {
+      const checkout = window.Paddle && window.Paddle.Checkout;
+      if (!checkout) return;
+
+      // Prefer the Events API when available
+      const eventsObj =
+        checkout.Events && typeof checkout.Events.on === "function"
+          ? checkout.Events
+          : null;
+
+      if (eventsObj) {
+        eventsObj.on("checkout.completed", (data) => {
+          console.log("✅ Paddle checkout completed:", data);
+          loadData().then(() => {
+            setSuccessMessage(
+              "Subscription successful! Your plan has been activated.",
+            );
+          });
+        });
+
+        eventsObj.on("checkout.closed", () => {
+          console.log("Paddle checkout closed");
+          setActionLoading(false);
+        });
+
+        eventsObj.on("checkout.error", (error) => {
+          console.error("Paddle checkout error:", error);
+          setError("Payment failed. Please try again.");
+          setActionLoading(false);
+        });
+        return;
+      }
+
+      // Fallback: some Paddle builds expose `on` directly on Checkout
+      if (typeof checkout.on === "function") {
+        checkout.on("checkout.completed", (data) => {
+          console.log("✅ Paddle checkout completed (fallback):", data);
+          loadData().then(() => {
+            setSuccessMessage(
+              "Subscription successful! Your plan has been activated.",
+            );
+          });
+        });
+
+        checkout.on("checkout.closed", () => {
+          console.log("Paddle checkout closed (fallback)");
+          setActionLoading(false);
+        });
+
+        checkout.on("checkout.error", (error) => {
+          console.error("Paddle checkout error (fallback):", error);
+          setError("Payment failed. Please try again.");
+          setActionLoading(false);
+        });
+        return;
+      }
+
+      console.warn(
+        "Paddle Events API not available; relying on URL callbacks instead.",
+      );
+    };
+
+    // Check if Paddle is already loaded
+    if (window.Paddle) {
+      setupPaddleEvents();
+    } else {
+      // Wait for Paddle to load
+      const checkPaddle = setInterval(() => {
+        if (window.Paddle) {
+          setupPaddleEvents();
+          clearInterval(checkPaddle);
+        }
+      }, 500);
+
+      // Clean up interval after 10 seconds
+      setTimeout(() => clearInterval(checkPaddle), 10000);
+    }
+  }, []);
+
+  // Check for success/cancel query params (fallback for redirect mode)
   useEffect(() => {
     if (router.query.success === "true") {
       console.log("User returned from successful checkout");
@@ -99,33 +181,91 @@ export default function Subscription() {
       console.log("=== SUBSCRIBE BUTTON CLICKED ===");
       console.log("Subscribing to plan:", normalizedPlan);
 
-      const baseUrl = window.location.origin;
-      const requestData = {
-        plan: normalizedPlan,
-        success_url: `${baseUrl}/dashboard/subscription?success=true`,
-        cancel_url: `${baseUrl}/dashboard/subscription?canceled=true`,
-      };
+      // Find the plan to get its price_id
+      const selectedPlan = plans.find(
+        (p) => p.name?.toLowerCase() === normalizedPlan,
+      );
 
-      console.log("Checkout request data:", requestData);
-
-      const checkoutData =
-        await subscriptionService.createCheckout(requestData);
-
-      console.log("=== CHECKOUT API RESPONSE ===");
-      console.log("Full response:", checkoutData);
-
-      if (checkoutData?.checkout_url) {
-        console.log("✅ Redirecting to Paddle:", checkoutData.checkout_url);
-        window.location.href = checkoutData.checkout_url;
-      } else {
-        console.error("❌ No checkout_url in response");
-        const errorMsg =
-          checkoutData?.error ||
-          checkoutData?.message ||
-          "No checkout URL received from backend.";
-        setError(errorMsg);
+      if (!selectedPlan?.price_id) {
+        console.error("No price_id found for plan:", normalizedPlan);
+        setError("Unable to find pricing for this plan. Please try again.");
         setActionLoading(false);
+        return;
       }
+
+      console.log("Selected plan:", selectedPlan);
+      console.log("Price ID:", selectedPlan.price_id);
+
+      // Check if Paddle is loaded
+      if (!window.Paddle) {
+        console.error("Paddle SDK not loaded");
+        setError(
+          "Payment system is not ready. Please refresh the page and try again.",
+        );
+        setActionLoading(false);
+        return;
+      }
+
+      // Request checkout settings from backend (contains Paddle settings + customer email)
+      console.log("Requesting checkout settings from backend...");
+      const checkoutResp = await subscriptionService
+        .createCheckout({
+          plan: normalizedPlan,
+        })
+        .catch((err) => {
+          console.error(
+            "Checkout settings error:",
+            err.response?.data || err.message,
+          );
+          return null;
+        });
+
+      // If backend returned checkout settings, use them to open Paddle overlay
+      if (checkoutResp && checkoutResp.checkout_settings) {
+        const cs = checkoutResp.checkout_settings;
+        console.log("Opening Paddle checkout with settings from backend", cs);
+
+        // Ensure items and settings exist; provide sensible defaults otherwise
+        const items = cs.items || [
+          { priceId: selectedPlan.price_id, quantity: 1 },
+        ];
+        const settings = cs.settings || {
+          displayMode: "overlay",
+          theme: "light",
+          locale: "en",
+          successUrl: `${window.location.origin}/dashboard/subscription?success=true`,
+        };
+
+        // Pass customer (including email) if provided by backend
+        const customer = cs.customer || {};
+
+        window.Paddle.Checkout.open({
+          items,
+          settings,
+          customData: cs.customData || { plan: normalizedPlan },
+          customer,
+        });
+
+        setActionLoading(false);
+        return;
+      }
+
+      // Fallback: open checkout directly using price_id (for backwards compatibility)
+      console.log("Opening Paddle checkout (fallback)...");
+      window.Paddle.Checkout.open({
+        items: [{ priceId: selectedPlan.price_id, quantity: 1 }],
+        settings: {
+          displayMode: "overlay",
+          theme: "light",
+          locale: "en",
+          successUrl: `${window.location.origin}/dashboard/subscription?success=true`,
+        },
+        customData: {
+          plan: normalizedPlan,
+        },
+      });
+
+      setActionLoading(false);
     } catch (err) {
       console.error("=== CHECKOUT ERROR ===");
       console.error("Error:", err);
