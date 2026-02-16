@@ -2690,6 +2690,8 @@ X-Tenant-ID: <tenant_id> (optional)
       "tone": "professional",
       "generate_image": true,
       "auto_publish": false,
+      "auto_post_social": false,
+      "social_media_config_id": null,
       "is_enabled": true,
       "priority": 1,
       "last_run_at": "2025-01-30T08:00:00.000000",
@@ -2728,6 +2730,8 @@ X-Tenant-ID: <tenant_id> (optional)
   "tone": "professional",
   "generate_image": true,
   "auto_publish": false,
+  "auto_post_social": false,
+  "social_media_config_id": null,
   "is_enabled": true,
   "priority": 1,
   "last_run_at": "2025-01-30T08:00:00.000000",
@@ -2771,6 +2775,8 @@ X-Tenant-ID: <tenant_id> (optional)
   "tone": "professional",
   "generate_image": true,
   "auto_publish": false,
+  "auto_post_social": false,
+  "social_media_config_id": null,
   "is_enabled": true,
   "priority": 1
 }
@@ -2795,10 +2801,17 @@ X-Tenant-ID: <tenant_id> (optional)
 | `tone`             | string  | "professional" | Writing tone (e.g., professional, casual, formal) |
 | `generate_image`   | boolean | true           | Generate main article image using DALL-E          |
 | `auto_publish`     | boolean | false          | Auto-publish articles or save as draft            |
+| `auto_post_social` | boolean | false          | Auto-post generated articles to social media      |
+| `social_media_config_id` | integer | null    | Social media config ID to use for auto-posting (must belong to tenant) |
 | `is_enabled`       | boolean | true           | Enable/disable scheduling                         |
 | `priority`         | integer | 0              | Processing priority (higher = processed first)    |
 
 **Response (201):** Same format as Get Scheduling Configuration.
+
+**Notes:**
+
+- If `social_media_config_id` is provided it must belong to the same tenant or be accessible by the requester; otherwise the request will fail with `404`.
+- `auto_post_social` only takes effect when `social_media_config_id` is set; enabling `auto_post_social` without a config will result in a warning on schedule execution.
 
 **Error Responses:**
 
@@ -2822,7 +2835,9 @@ X-Tenant-ID: <tenant_id> (optional)
   "scheduled_hour": 10,
   "scheduled_minute": 30,
   "is_enabled": false,
-  "auto_publish": true
+  "auto_publish": true,
+  "auto_post_social": false,
+  "social_media_config_id": null
 }
 ```
 

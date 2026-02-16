@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { schedulingService } from "@/lib/schedulingService";
 import { categoryService } from "@/lib/categoryService";
 import { tenantService } from "@/lib/tenantService";
+import { socialMediaService } from "@/lib/socialMediaService";
 import {
   Calendar,
   Plus,
@@ -20,6 +21,9 @@ import {
   RefreshCw,
   BarChart3,
   ArrowLeft,
+  Share2,
+  Facebook,
+  Instagram,
 } from "lucide-react";
 
 export default function TenantSchedulingPage() {
@@ -29,6 +33,7 @@ export default function TenantSchedulingPage() {
   const [tenant, setTenant] = useState(null);
   const [configs, setConfigs] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [socialMediaConfigs, setSocialMediaConfigs] = useState([]);
   const [logs, setLogs] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +56,8 @@ export default function TenantSchedulingPage() {
     tone: "professional",
     generate_image: true,
     auto_publish: false,
+    auto_post_social: false,
+    social_media_config_id: "",
     is_enabled: true,
     priority: 0,
   });
@@ -83,17 +90,24 @@ export default function TenantSchedulingPage() {
         }
       }
 
-      const [configsData, categoriesData, logsData, statsData] =
-        await Promise.all([
-          schedulingService.getConfigs({}, tenantId),
-          categoryService.getCategories({ tenant_id: tenantId }),
-          schedulingService.getLogs({ limit: 20 }, tenantId),
-          schedulingService.getStats(7, tenantId),
-        ]);
+      const [
+        configsData,
+        categoriesData,
+        logsData,
+        statsData,
+        socialMediaData,
+      ] = await Promise.all([
+        schedulingService.getConfigs({}, tenantId),
+        categoryService.getCategories({ tenant_id: tenantId }),
+        schedulingService.getLogs({ limit: 20 }, tenantId),
+        schedulingService.getStats(7, tenantId),
+        socialMediaService.getConfigs({ scope: "tenant" }, tenantId),
+      ]);
       setConfigs(configsData.configs || []);
       setCategories(categoriesData.categories || []);
       setLogs(logsData.logs || []);
       setStats(statsData);
+      setSocialMediaConfigs(socialMediaData.configs || []);
     } catch (error) {
       console.error("Failed to load scheduling data:", error);
     } finally {
@@ -115,6 +129,9 @@ export default function TenantSchedulingPage() {
         scheduled_minute: parseInt(formData.scheduled_minute),
         word_count: parseInt(formData.word_count),
         priority: parseInt(formData.priority),
+        social_media_config_id: formData.social_media_config_id
+          ? parseInt(formData.social_media_config_id)
+          : null,
       };
 
       if (editingConfig) {
@@ -151,6 +168,8 @@ export default function TenantSchedulingPage() {
       tone: config.tone || "professional",
       generate_image: config.generate_image ?? true,
       auto_publish: config.auto_publish ?? false,
+      auto_post_social: config.auto_post_social ?? false,
+      social_media_config_id: config.social_media_config_id?.toString() || "",
       is_enabled: config.is_enabled ?? true,
       priority: config.priority || 0,
     });
@@ -234,6 +253,8 @@ export default function TenantSchedulingPage() {
       tone: "professional",
       generate_image: true,
       auto_publish: false,
+      auto_post_social: false,
+      social_media_config_id: "",
       is_enabled: true,
       priority: 0,
     });
@@ -725,6 +746,106 @@ export default function TenantSchedulingPage() {
                     />
                     <span>Enable Schedule</span>
                   </label>
+                </div>
+
+                {/* Social Media Auto-Post Section */}
+                <div
+                  style={{
+                    marginTop: "1.5rem",
+                    padding: "1rem",
+                    background: "var(--bg-secondary)",
+                    borderRadius: "0.5rem",
+                    border: "1px solid var(--border-color)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    <Share2 size={20} />
+                    <h4 style={{ margin: 0, fontWeight: 600 }}>
+                      Social Media Auto-Post
+                    </h4>
+                  </div>
+
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      cursor: "pointer",
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.auto_post_social}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          auto_post_social: e.target.checked,
+                        })
+                      }
+                      style={{ width: "18px", height: "18px" }}
+                    />
+                    <span>
+                      Auto-post to social media when article is published
+                    </span>
+                  </label>
+
+                  {formData.auto_post_social && (
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="label">
+                        Select Social Media Account
+                      </label>
+                      {socialMediaConfigs.length === 0 ? (
+                        <p
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontSize: "0.875rem",
+                          }}
+                        >
+                          No social media accounts linked to this tenant.{" "}
+                          <Link
+                            href={`/dashboard/tenants/${tenantId}/social-media`}
+                            style={{ color: "var(--primary-color)" }}
+                          >
+                            Configure social media
+                          </Link>
+                        </p>
+                      ) : (
+                        <select
+                          className="select"
+                          value={formData.social_media_config_id}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              social_media_config_id: e.target.value,
+                            })
+                          }
+                          required={formData.auto_post_social}
+                        >
+                          <option value="">Select account...</option>
+                          {socialMediaConfigs.map((config) => (
+                            <option key={config.id} value={config.id}>
+                              {config.platform === "facebook_page" && (
+                                <span>📘 </span>
+                              )}
+                              {config.platform === "instagram" && (
+                                <span>📷 </span>
+                              )}
+                              {config.account_name} (
+                              {config.platform.replace("_", " ")})
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div

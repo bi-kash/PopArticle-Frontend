@@ -157,7 +157,12 @@ export default function TenantSocialMediaPage() {
       ]);
 
       if (results[0].status === "fulfilled") {
-        setTenantConfigs(results[0].value.configs || []);
+        const configs = results[0].value.configs || [];
+        setTenantConfigs(configs);
+        // Auto-select first config if none selected
+        if (configs.length > 0 && !selectedConfig) {
+          setSelectedConfig(configs[0]);
+        }
       } else {
         console.error("Failed to load tenant configs:", results[0].reason);
       }
@@ -419,18 +424,23 @@ export default function TenantSocialMediaPage() {
   const handleGeneratePost = async () => {
     if (!selectedArticle) return;
 
-    setGeneratingPost(true);
-    setGeneratedPost(null);
-
     // Use selected config, or fall back to first available tenant config
     const configToUse = selectedConfig || tenantConfigs[0];
+
+    if (!configToUse || !configToUse.id) {
+      setError("Please select a social media account to generate a post");
+      return;
+    }
+
+    setGeneratingPost(true);
+    setGeneratedPost(null);
 
     try {
       const result = await socialMediaService.generatePost(
         {
           article_id: selectedArticle.id,
-          config_id: configToUse?.id,
-          platform: configToUse?.platform || "facebook",
+          config_id: configToUse.id,
+          platform: configToUse.platform || "facebook",
           style: postStyle,
           include_link: true,
         },
@@ -2043,12 +2053,12 @@ export default function TenantSocialMediaPage() {
                         Account (for URL)
                       </label>
                       <select
-                        value={selectedConfig?.id || ""}
+                        value={selectedConfig?.id || tenantConfigs[0]?.id || ""}
                         onChange={(e) => {
                           const cfg = tenantConfigs.find(
                             (c) => c.id == e.target.value,
                           );
-                          setSelectedConfig(cfg || null);
+                          setSelectedConfig(cfg || tenantConfigs[0] || null);
                         }}
                         style={{
                           width: "100%",
@@ -2058,7 +2068,6 @@ export default function TenantSocialMediaPage() {
                           fontSize: "1rem",
                         }}
                       >
-                        <option value="">Auto-detect</option>
                         {tenantConfigs.map((cfg) => (
                           <option key={cfg.id} value={cfg.id}>
                             {cfg.account_name} ({cfg.platform.replace("_", " ")}
