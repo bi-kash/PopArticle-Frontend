@@ -422,12 +422,15 @@ export default function TenantSocialMediaPage() {
     setGeneratingPost(true);
     setGeneratedPost(null);
 
+    // Use selected config, or fall back to first available tenant config
+    const configToUse = selectedConfig || tenantConfigs[0];
+
     try {
       const result = await socialMediaService.generatePost(
         {
           article_id: selectedArticle.id,
-          config_id: selectedConfig?.id || undefined,
-          platform: "facebook",
+          config_id: configToUse?.id,
+          platform: configToUse?.platform || "facebook",
           style: postStyle,
           include_link: true,
         },
