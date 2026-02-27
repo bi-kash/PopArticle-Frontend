@@ -33,16 +33,25 @@ export default function NewArticle() {
   const [imagePreview, setImagePreview] = useState("");
 
   useEffect(() => {
-    loadCategories();
+    // Load categories for the current tenant when `tenantId` is available.
+    // If tenantId is not yet present, call without tenant header so global
+    // categories may still appear.
     if (tenantId) {
+      loadCategories(tenantId);
       setFormData((prev) => ({ ...prev, tenant_id: tenantId }));
+    } else {
+      loadCategories();
     }
   }, [tenantId]);
 
-  const loadCategories = async () => {
+  const loadCategories = async (tenant = null) => {
     try {
-      const data = await categoryService.getCategories();
-      setCategories(data.categories || []);
+      const params = tenant ? { tenant_id: tenant } : {};
+      const data = await categoryService.getCategories(params);
+      // API may return categories under different keys depending on endpoint
+      const cats = data.categories || data.data || data || [];
+      console.debug("Loaded categories:", cats);
+      setCategories(cats || []);
     } catch (error) {
       console.error("Failed to load categories:", error);
     }
@@ -91,12 +100,12 @@ export default function NewArticle() {
 
       console.log(
         "Creating article with data:",
-        isFormData ? "FormData" : dataToSend
+        isFormData ? "FormData" : dataToSend,
       );
       const response = await articleService.createArticle(
         dataToSend,
         tenantId,
-        isFormData
+        isFormData,
       );
       console.log("API Response:", response);
 
@@ -112,14 +121,14 @@ export default function NewArticle() {
         // Wait a moment to show success message before navigating
         setTimeout(async () => {
           await router.push(
-            `/dashboard/tenants/${tenantId}/articles/${articleId}`
+            `/dashboard/tenants/${tenantId}/articles/${articleId}`,
           );
         }, 500);
       } else {
         // Log the full response for debugging
         console.error("Unexpected response structure:", response);
         throw new Error(
-          "Article created but unable to retrieve article ID from response"
+          "Article created but unable to retrieve article ID from response",
         );
       }
     } catch (err) {
@@ -133,7 +142,7 @@ export default function NewArticle() {
         err.response?.data?.message ||
           err.response?.data?.error ||
           err.message ||
-          "Failed to create article"
+          "Failed to create article",
       );
       setLoading(false);
     }

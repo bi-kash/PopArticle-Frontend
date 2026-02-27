@@ -1608,8 +1608,63 @@ GET /api/v1/comments/<comment_id>
     "created_at": "2025-12-31T12:00:00.000000",
     "updated_at": "2025-12-31T12:00:00.000000",
     "replies": [],
-    "reply_count": 0
+    "reply_count": 0,
+    "has_replies": false
   }
+}
+```
+
+### Get Comment Replies (On-Demand Loading)
+
+Fetch replies to a specific comment on demand. This endpoint supports a "Load replies" button pattern in the UI, improving performance and reducing initial page load times.
+
+```http
+GET /api/v1/comments/<comment_id>/replies
+```
+
+**Query Parameters:**
+
+- `limit` (optional): Maximum number of replies to return (default: 50, max: 200)
+- `offset` (optional): Number of replies to skip (default: 0)
+- `include_unapproved` (optional): Include unapproved replies (admin only, default: false)
+
+**Response (200):**
+
+```json
+{
+  "parent_id": 1,
+  "replies": [
+    {
+      "id": 2,
+      "article_id": 123,
+      "user": {
+        "id": 6,
+        "username": "janedoe",
+        "full_name": "Jane Doe",
+        "email": "jane@example.com"
+      },
+      "content": "I agree with your point!",
+      "parent_id": 1,
+      "is_approved": true,
+      "is_edited": false,
+      "created_at": "2025-12-31T12:30:00.000000",
+      "updated_at": "2025-12-31T12:30:00.000000",
+      "reply_count": 0,
+      "has_replies": false
+    }
+  ],
+  "total_count": 1,
+  "limit": 50,
+  "offset": 0,
+  "has_more": false
+}
+```
+
+**Error Response (404):**
+
+```json
+{
+  "error": "Parent comment not found"
 }
 ```
 
@@ -2790,21 +2845,21 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Optional Fields:**
 
-| Field              | Type    | Default        | Description                                       |
-| ------------------ | ------- | -------------- | ------------------------------------------------- |
-| `articles_per_day` | integer | 1              | Number of articles to generate daily (1-10)       |
-| `scheduled_hour`   | integer | 6              | Hour in UTC (0-23) to run                         |
-| `scheduled_minute` | integer | 0              | Minute (0-59) to run                              |
-| `default_topic`    | string  | null           | Default topic/theme for article generation        |
-| `target_keywords`  | array   | null           | List of target keywords for SEO                   |
-| `word_count`       | integer | 1000           | Target word count for generated articles          |
-| `tone`             | string  | "professional" | Writing tone (e.g., professional, casual, formal) |
-| `generate_image`   | boolean | true           | Generate main article image using DALL-E          |
-| `auto_publish`     | boolean | false          | Auto-publish articles or save as draft            |
-| `auto_post_social` | boolean | false          | Auto-post generated articles to social media      |
-| `social_media_config_id` | integer | null    | Social media config ID to use for auto-posting (must belong to tenant) |
-| `is_enabled`       | boolean | true           | Enable/disable scheduling                         |
-| `priority`         | integer | 0              | Processing priority (higher = processed first)    |
+| Field                    | Type    | Default        | Description                                                            |
+| ------------------------ | ------- | -------------- | ---------------------------------------------------------------------- |
+| `articles_per_day`       | integer | 1              | Number of articles to generate daily (1-10)                            |
+| `scheduled_hour`         | integer | 6              | Hour in UTC (0-23) to run                                              |
+| `scheduled_minute`       | integer | 0              | Minute (0-59) to run                                                   |
+| `default_topic`          | string  | null           | Default topic/theme for article generation                             |
+| `target_keywords`        | array   | null           | List of target keywords for SEO                                        |
+| `word_count`             | integer | 1000           | Target word count for generated articles                               |
+| `tone`                   | string  | "professional" | Writing tone (e.g., professional, casual, formal)                      |
+| `generate_image`         | boolean | true           | Generate main article image using DALL-E                               |
+| `auto_publish`           | boolean | false          | Auto-publish articles or save as draft                                 |
+| `auto_post_social`       | boolean | false          | Auto-post generated articles to social media                           |
+| `social_media_config_id` | integer | null           | Social media config ID to use for auto-posting (must belong to tenant) |
+| `is_enabled`             | boolean | true           | Enable/disable scheduling                                              |
+| `priority`               | integer | 0              | Processing priority (higher = processed first)                         |
 
 **Response (201):** Same format as Get Scheduling Configuration.
 
@@ -4022,7 +4077,7 @@ Request Body:
 ```json
 {
   "plan": "pro",
-  "billing_email": "billing@example.com"  // Optional, defaults to user email
+  "billing_email": "billing@example.com" // Optional, defaults to user email
 }
 ```
 
@@ -4048,13 +4103,14 @@ Response (200):
 ```
 
 Frontend usage:
+
 ```javascript
 // After fetching checkout settings
 window.Paddle.Checkout.open({
   items: data.checkout_settings.items,
   customData: data.checkout_settings.customData,
   customer: data.checkout_settings.customer,
-  settings: data.checkout_settings.settings
+  settings: data.checkout_settings.settings,
 });
 ```
 
