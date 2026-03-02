@@ -7,6 +7,7 @@ import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
 import { Save, Trash2, Eye, Edit3, Maximize2, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function EditArticle() {
   const router = useRouter();
@@ -317,7 +318,7 @@ export default function EditArticle() {
                   }}
                   className="markdown-preview"
                 >
-                  <ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {formData.content ||
                       "*No content yet. Switch to Edit mode to write your article.*"}
                   </ReactMarkdown>
@@ -513,8 +514,8 @@ export default function EditArticle() {
                         formData.status === "published"
                           ? "success"
                           : formData.status === "draft"
-                          ? "warning"
-                          : "info"
+                            ? "warning"
+                            : "info"
                       }`}
                     >
                       {formData.status}
@@ -523,7 +524,7 @@ export default function EditArticle() {
                       <span>
                         Category:{" "}
                         {categories.find(
-                          (c) => c.id === parseInt(formData.category_id)
+                          (c) => c.id === parseInt(formData.category_id),
                         )?.name || "N/A"}
                       </span>
                     )}
@@ -536,7 +537,7 @@ export default function EditArticle() {
                     lineHeight: "1.8",
                   }}
                 >
-                  <ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {formData.content || "*No content available*"}
                   </ReactMarkdown>
                 </div>

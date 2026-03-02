@@ -8,6 +8,7 @@ import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
 import { Save, Trash2, Eye, Edit3 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
@@ -79,7 +80,8 @@ export default function EditArticle() {
       } else if (typeof articleData.category === "string") {
         // Category is a string name - find matching category
         const matchedCategory = categories.find(
-          (cat) => cat.name.toLowerCase() === articleData.category.toLowerCase()
+          (cat) =>
+            cat.name.toLowerCase() === articleData.category.toLowerCase(),
         );
         if (matchedCategory) {
           categoryId = String(matchedCategory.id);
@@ -159,14 +161,14 @@ export default function EditArticle() {
         articleId,
         dataToSend,
         tenantId,
-        isFormData
+        isFormData,
       );
       router.push(`/dashboard/tenants/${tenantId}/articles`);
     } catch (err) {
       setError(
         err.response?.data?.message ||
           err.response?.data?.error ||
-          "Failed to update article"
+          "Failed to update article",
       );
     } finally {
       setSaving(false);
@@ -554,7 +556,7 @@ export default function EditArticle() {
                   }}
                   className="markdown-preview"
                 >
-                  <ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {formData.content || "*No content yet*"}
                   </ReactMarkdown>
                 </div>

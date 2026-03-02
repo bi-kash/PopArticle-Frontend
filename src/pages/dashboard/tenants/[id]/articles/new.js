@@ -6,6 +6,7 @@ import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
 import { Save, Eye, Edit3 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function NewArticle() {
   const router = useRouter();
@@ -481,7 +482,7 @@ export default function NewArticle() {
                   }}
                   className="markdown-preview"
                 >
-                  <ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {formData.content ||
                       "*No content yet. Switch to Edit mode to write your article.*"}
                   </ReactMarkdown>
