@@ -22,6 +22,8 @@ Complete REST API reference for PopArticle content generation platform.
 - [Article Scheduling](#article-scheduling)
 - [Social Media Posting](#social-media-posting)
 - [Subscription Endpoints](#subscription-endpoints)
+- [Affiliate Link Management](#affiliate-link-management)
+  - [Affiliate Link Redirect](#affiliate-link-redirect)
 - [Health Check](#health-check)
 - [Error Responses](#error-responses)
 
@@ -2184,6 +2186,8 @@ Auto-creates team member entries for all tenant members who don't have one yet. 
 
 **Notes:**
 
+- If a tenant user has a `profile_image` on their platform account, the sync operation copies that URL into the `profile_photo` field of the created team member entry. This keeps the team list visually in sync with user profiles.
+
 - Only owners and admins can sync users
 - Skips users who already have team entries
 - Auto-assigns role based on user's tenant membership role
@@ -4295,6 +4299,465 @@ Configure these environment variables (see `PADDLE_INTEGRATION.md`):
 - Use `PADDLE_ENVIRONMENT=sandbox` locally.
 - Expose local server via `ngrok` for webhook testing.
 - Sandbox test card numbers: success `4242 4242 4242 4242`, decline `4000 0000 0000 0002`.
+
+---
+
+## Affiliate Link Management
+
+Centralized affiliate link management allows users to create, update, and track affiliate links across multiple tenant websites. Links are **user-owned** (not tenant-scoped), so the same affiliate link can be referenced in articles across different tenants.
+
+**Key Concepts:**
+
+- Each affiliate link gets a unique SEO-friendly **slug** (e.g., `wireless-headphones`)
+- Articles reference the **callback link** (`/go/{slug}?tenant_id=xyz`) instead of the raw affiliate URL
+- Updating the affiliate link destination propagates to all articles automatically
+- Click tracking records tenant_id, IP, user-agent, and referer per click
+
+### List Affiliate Links
+
+```http
+GET /api/v1/affiliate-links/
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters:**
+
+- `status` (optional): Filter by status (`active` or `inactive`)
+- `limit` (optional): Maximum number of results (default: 50, max: 200)
+- `offset` (optional): Pagination offset (default: 0)
+- `include_clicks` (optional): Include click counts per link (default: false)
+
+**Response (200):**
+
+```json
+{
+  "affiliate_links": [
+    {
+      "id": 1,
+      "user_id": 5,
+      "product_name": "Wireless Headphones",
+      "affiliate_service": "Amazon",
+      "affiliate_link": "https://www.amazon.com/dp/B09XYZ?tag=myref-20",
+      "slug": "wireless-headphones",
+      "callback_link": "/go/wireless-headphones",
+      "image_url": "https://images.amazon.com/headphones.jpg",
+      "status": "active",
+      "notes": "Great noise cancelling headphones",
+      "price": "79.99",
+      "currency": "USD",
+      "product_url": "https://www.amazon.com/dp/B09XYZ",
+      "tags": ["electronics", "audio", "headphones"],
+      "created_at": "2026-03-12T10:00:00.000000",
+      "updated_at": "2026-03-12T10:00:00.000000",
+      "click_count": 42
+    }
+  ],
+  "total_count": 1,
+  "limit": 50,
+  "offset": 0
+}
+```
+
+> **Note:** `click_count` is only included when `include_clicks=true`.
+
+### Create Affiliate Link
+
+```http
+POST /api/v1/affiliate-links/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "product_name": "Wireless Headphones",
+  "affiliate_link": "https://www.amazon.com/dp/B09XYZ?tag=myref-20",
+  "affiliate_service": "Amazon",
+  "image_url": "https://images.amazon.com/headphones.jpg",
+  "notes": "Great noise cancelling headphones",
+  "price": "79.99",
+  "currency": "USD",
+  "product_url": "https://www.amazon.com/dp/B09XYZ",
+  "tags": ["electronics", "audio", "headphones"]
+}
+```
+
+| Field              | Type     | Required | Description                                              |
+| ------------------ | -------- | -------- | -------------------------------------------------------- |
+| product_name       | string   | Yes      | Name of the product                                      |
+| affiliate_link     | string   | Yes*     | Destination affiliate URL (*or provide `html_snippet`)   |
+| affiliate_service  | string   | No       | Service name (e.g., Amazon, AliExpress)                  |
+| image_url          | string   | No       | Product image URL                                        |
+| notes              | string   | No       | Free-form notes                                          |
+| price              | string   | No       | Product price                                            |
+| currency           | string   | No       | Currency code (e.g., USD, EUR)                           |
+| product_url        | string   | No       | Non-affiliate product URL                                |
+| tags               | string[] | No       | Array of tag strings                                     |
+| html_snippet       | string   | No       | HTML snippet to parse for affiliate_link and image_url   |
+
+**Request Body (with HTML Snippet):**
+
+```json
+{
+  "product_name": "AliExpress Gadget",
+  "affiliate_service": "AliExpress",
+  "html_snippet": "<a href=\"https://s.click.aliexpress.com/e/_c4E8uVxZ\" target=\"_blank\"><img src=\"//ae01.alicdn.com/kf/S27b4dd97.jpg_80x80.jpg\" /></a>"
+}
+```
+
+When `html_snippet` is provided, the system extracts the affiliate link from the `<a href>` and the image URL from the `<img src>`. Protocol-relative URLs (`//`) are normalized to `https:`. Explicit `affiliate_link` and `image_url` values take precedence over parsed values.
+
+**Response (201):**
+
+```json
+{
+  "message": "Affiliate link created successfully",
+  "affiliate_link": {
+    "id": 1,
+    "user_id": 5,
+    "product_name": "Wireless Headphones",
+    "affiliate_service": "Amazon",
+    "affiliate_link": "https://www.amazon.com/dp/B09XYZ?tag=myref-20",
+    "slug": "wireless-headphones",
+    "callback_link": "/go/wireless-headphones",
+    "image_url": "https://images.amazon.com/headphones.jpg",
+    "status": "active",
+    "notes": "Great noise cancelling headphones",
+    "price": "79.99",
+    "currency": "USD",
+    "product_url": "https://www.amazon.com/dp/B09XYZ",
+    "tags": ["electronics", "audio", "headphones"],
+    "created_at": "2026-03-12T10:00:00.000000",
+    "updated_at": "2026-03-12T10:00:00.000000"
+  }
+}
+```
+
+**Error Responses:**
+
+**400 Bad Request:**
+
+```json
+{
+  "error": "product_name is required"
+}
+```
+
+```json
+{
+  "error": "affiliate_link is required (or provide html_snippet)"
+}
+```
+
+### Get Affiliate Link
+
+```http
+GET /api/v1/affiliate-links/<link_id>
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters:**
+
+- `include_clicks` (optional): Include click count (default: false)
+
+**Response (200):**
+
+```json
+{
+  "affiliate_link": {
+    "id": 1,
+    "user_id": 5,
+    "product_name": "Wireless Headphones",
+    "affiliate_service": "Amazon",
+    "affiliate_link": "https://www.amazon.com/dp/B09XYZ?tag=myref-20",
+    "slug": "wireless-headphones",
+    "callback_link": "/go/wireless-headphones",
+    "image_url": "https://images.amazon.com/headphones.jpg",
+    "status": "active",
+    "notes": "Great noise cancelling headphones",
+    "price": "79.99",
+    "currency": "USD",
+    "product_url": "https://www.amazon.com/dp/B09XYZ",
+    "tags": ["electronics", "audio", "headphones"],
+    "created_at": "2026-03-12T10:00:00.000000",
+    "updated_at": "2026-03-12T10:00:00.000000",
+    "click_count": 42
+  }
+}
+```
+
+**Error Responses:**
+
+**404 Not Found:**
+
+```json
+{
+  "error": "Affiliate link not found"
+}
+```
+
+> Only the owner can view their affiliate links. Requests for another user's link return 404.
+
+### Update Affiliate Link
+
+```http
+PUT /api/v1/affiliate-links/<link_id>
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Request Body (all fields optional):**
+
+```json
+{
+  "product_name": "Updated Headphones",
+  "affiliate_link": "https://www.amazon.com/dp/B09NEW?tag=myref-20",
+  "affiliate_service": "AliExpress",
+  "image_url": "https://images.amazon.com/new-headphones.jpg",
+  "status": "inactive",
+  "notes": "Updated notes",
+  "price": "59.99",
+  "currency": "EUR",
+  "product_url": "https://www.amazon.com/dp/B09NEW",
+  "tags": ["updated-tag"],
+  "html_snippet": "<a href='...'><img src='...' /></a>"
+}
+```
+
+Updating `affiliate_link` automatically propagates to all articles that use this link's callback slug.
+
+**Response (200):**
+
+```json
+{
+  "message": "Affiliate link updated successfully",
+  "affiliate_link": {
+    "id": 1,
+    "user_id": 5,
+    "product_name": "Updated Headphones",
+    "affiliate_service": "AliExpress",
+    "affiliate_link": "https://www.amazon.com/dp/B09NEW?tag=myref-20",
+    "slug": "wireless-headphones",
+    "callback_link": "/go/wireless-headphones",
+    "image_url": "https://images.amazon.com/new-headphones.jpg",
+    "status": "inactive",
+    "notes": "Updated notes",
+    "price": "59.99",
+    "currency": "EUR",
+    "product_url": "https://www.amazon.com/dp/B09NEW",
+    "tags": ["updated-tag"],
+    "created_at": "2026-03-12T10:00:00.000000",
+    "updated_at": "2026-03-12T15:30:00.000000"
+  }
+}
+```
+
+**Error Responses:**
+
+**400 Bad Request:**
+
+```json
+{
+  "error": "status must be \"active\" or \"inactive\""
+}
+```
+
+**403 Forbidden:**
+
+```json
+{
+  "error": "You can only update your own affiliate links"
+}
+```
+
+**404 Not Found:**
+
+```json
+{
+  "error": "Affiliate link not found"
+}
+```
+
+### Delete Affiliate Link
+
+```http
+DELETE /api/v1/affiliate-links/<link_id>
+Authorization: Bearer <access_token>
+```
+
+Deletes the affiliate link and all associated click tracking data.
+
+**Response (200):**
+
+```json
+{
+  "message": "Affiliate link deleted successfully"
+}
+```
+
+**Error Responses:**
+
+**403 Forbidden:**
+
+```json
+{
+  "error": "You can only delete your own affiliate links"
+}
+```
+
+**404 Not Found:**
+
+```json
+{
+  "error": "Affiliate link not found"
+}
+```
+
+### Get Click Analytics
+
+```http
+GET /api/v1/affiliate-links/<link_id>/clicks
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters:**
+
+- `tenant_id` (optional): Filter clicks by tenant UUID
+
+**Response (200):**
+
+```json
+{
+  "affiliate_link_id": 1,
+  "slug": "wireless-headphones",
+  "click_count": 42,
+  "tenant_id": null
+}
+```
+
+**Response (200, filtered by tenant):**
+
+```json
+{
+  "affiliate_link_id": 1,
+  "slug": "wireless-headphones",
+  "click_count": 15,
+  "tenant_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**Error Responses:**
+
+**404 Not Found:**
+
+```json
+{
+  "error": "Affiliate link not found"
+}
+```
+
+### Parse HTML Snippet
+
+```http
+POST /api/v1/affiliate-links/parse-html
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Parses an HTML snippet and extracts the affiliate link and image URL without creating a record.
+
+**Request Body:**
+
+```json
+{
+  "html_snippet": "<a href=\"https://s.click.aliexpress.com/e/_c4E8uVxZ\" target=\"_blank\"><img src=\"//ae01.alicdn.com/kf/S27b4dd97.jpg_80x80.jpg\" /></a>"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "parsed": {
+    "affiliate_link": "https://s.click.aliexpress.com/e/_c4E8uVxZ",
+    "image_url": "https://ae01.alicdn.com/kf/S27b4dd97.jpg_80x80.jpg"
+  }
+}
+```
+
+**Image-only snippet:**
+
+```json
+{
+  "html_snippet": "<img src=\"https://images.example.com/product.jpg\" />"
+}
+```
+
+```json
+{
+  "parsed": {
+    "affiliate_link": null,
+    "image_url": "https://images.example.com/product.jpg"
+  }
+}
+```
+
+**Error Responses:**
+
+**400 Bad Request:**
+
+```json
+{
+  "error": "html_snippet is required"
+}
+```
+
+### Affiliate Link Redirect
+
+```http
+GET /go/<slug>?tenant_id=<tenant_id>
+```
+
+Public endpoint (no authentication required). Logs the click and redirects (302) to the affiliate link destination.
+
+**URL Parameters:**
+
+- `slug` (required): The affiliate link's unique slug
+
+**Query Parameters:**
+
+- `tenant_id` (optional): Tenant UUID for tracking which website the click came from
+
+**Usage in Articles:**
+
+```html
+<a href="https://yourdomain.com/go/wireless-headphones?tenant_id=550e8400-e29b-41d4-a716-446655440000">
+  Buy Wireless Headphones
+</a>
+```
+
+**Response (302):** Redirects to the affiliate link destination URL.
+
+**Click Tracking:** Each redirect logs:
+
+- `affiliate_link_id`: Which link was clicked
+- `tenant_id`: Which tenant website the click came from
+- `ip_address`: Client IP address
+- `user_agent`: Client user agent string
+- `referer`: HTTP Referer header
+- `clicked_at`: Timestamp
+
+**Error Responses:**
+
+**404 Not Found:**
+
+```json
+{
+  "error": "Link not found or inactive"
+}
+```
 
 ---
 
