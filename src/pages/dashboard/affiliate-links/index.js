@@ -1114,9 +1114,10 @@ export default function AffiliateLinksPage() {
   const [editLink, setEditLink] = useState(null);
   const [deleteLink, setDeleteLink] = useState(null);
   const baseUrl =
-    typeof window !== "undefined"
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    (typeof window !== "undefined"
       ? `${window.location.protocol}//${window.location.host}`
-      : "";
+      : "");
 
   const loadLinks = useCallback(async () => {
     setLoading(true);
