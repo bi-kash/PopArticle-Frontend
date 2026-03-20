@@ -18,6 +18,12 @@ import {
   Settings,
   CreditCard,
   Link2,
+  ShieldCheck,
+  Users,
+  ClipboardList,
+  BarChart2,
+  PieChart,
+  DollarSign,
 } from "lucide-react";
 
 export default function DashboardLayout({ children }) {
@@ -75,6 +81,28 @@ export default function DashboardLayout({ children }) {
       href: "/dashboard/subscription",
     },
     { icon: UserCircle, label: "Profile", href: "/dashboard/profile" },
+  ];
+
+  const adminMenuItems = [
+    { icon: ShieldCheck, label: "Admin Dashboard", href: "/admin" },
+    { icon: BarChart2, label: "Platform Insights", href: "/admin/insights" },
+    {
+      icon: PieChart,
+      label: "Content Analytics",
+      href: "/admin/content-analytics",
+    },
+    {
+      icon: DollarSign,
+      label: "Revenue Analytics",
+      href: "/admin/revenue-analytics",
+    },
+    { icon: Building2, label: "All Tenants", href: "/admin/tenants" },
+    { icon: Users, label: "All Users", href: "/admin/users" },
+    {
+      icon: ClipboardList,
+      label: "Audit Logs",
+      href: "/admin/audit-logs",
+    },
   ];
 
   return (
@@ -153,6 +181,72 @@ export default function DashboardLayout({ children }) {
               );
             })}
           </nav>
+
+          {/* Admin Section — visible only to global admins */}
+          {user?.is_super_admin && (
+            <nav style={{ marginTop: "1rem" }}>
+              <div
+                style={{
+                  fontSize: "0.65rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  opacity: 0.55,
+                  padding: "0 1rem",
+                  marginBottom: "0.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                }}
+              >
+                <ShieldCheck size={12} />
+                Global Admin
+              </div>
+              {adminMenuItems.map((item) => {
+                const Icon = item.icon;
+                // For /admin root, only match exactly to avoid highlighting on sub-pages
+                const isActive =
+                  item.href === "/admin"
+                    ? router.pathname === "/admin"
+                    : router.pathname === item.href ||
+                      router.pathname.startsWith(item.href + "/");
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.75rem",
+                        padding: "0.65rem 1rem",
+                        borderRadius: "0.375rem",
+                        marginBottom: "0.3rem",
+                        background: isActive
+                          ? "rgba(220,38,38,0.25)"
+                          : "transparent",
+                        cursor: "pointer",
+                        transition: "background 0.2s",
+                        borderLeft: isActive
+                          ? "2px solid #fca5a5"
+                          : "2px solid transparent",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background =
+                          "rgba(220,38,38,0.15)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = isActive
+                          ? "rgba(220,38,38,0.25)"
+                          : "transparent")
+                      }
+                    >
+                      <Icon size={18} />
+                      <span style={{ fontSize: "0.9rem" }}>{item.label}</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
 
           {/* User Section */}
           <div

@@ -24,6 +24,15 @@ Complete REST API reference for PopArticle content generation platform.
 - [Subscription Endpoints](#subscription-endpoints)
 - [Affiliate Link Management](#affiliate-link-management)
   - [Affiliate Link Redirect](#affiliate-link-redirect)
+- [System Administration (Global Admin)](#system-administration-global-admin)
+  - [Admin Dashboard](#admin-dashboard)
+  - [Platform Insights](#platform-insights)
+  - [Content Analytics](#content-analytics)
+  - [Revenue Analytics](#revenue-analytics)
+  - [Admin Tenant Management](#admin-tenant-management)
+  - [Admin User Management](#admin-user-management)
+  - [Global Admin Role Management](#global-admin-role-management)
+  - [Admin Audit Logs](#admin-audit-logs)
 - [Health Check](#health-check)
 - [Error Responses](#error-responses)
 
@@ -4758,6 +4767,698 @@ Public endpoint (no authentication required). Logs the click and redirects (302)
   "error": "Link not found or inactive"
 }
 ```
+
+---
+
+## System Administration (Global Admin)
+
+System-level administration endpoints for platform-wide oversight and management. These routes are accessible **only** by global admins — users with `is_super_admin=True` and `tenant_id=None`.
+
+**Key Concepts:**
+
+- **Global Admin Role** — Exists independently of any tenant. Represents the top-most permission level in the system hierarchy.
+- **Cross-Tenant Access** — Full visibility into all tenants, users, and data system-wide.
+- **Audit Logging** — Every admin action is recorded in the `admin_audit_logs` table with actor, action, resource, IP address, and user agent.
+- All endpoints require `Authorization: Bearer <access_token>` from a global admin user.
+- Non-admin users receive a `403 Forbidden` response.
+
+**Authentication:**
+
+```http
+Authorization: Bearer <global_admin_access_token>
+```
+
+> **Note:** No `X-Tenant-ID` header is required. Admin routes operate outside tenant context.
+
+### Admin Dashboard
+
+```http
+GET /api/v1/admin/dashboard
+Authorization: Bearer <access_token>
+```
+
+Returns aggregate system-wide statistics across all tenants.
+
+**Response (200):**
+
+```json
+{
+  "users": {
+    "total": 150,
+    "active": 142,
+    "inactive": 8
+  },
+  "tenants": {
+    "total": 12,
+    "active": 10,
+    "suspended": 2
+  },
+  "articles": {
+    "total": 1250,
+    "published": 980
+  },
+  "categories": {
+    "total": 45
+  },
+  "global_admins": 2
+}
+```
+
+---
+
+### Platform Insights
+
+```http
+GET /api/v1/admin/dashboard/insights
+Authorization: Bearer <access_token>
+```
+
+Returns comprehensive platform insights combining subscription analytics, content metrics, social media performance, user activity trends, system health, and per-tenant health scores. Designed to support admin decision making with actionable summaries rather than raw data.
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description                          |
+| --------- | ---- | ------- | ------------------------------------ |
+| days      | int  | 30      | Lookback period in days (max: 365)   |
+
+**Response (200):**
+
+```json
+{
+  "period_days": 30,
+  "generated_at": "2026-03-20T08:00:00.000000",
+  "subscriptions": {
+    "total_active": 85,
+    "plan_distribution": {
+      "free": 40,
+      "basic": 25,
+      "pro": 15,
+      "enterprise": 5
+    },
+    "status_distribution": {
+      "active": 85,
+      "canceled": 12,
+      "past_due": 3,
+      "paused": 2,
+      "trialing": 5
+    },
+    "estimated_mrr": {
+      "USD": 2450.00
+    },
+    "billing_cycles": {
+      "month": 60,
+      "year": 25
+    },
+    "new_subscriptions": 8,
+    "recent_cancellations": 3,
+    "churn_rate": 3.5,
+    "usage": {
+      "avg_article_limit_utilization_pct": 62.3,
+      "users_at_article_limit": 7
+    }
+  },
+  "content": {
+    "articles_created_in_period": 320,
+    "articles_published_in_period": 280,
+    "status_distribution": {
+      "draft": 150,
+      "published": 980,
+      "archived": 120
+    },
+    "total_views": 45000,
+    "featured_articles": 12,
+    "top_articles": [
+      {
+        "id": 42,
+        "title": "Getting Started with AI",
+        "views": 5200,
+        "status": "published",
+        "tenant_id": "550e8400-e29b-41d4-a716-446655440000"
+      }
+    ],
+    "generation": {
+      "total_attempts": 150,
+      "successful": 142,
+      "failed": 8,
+      "success_rate": 94.7,
+      "avg_generation_time_ms": 12500
+    },
+    "active_scheduling_configs": 18
+  },
+  "social_media": {
+    "total_posts_in_period": 95,
+    "successful_posts": 88,
+    "success_rate": 92.6,
+    "status_distribution": {
+      "success": 88,
+      "failed": 5,
+      "scheduled": 2
+    },
+    "platform_distribution": {
+      "facebook_page": 45,
+      "instagram": 30,
+      "facebook": 20
+    },
+    "active_connected_accounts": 15,
+    "ai_generated_posts": 72,
+    "manually_edited_posts": 23,
+    "pending_scheduled_posts": 2
+  },
+  "user_activity": {
+    "new_registrations": 25,
+    "active_logins_in_period": 110,
+    "total_users": 150,
+    "login_rate": 73.3,
+    "growth_rate_vs_previous_period": 12.5,
+    "authentication": {
+      "password_users": 90,
+      "oauth_users": 60,
+      "oauth_providers": {
+        "google": 45,
+        "github": 15
+      }
+    },
+    "verified_users": 130,
+    "dormant_users_90d": 20
+  },
+  "system_health": {
+    "total_api_requests": 125000,
+    "error_requests": 1250,
+    "server_errors": 15,
+    "error_rate": 1.0,
+    "avg_response_time_ms": 180,
+    "p95_response_time_ms": 450,
+    "status_code_distribution": {
+      "200": 110000,
+      "201": 5000,
+      "400": 800,
+      "401": 350,
+      "404": 85,
+      "500": 15
+    },
+    "top_endpoints": [
+      {
+        "endpoint": "/api/v1/articles",
+        "method": "GET",
+        "request_count": 25000,
+        "avg_response_time_ms": 95
+      }
+    ]
+  },
+  "tenant_health": {
+    "total_active_tenants": 10,
+    "avg_health_score": 72.5,
+    "tenants": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "name": "Tech Blog",
+        "health_score": 100,
+        "users": 5,
+        "total_articles": 120,
+        "recent_articles": 15,
+        "published_articles": 95,
+        "total_views": 12000,
+        "social_posts_in_period": 8,
+        "created_at": "2025-06-01T10:00:00.000000"
+      }
+    ]
+  }
+}
+```
+
+> **Note:** Tenant health scores (0–100) are computed from user presence (25pts), article count (20pts), recent activity (25pts), published content (15pts), and social media activity (15pts).
+
+---
+
+### Content Analytics
+
+```http
+GET /api/v1/admin/dashboard/content
+Authorization: Bearer <access_token>
+```
+
+Returns detailed content and article generation analytics, including affiliate link performance data.
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description                          |
+| --------- | ---- | ------- | ------------------------------------ |
+| days      | int  | 30      | Lookback period in days (max: 365)   |
+
+**Response (200):**
+
+```json
+{
+  "period_days": 30,
+  "generated_at": "2026-03-20T08:00:00.000000",
+  "content": {
+    "articles_created_in_period": 320,
+    "articles_published_in_period": 280,
+    "status_distribution": {
+      "draft": 150,
+      "published": 980,
+      "archived": 120
+    },
+    "total_views": 45000,
+    "featured_articles": 12,
+    "top_articles": [],
+    "generation": {
+      "total_attempts": 150,
+      "successful": 142,
+      "failed": 8,
+      "success_rate": 94.7,
+      "avg_generation_time_ms": 12500
+    },
+    "active_scheduling_configs": 18,
+    "affiliate_links": {
+      "total_links": 25,
+      "active_links": 20,
+      "clicks_in_period": 340,
+      "top_links": [
+        {
+          "id": 1,
+          "product_name": "Wireless Headphones",
+          "slug": "wireless-headphones",
+          "service": "Amazon",
+          "clicks": 85
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+### Revenue Analytics
+
+```http
+GET /api/v1/admin/dashboard/revenue
+Authorization: Bearer <access_token>
+```
+
+Returns detailed subscription and revenue analytics to support financial decision making. Includes MRR estimates, conversion rates, churn indicators, and subscription health metrics.
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description                          |
+| --------- | ---- | ------- | ------------------------------------ |
+| days      | int  | 30      | Lookback period in days (max: 365)   |
+
+**Response (200):**
+
+```json
+{
+  "period_days": 30,
+  "generated_at": "2026-03-20T08:00:00.000000",
+  "revenue": {
+    "total_active": 85,
+    "plan_distribution": {
+      "free": 40,
+      "basic": 25,
+      "pro": 15,
+      "enterprise": 5
+    },
+    "status_distribution": {
+      "active": 85,
+      "canceled": 12,
+      "past_due": 3
+    },
+    "estimated_mrr": {
+      "USD": 2450.00
+    },
+    "billing_cycles": {
+      "month": 60,
+      "year": 25
+    },
+    "new_subscriptions": 8,
+    "recent_cancellations": 3,
+    "churn_rate": 3.5,
+    "usage": {
+      "avg_article_limit_utilization_pct": 62.3,
+      "users_at_article_limit": 7
+    },
+    "users_without_subscription": 65,
+    "conversion_rate": 56.7,
+    "active_trials": 5,
+    "expiring_within_7_days": 3,
+    "past_due_subscriptions": 3
+  }
+}
+```
+
+---
+
+### Admin Tenant Management
+
+#### List All Tenants
+
+```http
+GET /api/v1/admin/tenants
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters:**
+
+| Parameter  | Type    | Default | Description                                 |
+| ---------- | ------- | ------- | ------------------------------------------- |
+| page       | int     | 1       | Page number                                 |
+| per_page   | int     | 20      | Results per page (max: 100)                 |
+| search     | string  | —       | Search by name, slug, or domain             |
+| is_active  | boolean | —       | Filter by active (`true`) / suspended (`false`) |
+
+**Response (200):**
+
+```json
+{
+  "tenants": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "Tech Blog",
+      "slug": "tech-blog",
+      "primary_domain": "blog.techcompany.com",
+      "is_active": true,
+      "is_verified": true,
+      "user_count": 5,
+      "article_count": 120,
+      "created_at": "2025-06-01T10:00:00.000000",
+      "suspended_at": null
+    }
+  ],
+  "total": 12,
+  "page": 1,
+  "per_page": 20,
+  "pages": 1
+}
+```
+
+#### Suspend Tenant
+
+```http
+POST /api/v1/admin/tenants/<tenant_id>/suspend
+Authorization: Bearer <access_token>
+```
+
+Suspends a tenant, preventing access to their resources. Sets `is_active=false` and records the suspension timestamp.
+
+**Response (200):**
+
+```json
+{
+  "message": "Tenant suspended successfully",
+  "tenant": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Tech Blog",
+    "is_active": false,
+    "suspended_at": "2026-03-19T12:00:00.000000"
+  }
+}
+```
+
+**Error (404):**
+
+```json
+{
+  "error": "Tenant not found"
+}
+```
+
+#### Activate Tenant
+
+```http
+POST /api/v1/admin/tenants/<tenant_id>/activate
+Authorization: Bearer <access_token>
+```
+
+Activates a previously suspended tenant. Clears the suspension timestamp.
+
+**Response (200):**
+
+```json
+{
+  "message": "Tenant activated successfully",
+  "tenant": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Tech Blog",
+    "is_active": true
+  }
+}
+```
+
+#### Delete Tenant
+
+```http
+DELETE /api/v1/admin/tenants/<tenant_id>
+Authorization: Bearer <access_token>
+```
+
+Permanently deletes a tenant and all associated data (users, articles, categories, etc.).
+
+**Response (200):**
+
+```json
+{
+  "message": "Tenant deleted successfully"
+}
+```
+
+**Error (404):**
+
+```json
+{
+  "error": "Tenant not found"
+}
+```
+
+---
+
+### Admin User Management
+
+#### List All Users
+
+```http
+GET /api/v1/admin/users
+Authorization: Bearer <access_token>
+```
+
+Lists all users across the platform with cross-tenant visibility.
+
+**Query Parameters:**
+
+| Parameter  | Type    | Default | Description                                      |
+| ---------- | ------- | ------- | ------------------------------------------------ |
+| page       | int     | 1       | Page number                                      |
+| per_page   | int     | 20      | Results per page (max: 100)                      |
+| search     | string  | —       | Search by email, username, or full name          |
+| is_active  | boolean | —       | Filter by active (`true`) / inactive (`false`)   |
+| tenant_id  | string  | —       | Filter by tenant ID (UUID)                       |
+
+**Response (200):**
+
+```json
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "admin@poparticle.com",
+      "username": "admin",
+      "full_name": "Platform Admin",
+      "role": "user",
+      "is_active": true,
+      "is_super_admin": true,
+      "tenant_id": null,
+      "oauth_provider": null,
+      "created_at": "2025-01-01T00:00:00.000000",
+      "last_login_at": "2026-03-19T08:30:00.000000"
+    },
+    {
+      "id": 2,
+      "email": "user@techblog.com",
+      "username": "blogwriter",
+      "full_name": "Blog Writer",
+      "role": "editor",
+      "is_active": true,
+      "is_super_admin": false,
+      "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+      "oauth_provider": "google",
+      "created_at": "2025-06-15T14:30:00.000000",
+      "last_login_at": "2026-03-18T22:15:00.000000"
+    }
+  ],
+  "total": 150,
+  "page": 1,
+  "per_page": 20,
+  "pages": 8
+}
+```
+
+#### Deactivate User
+
+```http
+POST /api/v1/admin/users/<user_id>/deactivate
+Authorization: Bearer <access_token>
+```
+
+Deactivates a user account, preventing login and API access. Admins cannot deactivate their own account.
+
+**Response (200):**
+
+```json
+{
+  "message": "User deactivated successfully",
+  "user": {
+    "id": 5,
+    "email": "user@example.com",
+    "is_active": false
+  }
+}
+```
+
+**Error (400):**
+
+```json
+{
+  "error": "Cannot deactivate your own account"
+}
+```
+
+#### Activate User
+
+```http
+POST /api/v1/admin/users/<user_id>/activate
+Authorization: Bearer <access_token>
+```
+
+Activates a previously deactivated user account.
+
+**Response (200):**
+
+```json
+{
+  "message": "User activated successfully",
+  "user": {
+    "id": 5,
+    "email": "user@example.com",
+    "is_active": true
+  }
+}
+```
+
+---
+
+### Global Admin Role Management
+
+#### Grant Global Admin
+
+```http
+POST /api/v1/admin/users/<user_id>/grant-admin
+Authorization: Bearer <access_token>
+```
+
+Grants global admin (`is_super_admin=true`) privileges to a user.
+
+**Response (200):**
+
+```json
+{
+  "message": "Global admin privileges granted successfully",
+  "user": {
+    "id": 5,
+    "email": "user@example.com",
+    "is_super_admin": true
+  }
+}
+```
+
+#### Revoke Global Admin
+
+```http
+POST /api/v1/admin/users/<user_id>/revoke-admin
+Authorization: Bearer <access_token>
+```
+
+Revokes global admin privileges from a user. The system prevents revoking the last remaining global admin to ensure at least one admin always exists.
+
+**Response (200):**
+
+```json
+{
+  "message": "Global admin privileges revoked successfully",
+  "user": {
+    "id": 5,
+    "email": "user@example.com",
+    "is_super_admin": false
+  }
+}
+```
+
+**Error (400):**
+
+```json
+{
+  "error": "Cannot revoke admin privileges. User not found or you are the last global admin."
+}
+```
+
+---
+
+### Admin Audit Logs
+
+```http
+GET /api/v1/admin/audit-logs
+Authorization: Bearer <access_token>
+```
+
+Returns a paginated, filterable list of all admin actions recorded in the audit log.
+
+**Query Parameters:**
+
+| Parameter      | Type   | Default | Description                                         |
+| -------------- | ------ | ------- | --------------------------------------------------- |
+| page           | int    | 1       | Page number                                         |
+| per_page       | int    | 50      | Results per page (max: 100)                         |
+| admin_user_id  | int    | —       | Filter by admin user ID                             |
+| action         | string | —       | Filter by action (e.g., `tenant.suspend`, `admin.grant`) |
+| resource_type  | string | —       | Filter by resource type (`tenant`, `user`, `system`)     |
+
+**Response (200):**
+
+```json
+{
+  "logs": [
+    {
+      "id": 1,
+      "admin_user_id": 1,
+      "admin_email": "admin@poparticle.com",
+      "action": "tenant.suspend",
+      "resource_type": "tenant",
+      "resource_id": "550e8400-e29b-41d4-a716-446655440000",
+      "details": {
+        "tenant_name": "Tech Blog"
+      },
+      "ip_address": "192.168.1.100",
+      "created_at": "2026-03-19T12:00:00.000000"
+    }
+  ],
+  "total": 25,
+  "page": 1,
+  "per_page": 50,
+  "pages": 1
+}
+```
+
+**Tracked Action Types:**
+
+| Action             | Resource Type | Description                          |
+| ------------------ | ------------- | ------------------------------------ |
+| `dashboard.view`   | `system`      | Admin viewed the dashboard           |
+| `tenant.suspend`   | `tenant`      | Tenant was suspended                 |
+| `tenant.activate`  | `tenant`      | Tenant was activated                 |
+| `tenant.delete`    | `tenant`      | Tenant was permanently deleted       |
+| `user.deactivate`  | `user`        | User account was deactivated         |
+| `user.activate`    | `user`        | User account was activated           |
+| `admin.grant`      | `user`        | Global admin role was granted        |
+| `admin.revoke`     | `user`        | Global admin role was revoked        |
 
 ---
 
