@@ -1,4 +1,5 @@
 import Link from "next/link";
+import siteConfig from "@/lib/siteConfig";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -30,7 +31,7 @@ export default function Footer() {
               marginBottom: "0.75rem",
             }}
           >
-            PopArticle
+            {siteConfig.siteName}
           </h3>
           <p
             style={{
@@ -39,8 +40,7 @@ export default function Footer() {
               lineHeight: 1.6,
             }}
           >
-            AI-powered content generation and management platform. Create,
-            schedule, and publish articles with ease.
+            {siteConfig.description}
           </p>
         </div>
 
@@ -165,6 +165,20 @@ export default function Footer() {
             >
               Terms of Service
             </Link>
+            <Link
+              href="/refund-policy"
+              style={{
+                color: "rgba(255,255,255,0.7)",
+                fontSize: "0.9rem",
+                transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "white")}
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.color = "rgba(255,255,255,0.7)")
+              }
+            >
+              Refund Policy
+            </Link>
           </nav>
         </div>
       </div>
@@ -185,7 +199,8 @@ export default function Footer() {
               margin: 0,
             }}
           >
-            &copy; {currentYear} PopArticle. All rights reserved.
+            &copy; {currentYear} {siteConfig.copyrightHolder}. All rights
+            reserved.
           </p>
         </div>
       </div>

@@ -77,19 +77,42 @@ export default function EditTenant() {
         <div style={{ maxWidth: "600px", margin: "0 auto" }}>
           <div style={{ marginBottom: "2rem" }}>
             <button
-              className="btn btn-secondary"
               onClick={() => router.push(`/dashboard/tenants/${id}`)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 1rem",
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "0.75rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                fontSize: "0.875rem",
+              }}
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={16} />
               Back to Tenant
             </button>
           </div>
 
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <Building2
-              size={48}
-              style={{ color: "var(--primary-color)", margin: "0 auto 1rem" }}
-            />
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "1rem",
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                margin: "0 auto 1rem",
+              }}
+            >
+              <Building2 size={28} />
+            </div>
             <h1
               style={{
                 fontSize: "2rem",
@@ -139,17 +162,41 @@ export default function EditTenant() {
               <div style={{ display: "flex", gap: "1rem" }}>
                 <button
                   type="submit"
-                  className="btn btn-primary"
                   disabled={saving}
-                  style={{ flex: 1 }}
+                  style={{
+                    flex: 1,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem",
+                    padding: "0.75rem 1.5rem",
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "0.75rem",
+                    fontWeight: 600,
+                    cursor: saving ? "not-allowed" : "pointer",
+                    opacity: saving ? 0.7 : 1,
+                  }}
                 >
                   <Save size={20} />
                   {saving ? "Saving..." : "Save Changes"}
                 </button>
                 <button
                   type="button"
-                  className="btn btn-secondary"
                   onClick={() => router.push(`/dashboard/tenants/${id}`)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.75rem 1.5rem",
+                    background: "var(--surface)",
+                    color: "var(--text-primary)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "0.75rem",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
                 >
                   Cancel
                 </button>

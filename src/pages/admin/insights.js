@@ -267,7 +267,19 @@ export default function PlatformInsightsPage() {
                   marginBottom: "0.4rem",
                 }}
               >
-                <BarChart2 size={28} color="#dc2626" />
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "0.75rem",
+                    background: "linear-gradient(135deg, #8b5cf6, #6366f1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <BarChart2 size={24} color="white" />
+                </div>
                 <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
                   Platform Insights
                 </h1>

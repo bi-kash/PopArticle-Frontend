@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { articleService } from "@/lib/articleService";
-import { Plus, Search, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, FileText } from "lucide-react";
 
 export default function ArticlesPage() {
   const router = useRouter();
@@ -74,9 +74,51 @@ export default function ArticlesPage() {
               marginBottom: "2rem",
             }}
           >
-            <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>Articles</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: "0.75rem",
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <FileText size={24} color="white" />
+              </div>
+              <div>
+                <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
+                  Articles
+                </h1>
+                <p
+                  style={{
+                    color: "var(--text-secondary)",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Create, edit, and manage your content
+                </p>
+              </div>
+            </div>
             <Link href="/dashboard/articles/new">
-              <button className="btn btn-primary">
+              <button
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.625rem 1.25rem",
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.5rem",
+                  fontWeight: 600,
+                  fontSize: "0.875rem",
+                  cursor: "pointer",
+                }}
+              >
                 <Plus size={20} />
                 New Article
               </button>
@@ -108,7 +150,19 @@ export default function ArticlesPage() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                    <button type="submit" className="btn btn-primary">
+                    <button
+                      type="submit"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "0.5rem 0.75rem",
+                        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "0.5rem",
+                        cursor: "pointer",
+                      }}
+                    >
                       <Search size={20} />
                     </button>
                   </div>
@@ -152,7 +206,21 @@ export default function ArticlesPage() {
                   No articles found
                 </p>
                 <Link href="/dashboard/articles/new">
-                  <button className="btn btn-primary">
+                  <button
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.625rem 1.25rem",
+                      background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "0.5rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Plus size={20} />
                     Create your first article
                   </button>
                 </Link>
@@ -188,13 +256,27 @@ export default function ArticlesPage() {
                         </td>
                         <td>
                           <span
-                            className={`badge badge-${
-                              article.status === "published"
-                                ? "success"
-                                : article.status === "draft"
-                                ? "warning"
-                                : "info"
-                            }`}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              padding: "0.25rem 0.75rem",
+                              borderRadius: "9999px",
+                              fontSize: "0.8rem",
+                              fontWeight: 600,
+                              textTransform: "capitalize",
+                              background:
+                                article.status === "published"
+                                  ? "#d1fae5"
+                                  : article.status === "draft"
+                                    ? "#fef3c7"
+                                    : "#dbeafe",
+                              color:
+                                article.status === "published"
+                                  ? "#065f46"
+                                  : article.status === "draft"
+                                    ? "#92400e"
+                                    : "#1e40af",
+                            }}
                           >
                             {article.status}
                           </span>
@@ -218,10 +300,16 @@ export default function ArticlesPage() {
                           <div style={{ display: "flex", gap: "0.5rem" }}>
                             <Link href={`/dashboard/articles/${article.id}`}>
                               <button
-                                className="btn btn-primary"
                                 style={{
-                                  padding: "0.25rem 0.5rem",
-                                  fontSize: "0.875rem",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  padding: "0.35rem 0.6rem",
+                                  background:
+                                    "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "0.375rem",
+                                  cursor: "pointer",
                                 }}
                                 title="Edit"
                               >
@@ -229,10 +317,15 @@ export default function ArticlesPage() {
                               </button>
                             </Link>
                             <button
-                              className="btn btn-danger"
                               style={{
-                                padding: "0.25rem 0.5rem",
-                                fontSize: "0.875rem",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                padding: "0.35rem 0.6rem",
+                                background: "#fee2e2",
+                                color: "#991b1b",
+                                border: "none",
+                                borderRadius: "0.375rem",
+                                cursor: "pointer",
                               }}
                               onClick={() => handleDelete(article.id)}
                               title="Delete"

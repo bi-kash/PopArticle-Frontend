@@ -554,13 +554,25 @@ export default function TenantSocialMediaPage() {
           {/* Header */}
           <div style={{ marginBottom: "2rem" }}>
             <button
-              className="btn btn-secondary"
               onClick={() =>
                 router.push("/dashboard/tenants/" + tenantId + "/dashboard")
               }
-              style={{ marginBottom: "1rem" }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 1rem",
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "0.75rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                fontSize: "0.875rem",
+                marginBottom: "1rem",
+              }}
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={16} />
               Back to Dashboard
             </button>
 
@@ -574,33 +586,60 @@ export default function TenantSocialMediaPage() {
               }}
             >
               <div>
-                <h1
-                  style={{
-                    fontSize: "2rem",
-                    fontWeight: "bold",
-                    marginBottom: "0.5rem",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                  }}
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "1rem" }}
                 >
-                  <Share2 size={32} />
-                  Social Media
-                </h1>
-                <p style={{ color: "var(--text-secondary)" }}>
-                  {tenant?.name} &mdash; Connect accounts and share across
-                  tenants
-                </p>
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: "0.75rem",
+                      background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                    }}
+                  >
+                    <Share2 size={24} />
+                  </div>
+                  <div>
+                    <h1
+                      style={{
+                        fontSize: "2rem",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Social Media
+                    </h1>
+                    <p
+                      style={{
+                        color: "var(--text-secondary)",
+                        marginTop: "0.25rem",
+                      }}
+                    >
+                      {tenant?.name} &mdash; Connect accounts and share across
+                      tenants
+                    </p>
+                  </div>
+                </div>
               </div>
               <div style={{ display: "flex", gap: "0.75rem" }}>
                 <button
-                  className="btn btn-primary"
                   onClick={handleOAuthConnect}
                   disabled={connecting}
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: "0.5rem",
+                    padding: "0.75rem 1.25rem",
+                    background: "linear-gradient(135deg, #1877F2, #0d65d9)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "0.75rem",
+                    fontWeight: 600,
+                    cursor: connecting ? "not-allowed" : "pointer",
+                    opacity: connecting ? 0.7 : 1,
                   }}
                 >
                   {connecting ? (
@@ -616,8 +655,19 @@ export default function TenantSocialMediaPage() {
                   )}
                 </button>
                 <button
-                  className="btn btn-secondary"
                   onClick={() => setShowForm(true)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.75rem 1.25rem",
+                    background: "var(--surface)",
+                    color: "var(--text-primary)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "0.75rem",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
                 >
                   <Plus size={20} />
                   Add Manually
@@ -774,7 +824,7 @@ export default function TenantSocialMediaPage() {
                     border: "none",
                     background:
                       activeTab === item.key
-                        ? "var(--primary-color)"
+                        ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
                         : "transparent",
                     color:
                       activeTab === item.key
@@ -1223,8 +1273,19 @@ export default function TenantSocialMediaPage() {
                         />
                         <button
                           type="button"
-                          className="btn btn-secondary"
                           onClick={handleAddHashtag}
+                          style={{
+                            padding: "0.5rem 1rem",
+                            background: "var(--surface)",
+                            color: "var(--text-primary)",
+                            border: "1px solid var(--border-color)",
+                            borderRadius: "0.5rem",
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.375rem",
+                          }}
                         >
                           <Hash size={16} />
                           Add
@@ -1343,8 +1404,21 @@ export default function TenantSocialMediaPage() {
                     <div style={{ display: "flex", gap: "1rem" }}>
                       <button
                         type="submit"
-                        className="btn btn-primary"
                         disabled={saving}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          padding: "0.75rem 1.5rem",
+                          background:
+                            "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "0.75rem",
+                          fontWeight: 600,
+                          cursor: saving ? "not-allowed" : "pointer",
+                          opacity: saving ? 0.7 : 1,
+                        }}
                       >
                         {saving ? (
                           <>
@@ -1360,8 +1434,19 @@ export default function TenantSocialMediaPage() {
                       </button>
                       <button
                         type="button"
-                        className="btn btn-secondary"
                         onClick={resetForm}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          padding: "0.75rem 1.5rem",
+                          background: "var(--surface)",
+                          color: "var(--text-primary)",
+                          border: "1px solid var(--border-color)",
+                          borderRadius: "0.75rem",
+                          fontWeight: 500,
+                          cursor: "pointer",
+                        }}
                       >
                         Cancel
                       </button>
@@ -1466,10 +1551,25 @@ export default function TenantSocialMediaPage() {
                   </div>
                   <div style={{ display: "flex", gap: "0.75rem" }}>
                     <button
-                      className="btn btn-primary"
                       onClick={() => handleAttachToTenant(showAttachModal)}
                       disabled={attaching === showAttachModal}
-                      style={{ fontSize: "0.875rem" }}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        padding: "0.75rem 1.25rem",
+                        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "0.75rem",
+                        fontWeight: 600,
+                        cursor:
+                          attaching === showAttachModal
+                            ? "not-allowed"
+                            : "pointer",
+                        opacity: attaching === showAttachModal ? 0.7 : 1,
+                        fontSize: "0.875rem",
+                      }}
                     >
                       {attaching === showAttachModal ? (
                         <>
@@ -1484,7 +1584,6 @@ export default function TenantSocialMediaPage() {
                       )}
                     </button>
                     <button
-                      className="btn btn-secondary"
                       onClick={() => {
                         setShowAttachModal(null);
                         setAttachData({
@@ -1492,7 +1591,19 @@ export default function TenantSocialMediaPage() {
                           auto_post_enabled: false,
                         });
                       }}
-                      style={{ fontSize: "0.875rem" }}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        padding: "0.75rem 1.25rem",
+                        background: "var(--surface)",
+                        color: "var(--text-primary)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "0.75rem",
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        fontSize: "0.875rem",
+                      }}
                     >
                       Cancel
                     </button>
@@ -1544,13 +1655,21 @@ export default function TenantSocialMediaPage() {
                         }}
                       >
                         <button
-                          className="btn btn-primary"
                           onClick={handleOAuthConnect}
                           disabled={connecting}
                           style={{
                             display: "flex",
                             alignItems: "center",
                             gap: "0.5rem",
+                            padding: "0.75rem 1.25rem",
+                            background:
+                              "linear-gradient(135deg, #1877F2, #0d65d9)",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "0.75rem",
+                            fontWeight: 600,
+                            cursor: connecting ? "not-allowed" : "pointer",
+                            opacity: connecting ? 0.7 : 1,
                           }}
                         >
                           {connecting ? (
@@ -1567,8 +1686,19 @@ export default function TenantSocialMediaPage() {
                         </button>
                         {userConfigs.length > 0 && (
                           <button
-                            className="btn btn-secondary"
                             onClick={() => setConfigView("user")}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              padding: "0.75rem 1.25rem",
+                              background: "var(--surface)",
+                              color: "var(--text-primary)",
+                              border: "1px solid var(--border-color)",
+                              borderRadius: "0.75rem",
+                              fontWeight: 500,
+                              cursor: "pointer",
+                            }}
                           >
                             <User size={20} />
                             Link Existing Account
@@ -1605,7 +1735,6 @@ export default function TenantSocialMediaPage() {
                         can be shared across all your tenants.
                       </p>
                       <button
-                        className="btn btn-primary"
                         onClick={handleOAuthConnect}
                         disabled={connecting}
                         style={{
@@ -1613,6 +1742,15 @@ export default function TenantSocialMediaPage() {
                           alignItems: "center",
                           gap: "0.5rem",
                           margin: "0 auto",
+                          padding: "0.75rem 1.25rem",
+                          background:
+                            "linear-gradient(135deg, #1877F2, #0d65d9)",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "0.75rem",
+                          fontWeight: 600,
+                          cursor: connecting ? "not-allowed" : "pointer",
+                          opacity: connecting ? 0.7 : 1,
                         }}
                       >
                         <Facebook size={20} />
@@ -1795,10 +1933,25 @@ export default function TenantSocialMediaPage() {
                         }}
                       >
                         <button
-                          className="btn btn-secondary"
                           onClick={() => handleVerifyToken(config.id)}
                           disabled={verifying === config.id}
-                          style={{ fontSize: "0.875rem" }}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.375rem",
+                            padding: "0.5rem 0.875rem",
+                            background: "var(--surface)",
+                            color: "var(--text-secondary)",
+                            border: "1px solid var(--border-color)",
+                            borderRadius: "0.5rem",
+                            fontWeight: 500,
+                            cursor:
+                              verifying === config.id
+                                ? "not-allowed"
+                                : "pointer",
+                            opacity: verifying === config.id ? 0.7 : 1,
+                            fontSize: "0.875rem",
+                          }}
                         >
                           {verifying === config.id ? (
                             <RefreshCw size={16} className="spin" />
@@ -1810,9 +1963,21 @@ export default function TenantSocialMediaPage() {
 
                         {config.is_owner && (
                           <button
-                            className="btn btn-secondary"
                             onClick={() => handleEdit(config)}
-                            style={{ fontSize: "0.875rem" }}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.375rem",
+                              padding: "0.5rem 0.875rem",
+                              background:
+                                "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "0.5rem",
+                              fontWeight: 500,
+                              cursor: "pointer",
+                              fontSize: "0.875rem",
+                            }}
                           >
                             <Edit size={16} />
                             Edit
@@ -1822,11 +1987,19 @@ export default function TenantSocialMediaPage() {
                         {/* Tenant view: unlink from tenant */}
                         {configView === "tenant" && (
                           <button
-                            className="btn btn-secondary"
                             onClick={() => handleDetachFromTenant(config.id)}
                             style={{
-                              fontSize: "0.875rem",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.375rem",
+                              padding: "0.5rem 0.875rem",
+                              background: "#fffbeb",
                               color: "#b45309",
+                              border: "1px solid #fde68a",
+                              borderRadius: "0.5rem",
+                              fontWeight: 500,
+                              cursor: "pointer",
+                              fontSize: "0.875rem",
                             }}
                           >
                             <Unlink size={16} />
@@ -1838,11 +2011,19 @@ export default function TenantSocialMediaPage() {
                         {configView === "user" &&
                           !isAttachedToTenant(config.id) && (
                             <button
-                              className="btn btn-secondary"
                               onClick={() => setShowAttachModal(config.id)}
                               style={{
-                                fontSize: "0.875rem",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.375rem",
+                                padding: "0.5rem 0.875rem",
+                                background: "#ecfdf5",
                                 color: "#059669",
+                                border: "1px solid #a7f3d0",
+                                borderRadius: "0.5rem",
+                                fontWeight: 500,
+                                cursor: "pointer",
+                                fontSize: "0.875rem",
                               }}
                             >
                               <Link2 size={16} />
@@ -1853,11 +2034,19 @@ export default function TenantSocialMediaPage() {
                         {configView === "user" &&
                           isAttachedToTenant(config.id) && (
                             <button
-                              className="btn btn-secondary"
                               onClick={() => handleDetachFromTenant(config.id)}
                               style={{
-                                fontSize: "0.875rem",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.375rem",
+                                padding: "0.5rem 0.875rem",
+                                background: "#fffbeb",
                                 color: "#b45309",
+                                border: "1px solid #fde68a",
+                                borderRadius: "0.5rem",
+                                fontWeight: 500,
+                                cursor: "pointer",
+                                fontSize: "0.875rem",
                               }}
                             >
                               <Unlink size={16} />
@@ -1867,11 +2056,19 @@ export default function TenantSocialMediaPage() {
 
                         {config.is_owner && (
                           <button
-                            className="btn btn-secondary"
                             onClick={() => handleOAuthDisconnect(config.id)}
                             style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.375rem",
+                              padding: "0.5rem 0.875rem",
+                              background: "#fee2e2",
+                              color: "#991b1b",
+                              border: "1px solid #fecaca",
+                              borderRadius: "0.5rem",
+                              fontWeight: 500,
+                              cursor: "pointer",
                               fontSize: "0.875rem",
-                              color: "var(--danger-color)",
                             }}
                           >
                             <Trash2 size={16} />
@@ -1945,8 +2142,19 @@ export default function TenantSocialMediaPage() {
                     No social media accounts linked to this tenant.
                   </p>
                   <button
-                    className="btn btn-primary"
                     onClick={() => setActiveTab("configs")}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.75rem 1.25rem",
+                      background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "0.75rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
                   >
                     Link Account First
                   </button>
@@ -1964,7 +2172,22 @@ export default function TenantSocialMediaPage() {
                     No published articles to share.
                   </p>
                   <Link href={"/dashboard/tenants/" + tenantId + "/articles"}>
-                    <button className="btn btn-primary">View Articles</button>
+                    <button
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        padding: "0.75rem 1.25rem",
+                        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "0.75rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      View Articles
+                    </button>
                   </Link>
                 </div>
               ) : (
@@ -2079,10 +2302,25 @@ export default function TenantSocialMediaPage() {
                   </div>
 
                   <button
-                    className="btn btn-primary"
                     onClick={handleGeneratePost}
                     disabled={!selectedArticle || generatingPost}
-                    style={{ marginBottom: "1.5rem" }}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.75rem 1.5rem",
+                      background: "linear-gradient(135deg, #10b981, #059669)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "0.75rem",
+                      fontWeight: 600,
+                      cursor:
+                        !selectedArticle || generatingPost
+                          ? "not-allowed"
+                          : "pointer",
+                      opacity: !selectedArticle || generatingPost ? 0.7 : 1,
+                      marginBottom: "1.5rem",
+                    }}
                   >
                     {generatingPost ? (
                       <>
@@ -2149,13 +2387,21 @@ export default function TenantSocialMediaPage() {
                           {tenantConfigs.map((cfg) => (
                             <button
                               key={cfg.id}
-                              className="btn btn-primary"
                               onClick={() => handlePostNow(cfg.id)}
                               disabled={posting}
                               style={{
                                 display: "flex",
                                 alignItems: "center",
                                 gap: "0.5rem",
+                                padding: "0.75rem 1.25rem",
+                                background:
+                                  "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "0.75rem",
+                                fontWeight: 600,
+                                cursor: posting ? "not-allowed" : "pointer",
+                                opacity: posting ? 0.7 : 1,
                               }}
                             >
                               {posting ? (
@@ -2281,10 +2527,18 @@ export default function TenantSocialMediaPage() {
                                 href={log.platform_post_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="btn btn-secondary"
                                 style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.25rem",
                                   fontSize: "0.75rem",
                                   padding: "0.25rem 0.5rem",
+                                  background: "var(--surface)",
+                                  color: "var(--text-secondary)",
+                                  border: "1px solid var(--border-color)",
+                                  borderRadius: "0.375rem",
+                                  textDecoration: "none",
+                                  fontWeight: 500,
                                 }}
                               >
                                 <ExternalLink size={14} />

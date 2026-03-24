@@ -277,7 +277,19 @@ export default function RevenueAnalyticsPage() {
                   marginBottom: "0.4rem",
                 }}
               >
-                <DollarSign size={28} color="#dc2626" />
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "0.75rem",
+                    background: "linear-gradient(135deg, #f59e0b, #f97316)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <DollarSign size={24} color="white" />
+                </div>
                 <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
                   Revenue Analytics
                 </h1>

@@ -111,13 +111,24 @@ export default function BillingHistory() {
       <DashboardLayout>
         <div>
           {/* Back button */}
-          <div style={{ marginBottom: "2rem" }}>
+          <div style={{ marginBottom: "1.5rem" }}>
             <button
-              className="btn btn-secondary"
               onClick={() => router.push("/dashboard/subscription")}
-              style={{ marginBottom: "1rem" }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.375rem",
+                padding: "0.5rem 1rem",
+                background: "var(--surface)",
+                color: "var(--text-primary)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "0.5rem",
+                cursor: "pointer",
+                fontWeight: 500,
+                fontSize: "0.875rem",
+              }}
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} />
               Back to Subscription
             </button>
           </div>
@@ -131,7 +142,20 @@ export default function BillingHistory() {
               marginBottom: "2rem",
             }}
           >
-            <Receipt size={32} style={{ color: "var(--primary-color)" }} />
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "0.75rem",
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Receipt size={24} color="#fff" />
+            </div>
             <div>
               <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
                 Billing History
@@ -202,7 +226,21 @@ export default function BillingHistory() {
                   plan.
                 </p>
                 <Link href="/dashboard/subscription">
-                  <button className="btn btn-primary">
+                  <button
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.625rem 1.25rem",
+                      background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "0.5rem",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                    }}
+                  >
                     <CreditCard size={18} />
                     View Plans
                   </button>

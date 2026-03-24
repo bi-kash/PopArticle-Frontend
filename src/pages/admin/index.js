@@ -101,10 +101,8 @@ export default function AdminDashboardPage() {
       setLoading(true);
       setError(null);
       const data = await adminService.getDashboardStats();
-      console.log("Admin API response:", data);
       setStats(data);
     } catch (err) {
-      console.error("Admin API error:", err);
       const status = err.response?.status;
       if (status === 403 || status === 401) {
         router.replace("/dashboard");
@@ -130,7 +128,19 @@ export default function AdminDashboardPage() {
                 marginBottom: "0.4rem",
               }}
             >
-              <ShieldCheck size={28} color="#dc2626" />
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: "0.75rem",
+                  background: "linear-gradient(135deg, #dc2626, #ef4444)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <ShieldCheck size={24} color="white" />
+              </div>
               <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
                 Admin Dashboard
               </h1>

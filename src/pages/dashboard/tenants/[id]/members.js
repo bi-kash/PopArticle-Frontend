@@ -158,8 +158,19 @@ export default function TenantMembers() {
               {error}
             </h3>
             <button
-              className="btn btn-primary"
               onClick={() => router.push("/dashboard/tenants")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.75rem 1.5rem",
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                color: "white",
+                border: "none",
+                borderRadius: "0.75rem",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
             >
               <ArrowLeft size={20} />
               Back to Tenants
@@ -176,11 +187,23 @@ export default function TenantMembers() {
         <div>
           <div style={{ marginBottom: "2rem" }}>
             <button
-              className="btn btn-secondary"
               onClick={() => router.push(`/dashboard/tenants/${id}`)}
-              style={{ marginBottom: "1rem" }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 1rem",
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "0.75rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                fontSize: "0.875rem",
+                marginBottom: "1rem",
+              }}
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={16} />
               Back to Tenant
             </button>
           </div>
@@ -194,28 +217,70 @@ export default function TenantMembers() {
             }}
           >
             <div>
-              <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
-                {tenant?.name} - Team
-              </h1>
-              <p style={{ color: "var(--text-secondary)" }}>
-                Manage team members and invitations
-              </p>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "1rem" }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "0.75rem",
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                  }}
+                >
+                  <Users size={24} />
+                </div>
+                <div>
+                  <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
+                    {tenant?.name} - Team
+                  </h1>
+                  <p style={{ color: "var(--text-secondary)" }}>
+                    Manage team members and invitations
+                  </p>
+                </div>
+              </div>
             </div>
             <div style={{ display: "flex", gap: "1rem" }}>
               {activeTab === "members" && (
                 <button
-                  className="btn btn-secondary"
                   onClick={() => setShowAddForm(!showAddForm)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.75rem 1.25rem",
+                    background: "var(--surface)",
+                    color: "var(--text-primary)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "0.75rem",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
                 >
-                  <UserPlus size={20} />
+                  <UserPlus size={18} />
                   Add Member
                 </button>
               )}
               <button
-                className="btn btn-primary"
                 onClick={() => setShowInviteModal(true)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.75rem 1.25rem",
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.75rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
               >
-                <Mail size={20} />
+                <Mail size={18} />
                 Invite Member
               </button>
             </div>
@@ -331,13 +396,38 @@ export default function TenantMembers() {
                   </div>
 
                   <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <button type="submit" className="btn btn-primary">
+                    <button
+                      type="submit"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        padding: "0.75rem 1.25rem",
+                        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "0.75rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
                       Add
                     </button>
                     <button
                       type="button"
-                      className="btn btn-secondary"
                       onClick={() => setShowAddForm(false)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        padding: "0.75rem 1.25rem",
+                        background: "var(--surface)",
+                        color: "var(--text-primary)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "0.75rem",
+                        fontWeight: 500,
+                        cursor: "pointer",
+                      }}
                     >
                       Cancel
                     </button>
@@ -493,8 +583,8 @@ export default function TenantMembers() {
                                     member.role === "owner"
                                       ? "var(--primary-color)"
                                       : member.role === "admin"
-                                      ? "var(--success-color)"
-                                      : "var(--surface)",
+                                        ? "var(--success-color)"
+                                        : "var(--surface)",
                                   color:
                                     member.role === "owner" ||
                                     member.role === "admin"
@@ -514,7 +604,7 @@ export default function TenantMembers() {
                                   className="btn"
                                   onClick={() =>
                                     handleRemoveMember(
-                                      member.id || member.user_id
+                                      member.id || member.user_id,
                                     )
                                   }
                                   style={{
@@ -572,8 +662,19 @@ export default function TenantMembers() {
                     Invite people to join your team
                   </p>
                   <button
-                    className="btn btn-primary"
                     onClick={() => setShowInviteModal(true)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.75rem 1.5rem",
+                      background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "0.75rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
                   >
                     <Mail size={20} />
                     Send Invitation
@@ -705,7 +806,7 @@ export default function TenantMembers() {
                               }}
                             >
                               {new Date(
-                                invitation.expires_at
+                                invitation.expires_at,
                               ).toLocaleDateString()}
                             </td>
                             <td style={{ padding: "1rem", textAlign: "right" }}>

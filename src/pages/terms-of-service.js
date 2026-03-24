@@ -2,22 +2,24 @@ import Head from "next/head";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import siteConfig from "@/lib/siteConfig";
 
 export default function TermsOfService() {
+  const name = siteConfig.siteName;
   return (
     <>
       <Head>
-        <title>Terms of Service - PopArticle</title>
+        <title>Terms of Service - {name}</title>
         <meta
           name="description"
-          content="Terms of Service for PopArticle - AI-Powered Content Platform"
+          content={`Terms of Service for ${name} - AI-Powered Content Platform`}
         />
 
         {/* Open Graph */}
-        <meta property="og:title" content="Terms of Service - PopArticle" />
+        <meta property="og:title" content={`Terms of Service - ${name}`} />
         <meta
           property="og:description"
-          content="Terms of Service for PopArticle - AI-Powered Content Platform"
+          content={`Terms of Service for ${name} - AI-Powered Content Platform`}
         />
         <meta property="og:image" content="/og-default.svg" />
       </Head>
@@ -63,9 +65,9 @@ export default function TermsOfService() {
             1. Acceptance of Terms
           </h2>
           <p style={{ marginBottom: "1rem" }}>
-            By accessing or using the PopArticle platform (&quot;Service&quot;),
-            you agree to be bound by these Terms of Service (&quot;Terms&quot;).
-            If you do not agree to these Terms, you may not access or use the
+            By accessing or using the {name} platform (&quot;Service&quot;), you
+            agree to be bound by these Terms of Service (&quot;Terms&quot;). If
+            you do not agree to these Terms, you may not access or use the
             Service. These Terms apply to all visitors, users, and others who
             access or use the Service.
           </p>
@@ -82,7 +84,7 @@ export default function TermsOfService() {
             2. Description of Service
           </h2>
           <p style={{ marginBottom: "1rem" }}>
-            PopArticle is an AI-powered content generation, management, and
+            {name} is an AI-powered content generation, management, and
             distribution platform. The Service allows users to:
           </p>
           <ul style={{ paddingLeft: "1.5rem", marginBottom: "1rem" }}>
@@ -166,9 +168,9 @@ export default function TermsOfService() {
           <p style={{ marginBottom: "1rem" }}>
             You retain ownership of all content you create, upload, or generate
             through the Service (&quot;User Content&quot;). By using the
-            Service, you grant PopArticle a non-exclusive, worldwide,
-            royalty-free license to store, display, and process your User
-            Content solely for the purpose of providing the Service to you.
+            Service, you grant {name} a non-exclusive, worldwide, royalty-free
+            license to store, display, and process your User Content solely for
+            the purpose of providing the Service to you.
           </p>
 
           <h3
@@ -237,7 +239,7 @@ export default function TermsOfService() {
           </p>
           <ul style={{ paddingLeft: "1.5rem", marginBottom: "1rem" }}>
             <li style={{ marginBottom: "0.5rem" }}>
-              Authorize PopArticle to post content to your connected accounts on
+              Authorize {name} to post content to your connected accounts on
               your behalf
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
@@ -253,8 +255,8 @@ export default function TermsOfService() {
               to your social media accounts
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              May revoke access at any time through your PopArticle account
-              settings or directly through the social media platform
+              May revoke access at any time through your {name} account settings
+              or directly through the social media platform
             </li>
           </ul>
           <p style={{ marginBottom: "1rem" }}>
@@ -275,9 +277,9 @@ export default function TermsOfService() {
             6. Multi-Tenant Usage
           </h2>
           <p style={{ marginBottom: "1rem" }}>
-            PopArticle supports multi-tenant architecture, allowing
-            organizations to create and manage separate workspaces. As a tenant
-            administrator, you are responsible for:
+            {name} supports multi-tenant architecture, allowing organizations to
+            create and manage separate workspaces. As a tenant administrator,
+            you are responsible for:
           </p>
           <ul style={{ paddingLeft: "1.5rem", marginBottom: "1rem" }}>
             <li style={{ marginBottom: "0.5rem" }}>
@@ -335,10 +337,9 @@ export default function TermsOfService() {
           <p style={{ marginBottom: "1rem" }}>
             The Service, including its original content, features, and
             functionality, is and will remain the exclusive property of
-            PopArticle. The Service is protected by copyright, trademark, and
-            other laws. Our trademarks and trade dress may not be used in
-            connection with any product or service without prior written
-            consent.
+            {name}. The Service is protected by copyright, trademark, and other
+            laws. Our trademarks and trade dress may not be used in connection
+            with any product or service without prior written consent.
           </p>
         </section>
 
@@ -394,13 +395,13 @@ export default function TermsOfService() {
             11. Limitation of Liability
           </h2>
           <p style={{ marginBottom: "1rem" }}>
-            IN NO EVENT SHALL POPARTICLE, ITS DIRECTORS, EMPLOYEES, PARTNERS,
-            AGENTS, SUPPLIERS, OR AFFILIATES BE LIABLE FOR ANY INDIRECT,
-            INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING
-            WITHOUT LIMITATION, LOSS OF PROFITS, DATA, USE, GOODWILL, OR OTHER
-            INTANGIBLE LOSSES, RESULTING FROM YOUR ACCESS TO OR USE OF (OR
-            INABILITY TO ACCESS OR USE) THE SERVICE, CONTENT POSTED THROUGH THE
-            SERVICE TO SOCIAL MEDIA PLATFORMS, OR ANY AI-GENERATED CONTENT.
+            IN NO EVENT SHALL {name.toUpperCase()}, ITS DIRECTORS, EMPLOYEES,
+            PARTNERS, AGENTS, SUPPLIERS, OR AFFILIATES BE LIABLE FOR ANY
+            INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES,
+            INCLUDING WITHOUT LIMITATION, LOSS OF PROFITS, DATA, USE, GOODWILL,
+            OR OTHER INTANGIBLE LOSSES, RESULTING FROM YOUR ACCESS TO OR USE OF
+            (OR INABILITY TO ACCESS OR USE) THE SERVICE, CONTENT POSTED THROUGH
+            THE SERVICE TO SOCIAL MEDIA PLATFORMS, OR ANY AI-GENERATED CONTENT.
           </p>
         </section>
 
@@ -415,13 +416,13 @@ export default function TermsOfService() {
             12. Indemnification
           </h2>
           <p style={{ marginBottom: "1rem" }}>
-            You agree to indemnify and hold harmless PopArticle and its
-            officers, directors, employees, and agents from any claims, damages,
-            losses, liabilities, and expenses (including attorneys&apos; fees)
-            arising out of or relating to your use of the Service, your User
-            Content, your violation of these Terms, or your violation of any
-            rights of another party, including content posted to social media
-            platforms through the Service.
+            You agree to indemnify and hold harmless {name} and its officers,
+            directors, employees, and agents from any claims, damages, losses,
+            liabilities, and expenses (including attorneys&apos; fees) arising
+            out of or relating to your use of the Service, your User Content,
+            your violation of these Terms, or your violation of any rights of
+            another party, including content posted to social media platforms
+            through the Service.
           </p>
         </section>
 

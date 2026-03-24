@@ -88,12 +88,10 @@ export default function AdminAuditLogsPage() {
       if (filterAction) params.action = filterAction;
       if (filterResource) params.resource_type = filterResource;
       const data = await adminService.getAuditLogs(params);
-      console.log("Admin audit logs response:", data);
       setLogs(data.logs || []);
       setTotal(data.total || 0);
       setPages(data.pages || 1);
     } catch (err) {
-      console.error("Admin audit logs error:", err);
       const status = err.response?.status;
       if (status === 403 || status === 401) {
         router.replace("/dashboard");
@@ -129,7 +127,19 @@ export default function AdminAuditLogsPage() {
               marginBottom: "0.4rem",
             }}
           >
-            <ClipboardList size={26} color="#f59e0b" />
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: "0.75rem",
+                background: "linear-gradient(135deg, #f59e0b, #f97316)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ClipboardList size={24} color="white" />
+            </div>
             <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>Audit Logs</h1>
           </div>
           <p

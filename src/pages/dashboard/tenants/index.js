@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { tenantService } from "@/lib/tenantService";
-import { Plus, Building2, Users, Settings } from "lucide-react";
+import { Plus, Building2, Users, Settings, Globe } from "lucide-react";
 
 export default function TenantsPage() {
   const router = useRouter();
@@ -18,9 +18,6 @@ export default function TenantsPage() {
   const loadTenants = async () => {
     try {
       const data = await tenantService.getMyTenants();
-      console.log("Tenants API response:", data);
-      console.log("Response type:", typeof data);
-      console.log("Is array?:", Array.isArray(data));
 
       // Handle different response structures
       let tenantsArray = [];
@@ -32,11 +29,9 @@ export default function TenantsPage() {
         tenantsArray = data.data;
       }
 
-      console.log("Parsed tenants array:", tenantsArray);
       setTenants(tenantsArray);
     } catch (error) {
       console.error("Failed to load tenants:", error);
-      console.error("Error response:", error.response);
     } finally {
       setLoading(false);
     }
@@ -56,8 +51,22 @@ export default function TenantsPage() {
           >
             <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>Tenants</h1>
             <Link href="/dashboard/tenants/new">
-              <button className="btn btn-primary">
-                <Plus size={20} />
+              <button
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.625rem 1.25rem",
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "0.5rem",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: "0.875rem",
+                }}
+              >
+                <Plus size={18} />
                 Register Tenant
               </button>
             </Link>
@@ -69,8 +78,13 @@ export default function TenantsPage() {
             </div>
           ) : tenants.length === 0 ? (
             <div
-              className="card"
-              style={{ textAlign: "center", padding: "3rem" }}
+              style={{
+                textAlign: "center",
+                padding: "3rem",
+                background: "var(--surface)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "1rem",
+              }}
             >
               <Building2
                 size={48}
@@ -98,8 +112,22 @@ export default function TenantsPage() {
                 authentication
               </p>
               <Link href="/dashboard/tenants/new">
-                <button className="btn btn-primary">
-                  <Plus size={20} />
+                <button
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.625rem 1.25rem",
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "0.5rem",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  <Plus size={18} />
                   Register Tenant
                 </button>
               </Link>
@@ -113,7 +141,25 @@ export default function TenantsPage() {
               }}
             >
               {tenants.map((tenant) => (
-                <div key={tenant.id} className="card">
+                <div
+                  key={tenant.id}
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "1rem",
+                    padding: "1.5rem",
+                    transition: "box-shadow 0.2s, transform 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow =
+                      "0 4px 20px rgba(0,0,0,0.08)";
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = "none";
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }}
+                >
                   <div
                     style={{
                       display: "flex",
@@ -122,29 +168,60 @@ export default function TenantsPage() {
                       marginBottom: "1rem",
                     }}
                   >
-                    <div>
-                      <h3
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "0.75rem",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div
                         style={{
-                          fontSize: "1.25rem",
-                          fontWeight: "bold",
-                          marginBottom: "0.25rem",
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "0.75rem",
+                          background:
+                            "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
                         }}
                       >
-                        {tenant.name}
-                      </h3>
-                      <p
-                        style={{
-                          color: "var(--text-secondary)",
-                          fontSize: "0.875rem",
-                        }}
-                      >
-                        {tenant.primary_domain}
-                      </p>
+                        <Globe size={20} color="#fff" />
+                      </div>
+                      <div>
+                        <h3
+                          style={{
+                            fontSize: "1.125rem",
+                            fontWeight: "bold",
+                            marginBottom: "0.125rem",
+                          }}
+                        >
+                          {tenant.name}
+                        </h3>
+                        <p
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontSize: "0.8125rem",
+                          }}
+                        >
+                          {tenant.primary_domain}
+                        </p>
+                      </div>
                     </div>
                     <span
-                      className={`badge badge-${
-                        tenant.status === "active" ? "success" : "warning"
-                      }`}
+                      style={{
+                        fontSize: "0.6875rem",
+                        fontWeight: 600,
+                        padding: "0.2rem 0.625rem",
+                        borderRadius: "999px",
+                        textTransform: "capitalize",
+                        background:
+                          tenant.status === "active" ? "#d1fae5" : "#fef3c7",
+                        color:
+                          tenant.status === "active" ? "#065f46" : "#92400e",
+                      }}
                     >
                       {tenant.status}
                     </span>
@@ -201,19 +278,46 @@ export default function TenantsPage() {
                   >
                     <Link href={`/dashboard/tenants/${tenant.id}`}>
                       <button
-                        className="btn btn-primary"
-                        style={{ flex: 1, fontSize: "0.875rem" }}
+                        style={{
+                          flex: 1,
+                          fontSize: "0.8125rem",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "0.375rem",
+                          padding: "0.5rem 0.75rem",
+                          background:
+                            "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "0.5rem",
+                          cursor: "pointer",
+                          fontWeight: 500,
+                        }}
                       >
-                        <Settings size={16} />
+                        <Settings size={15} />
                         Manage
                       </button>
                     </Link>
                     <Link href={`/dashboard/tenants/${tenant.id}/members`}>
                       <button
-                        className="btn btn-secondary"
-                        style={{ flex: 1, fontSize: "0.875rem" }}
+                        style={{
+                          flex: 1,
+                          fontSize: "0.8125rem",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "0.375rem",
+                          padding: "0.5rem 0.75rem",
+                          background: "var(--surface)",
+                          color: "var(--text-primary)",
+                          border: "1px solid var(--border-color)",
+                          borderRadius: "0.5rem",
+                          cursor: "pointer",
+                          fontWeight: 500,
+                        }}
                       >
-                        <Users size={16} />
+                        <Users size={15} />
                         Members
                       </button>
                     </Link>

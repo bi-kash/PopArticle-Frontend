@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { authService } from "@/lib/authService";
+import siteConfig from "@/lib/siteConfig";
 import {
   LayoutDashboard,
   FileText,
@@ -138,7 +139,7 @@ export default function DashboardLayout({ children }) {
               marginBottom: "2rem",
             }}
           >
-            PopArticle
+            {siteConfig.siteName}
           </h2>
 
           <nav>

@@ -3,10 +3,10 @@ import "@/styles/globals.css";
 import "react-quill/dist/quill.snow.css";
 import "easymde/dist/easymde.min.css";
 import Head from "next/head";
+import siteConfig from "@/lib/siteConfig";
 
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "PopArticle";
-const DEFAULT_DESCRIPTION =
-  "AI-powered content generation and management platform.";
+const APP_NAME = siteConfig.siteName;
+const DEFAULT_DESCRIPTION = siteConfig.description;
 
 // Prefer an absolute site URL for Open Graph images so crawlers can fetch them.
 // Set NEXT_PUBLIC_SITE_URL (e.g. https://example.com). If not set and running

@@ -118,10 +118,21 @@ export default function TenantTeam() {
             <p style={{ color: "#6b7280", marginTop: "0.5rem" }}>{error}</p>
             <button
               onClick={() => router.back()}
-              className="btn-secondary"
-              style={{ marginTop: "1.5rem" }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 1rem",
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "0.75rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                fontSize: "0.875rem",
+              }}
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={16} />
               Go Back
             </button>
           </div>
@@ -174,14 +185,21 @@ export default function TenantTeam() {
             className="card"
             style={{ marginBottom: "1.5rem", padding: "1rem" }}
           >
-            <label className="flex items-center gap-3 cursor-pointer">
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                cursor: "pointer",
+              }}
+            >
               <input
                 type="checkbox"
                 checked={includeInactive}
                 onChange={(e) => setIncludeInactive(e.target.checked)}
-                className="w-5 h-5"
+                style={{ width: "1.25rem", height: "1.25rem" }}
               />
-              <span className="font-semibold">Show inactive members</span>
+              <span style={{ fontWeight: 600 }}>Show inactive members</span>
             </label>
           </div>
 
@@ -235,17 +253,33 @@ export default function TenantTeam() {
                     {teamMembers.map((member) => (
                       <tr key={member.id}>
                         <td>
-                          <div className="flex items-center gap-3">
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.75rem",
+                            }}
+                          >
                             {member.profile_photo ? (
                               <img
                                 src={member.profile_photo}
                                 alt={member.full_name}
-                                className="w-12 h-12 rounded-full object-cover"
+                                style={{
+                                  width: "3rem",
+                                  height: "3rem",
+                                  borderRadius: "9999px",
+                                  objectFit: "cover",
+                                }}
                               />
                             ) : (
                               <div
-                                className="w-12 h-12 rounded-full flex items-center justify-center"
                                 style={{
+                                  width: "3rem",
+                                  height: "3rem",
+                                  borderRadius: "9999px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
                                   background: "#f3f4f6",
                                   color: "#6b7280",
                                 }}
@@ -254,13 +288,18 @@ export default function TenantTeam() {
                               </div>
                             )}
                             <div>
-                              <div className="font-semibold">
+                              <div style={{ fontWeight: 600 }}>
                                 {member.full_name}
                               </div>
                               {member.is_platform_user && (
                                 <div
-                                  className="text-xs flex items-center gap-1"
-                                  style={{ color: "#10b981" }}
+                                  style={{
+                                    fontSize: "0.75rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.25rem",
+                                    color: "#10b981",
+                                  }}
                                 >
                                   <CheckCircle size={12} />
                                   Platform User
@@ -270,35 +309,60 @@ export default function TenantTeam() {
                           </div>
                         </td>
                         <td>
-                          <div className="font-semibold">{member.role}</div>
+                          <div style={{ fontWeight: 600 }}>{member.role}</div>
                           {member.position && (
                             <div
-                              className="text-sm"
-                              style={{ color: "#6b7280" }}
+                              style={{ fontSize: "0.875rem", color: "#6b7280" }}
                             >
                               {member.position}
                             </div>
                           )}
                         </td>
                         <td>
-                          <div className="space-y-1">
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "0.25rem",
+                            }}
+                          >
                             {member.email && (
-                              <div className="flex items-center gap-2 text-sm">
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.5rem",
+                                  fontSize: "0.875rem",
+                                }}
+                              >
                                 <Mail size={14} style={{ color: "#6b7280" }} />
                                 <a
                                   href={`mailto:${member.email}`}
-                                  className="text-blue-600 hover:underline"
+                                  style={{
+                                    color: "#2563eb",
+                                    textDecoration: "none",
+                                  }}
                                 >
                                   {member.email}
                                 </a>
                               </div>
                             )}
                             {member.phone && (
-                              <div className="flex items-center gap-2 text-sm">
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.5rem",
+                                  fontSize: "0.875rem",
+                                }}
+                              >
                                 <Phone size={14} style={{ color: "#6b7280" }} />
                                 <a
                                   href={`tel:${member.phone}`}
-                                  className="text-blue-600 hover:underline"
+                                  style={{
+                                    color: "#2563eb",
+                                    textDecoration: "none",
+                                  }}
                                 >
                                   {member.phone}
                                 </a>
@@ -312,7 +376,7 @@ export default function TenantTeam() {
                         <td>
                           {member.social_links &&
                           member.social_links.length > 0 ? (
-                            <div className="flex gap-2">
+                            <div style={{ display: "flex", gap: "0.5rem" }}>
                               {member.social_links
                                 .slice(0, 3)
                                 .map((link, idx) => (
@@ -321,7 +385,7 @@ export default function TenantTeam() {
                                     href={link.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-blue-600 hover:text-blue-800"
+                                    style={{ color: "#2563eb" }}
                                     title={`${link.platform}${
                                       link.handle ? `: @${link.handle}` : ""
                                     }`}
@@ -331,8 +395,10 @@ export default function TenantTeam() {
                                 ))}
                               {member.social_links.length > 3 && (
                                 <span
-                                  className="text-sm"
-                                  style={{ color: "#6b7280" }}
+                                  style={{
+                                    fontSize: "0.875rem",
+                                    color: "#6b7280",
+                                  }}
                                 >
                                   +{member.social_links.length - 3}
                                 </span>
@@ -344,8 +410,14 @@ export default function TenantTeam() {
                         </td>
                         <td>
                           <div
-                            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold"
                             style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              padding: "0.25rem 0.75rem",
+                              borderRadius: "9999px",
+                              fontSize: "0.875rem",
+                              fontWeight: 600,
                               background: member.is_active
                                 ? "#d1fae5"
                                 : "#fee2e2",
@@ -367,8 +439,12 @@ export default function TenantTeam() {
                         </td>
                         <td>
                           <span
-                            className="px-3 py-1 rounded-full text-sm font-semibold"
                             style={{
+                              display: "inline-flex",
+                              padding: "0.25rem 0.75rem",
+                              borderRadius: "9999px",
+                              fontSize: "0.875rem",
+                              fontWeight: 600,
                               background: "#f3f4f6",
                               color: "#374151",
                             }}
@@ -377,7 +453,7 @@ export default function TenantTeam() {
                           </span>
                         </td>
                         <td>
-                          <div className="flex gap-2">
+                          <div style={{ display: "flex", gap: "0.5rem" }}>
                             <button
                               onClick={() => openEditModal(member)}
                               className="icon-button"
@@ -411,11 +487,25 @@ export default function TenantTeam() {
               border: "1px solid #bfdbfe",
             }}
           >
-            <div className="p-4">
-              <h3 className="font-semibold mb-2" style={{ color: "#1e40af" }}>
+            <div style={{ padding: "1rem" }}>
+              <h3
+                style={{
+                  fontWeight: 600,
+                  marginBottom: "0.5rem",
+                  color: "#1e40af",
+                }}
+              >
                 About Team Management
               </h3>
-              <ul className="space-y-2 text-sm" style={{ color: "#1e3a8a" }}>
+              <ul
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                  fontSize: "0.875rem",
+                  color: "#1e3a8a",
+                }}
+              >
                 <li>
                   • Add team members who don't need platform accounts (e.g.,
                   secretaries, social media managers)
@@ -488,7 +578,7 @@ export default function TenantTeam() {
         .header-icon {
           padding: 1rem;
           border-radius: 1rem;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, #6366f1, #8b5cf6);
           color: white;
         }
 
@@ -568,8 +658,8 @@ export default function TenantTeam() {
           gap: 0.5rem;
           padding: 0.75rem 1.5rem;
           border: none;
-          border-radius: 0.5rem;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 0.75rem;
+          background: linear-gradient(135deg, #6366f1, #8b5cf6);
           color: white;
           font-weight: 600;
           cursor: pointer;
@@ -586,7 +676,7 @@ export default function TenantTeam() {
           gap: 0.5rem;
           padding: 0.75rem 1.5rem;
           border: 1px solid #e5e7eb;
-          border-radius: 0.5rem;
+          border-radius: 0.75rem;
           background: white;
           color: #374151;
           font-weight: 600;
@@ -600,32 +690,32 @@ export default function TenantTeam() {
 
         .icon-button {
           padding: 0.5rem;
-          border: 1px solid #e5e7eb;
-          border-radius: 0.375rem;
-          background: white;
-          color: #3b82f6;
+          border: none;
+          border-radius: 0.5rem;
+          background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          color: white;
           cursor: pointer;
           transition: all 0.2s;
         }
 
         .icon-button:hover {
-          background: #eff6ff;
-          border-color: #3b82f6;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
         }
 
         .icon-button-danger {
           padding: 0.5rem;
-          border: 1px solid #e5e7eb;
-          border-radius: 0.375rem;
-          background: white;
-          color: #ef4444;
+          border: 1px solid #fecaca;
+          border-radius: 0.5rem;
+          background: #fee2e2;
+          color: #991b1b;
           cursor: pointer;
           transition: all 0.2s;
         }
 
         .icon-button-danger:hover {
-          background: #fef2f2;
-          border-color: #ef4444;
+          background: #fecaca;
+          border-color: #f87171;
         }
 
         .loading {
@@ -639,7 +729,7 @@ export default function TenantTeam() {
           width: 48px;
           height: 48px;
           border: 4px solid #f3f4f6;
-          border-top-color: #667eea;
+          border-top-color: #6366f1;
           border-radius: 50%;
           animation: spin 1s linear infinite;
         }

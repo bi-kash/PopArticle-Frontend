@@ -4,7 +4,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ArrowLeft } from "lucide-react";
 
 export default function GenerateArticle() {
   const router = useRouter();
@@ -56,7 +56,7 @@ export default function GenerateArticle() {
 
       const response = await articleService.generateArticle(data, tenantId);
       router.push(
-        `/dashboard/tenants/${tenantId}/articles/${response.article.id}`
+        `/dashboard/tenants/${tenantId}/articles/${response.article.id}`,
       );
     } catch (err) {
       setError(err.response?.data?.message || "Failed to generate article");
@@ -89,11 +89,47 @@ export default function GenerateArticle() {
     <ProtectedRoute>
       <DashboardLayout>
         <div>
+          <div style={{ marginBottom: "2rem" }}>
+            <button
+              onClick={() =>
+                router.push(`/dashboard/tenants/${tenantId}/dashboard`)
+              }
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 1rem",
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "0.75rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                fontSize: "0.875rem",
+                marginBottom: "1rem",
+              }}
+            >
+              <ArrowLeft size={16} />
+              Back to Dashboard
+            </button>
+          </div>
+
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <Sparkles
-              size={48}
-              style={{ color: "var(--primary-color)", margin: "0 auto 1rem" }}
-            />
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "1rem",
+                background: "linear-gradient(135deg, #10b981, #059669)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                margin: "0 auto 1rem",
+              }}
+            >
+              <Sparkles size={28} />
+            </div>
             <h1
               style={{
                 fontSize: "2rem",
@@ -351,17 +387,43 @@ export default function GenerateArticle() {
               >
                 <button
                   type="submit"
-                  className="btn btn-success"
                   disabled={loading}
-                  style={{ minWidth: "200px" }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.75rem 1.5rem",
+                    minWidth: "200px",
+                    background: "linear-gradient(135deg, #10b981, #059669)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "0.75rem",
+                    fontWeight: 600,
+                    cursor: loading ? "not-allowed" : "pointer",
+                    opacity: loading ? 0.7 : 1,
+                    justifyContent: "center",
+                  }}
                 >
                   <Sparkles size={20} />
                   {loading ? "Generating..." : "Generate Article"}
                 </button>
                 <button
                   type="button"
-                  className="btn btn-secondary"
-                  onClick={() => router.push("/dashboard/articles")}
+                  onClick={() =>
+                    router.push(`/dashboard/tenants/${tenantId}/dashboard`)
+                  }
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.75rem 1.5rem",
+                    background: "var(--surface)",
+                    color: "var(--text-primary)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "0.75rem",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
                 >
                   Cancel
                 </button>

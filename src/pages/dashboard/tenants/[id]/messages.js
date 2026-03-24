@@ -20,13 +20,9 @@ export default function TenantMessagesPage() {
   });
   const [pagination, setPagination] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [debugMeta, setDebugMeta] = useState(null);
-  const [debugBody, setDebugBody] = useState(null);
-  const [debugError, setDebugError] = useState(null);
 
   useEffect(() => {
     if (tenantId) {
-      console.log("🔍 Tenant ID detected:", tenantId);
       fetchMessages();
     }
   }, [tenantId, filters]);
@@ -34,32 +30,13 @@ export default function TenantMessagesPage() {
   const fetchMessages = async () => {
     setLoading(true);
     try {
-      console.log("📤 Fetching messages with params:", {
-        filters,
-        tenantId,
-      });
       const response = await messageService.getMessages(filters, tenantId);
-      console.log("📥 Full API Response:", response);
-      console.log("📧 Messages received:", response.messages);
-      console.log("📊 Pagination info:", response.pagination);
-      console.log("🔔 Unread count:", response.unread_count);
-
-      // Debug meta attached by service
-      setDebugMeta(response._meta || null);
-      setDebugBody(response || null);
 
       setMessages(response.messages);
       setPagination(response.pagination);
       setUnreadCount(response.unread_count || 0);
     } catch (error) {
-      console.error("❌ Failed to fetch messages:", error);
-      console.error("Error response:", error.response?.data);
-      console.error("Error status:", error.response?.status);
-      setDebugError({
-        status: error.response?.status,
-        data: error.response?.data,
-        sent_headers: error.response?.config?.headers || null,
-      });
+      console.error("Failed to fetch messages:", error);
     } finally {
       setLoading(false);
     }
@@ -70,7 +47,7 @@ export default function TenantMessagesPage() {
       await messageService.updateMessage(
         messageId,
         { status: newStatus },
-        tenantId
+        tenantId,
       );
       await fetchMessages();
       if (selectedMessage?.id === messageId) {
@@ -92,7 +69,7 @@ export default function TenantMessagesPage() {
       await messageService.updateMessage(
         messageId,
         { status: "replied", reply_text: replyText },
-        tenantId
+        tenantId,
       );
       setReplyText("");
       await fetchMessages();
@@ -118,17 +95,6 @@ export default function TenantMessagesPage() {
     }
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      pending: "bg-yellow-100 text-yellow-800",
-      read: "bg-blue-100 text-blue-800",
-      replied: "bg-green-100 text-green-800",
-      archived: "bg-gray-100 text-gray-800",
-      spam: "bg-red-100 text-red-800",
-    };
-    return colors[status] || "bg-gray-100 text-gray-800";
-  };
-
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString();
   };
@@ -141,16 +107,41 @@ export default function TenantMessagesPage() {
           <div style={{ marginBottom: "2rem" }}>
             <Link href={`/dashboard/tenants/${tenantId}/dashboard`}>
               <button
-                className="btn btn-secondary"
-                style={{ marginBottom: "1rem" }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.5rem 1rem",
+                  background: "var(--surface)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "0.75rem",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  fontSize: "0.875rem",
+                  marginBottom: "1rem",
+                }}
               >
-                <ArrowLeft size={20} />
+                <ArrowLeft size={16} />
                 Back to Tenant Dashboard
               </button>
             </Link>
 
             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-              <Mail size={32} style={{ color: "var(--primary-color)" }} />
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: "0.75rem",
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                }}
+              >
+                <Mail size={24} />
+              </div>
               <div>
                 <h1
                   style={{
@@ -195,91 +186,21 @@ export default function TenantMessagesPage() {
 
               <button
                 onClick={() => fetchMessages()}
-                className="btn btn-primary"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.75rem 1.25rem",
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.75rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
               >
                 Refresh
               </button>
-            </div>
-          </div>
-
-          {/* Debug Panel (shows request headers and response for troubleshooting) */}
-          <div className="card" style={{ marginBottom: "1.5rem" }}>
-            <h3
-              style={{
-                fontSize: "1rem",
-                fontWeight: 600,
-                marginBottom: "0.5rem",
-              }}
-            >
-              Debug: Request / Response
-            </h3>
-            <div
-              style={{ display: "flex", gap: "1rem", flexDirection: "column" }}
-            >
-              {debugMeta && (
-                <div style={{ fontSize: "0.875rem" }}>
-                  <strong>Sent Headers:</strong>
-                  <pre
-                    style={{
-                      whiteSpace: "pre-wrap",
-                      background: "#f7fafc",
-                      padding: "0.75rem",
-                      borderRadius: "6px",
-                      marginTop: "0.5rem",
-                    }}
-                  >
-                    {JSON.stringify(debugMeta.sent_headers, null, 2)}
-                  </pre>
-                </div>
-              )}
-              {debugMeta?.sent_config && (
-                <div style={{ fontSize: "0.875rem", marginTop: "0.5rem" }}>
-                  <strong>Sent Request Config:</strong>
-                  <pre
-                    style={{
-                      whiteSpace: "pre-wrap",
-                      background: "#f7fafc",
-                      padding: "0.75rem",
-                      borderRadius: "6px",
-                      marginTop: "0.5rem",
-                    }}
-                  >
-                    {JSON.stringify(debugMeta.sent_config, null, 2)}
-                  </pre>
-                </div>
-              )}
-              {debugBody && (
-                <div style={{ fontSize: "0.875rem" }}>
-                  <strong>Response (status {debugMeta?.status || "-"}):</strong>
-                  <pre
-                    style={{
-                      whiteSpace: "pre-wrap",
-                      background: "#f7fafc",
-                      padding: "0.75rem",
-                      borderRadius: "6px",
-                      marginTop: "0.5rem",
-                    }}
-                  >
-                    {JSON.stringify(debugBody, null, 2)}
-                  </pre>
-                </div>
-              )}
-              {debugError && (
-                <div style={{ fontSize: "0.875rem" }}>
-                  <strong>Error:</strong>
-                  <pre
-                    style={{
-                      whiteSpace: "pre-wrap",
-                      background: "#fff7f7",
-                      padding: "0.75rem",
-                      borderRadius: "6px",
-                      marginTop: "0.5rem",
-                    }}
-                  >
-                    {JSON.stringify(debugError, null, 2)}
-                  </pre>
-                </div>
-              )}
             </div>
           </div>
 
@@ -366,10 +287,10 @@ export default function TenantMessagesPage() {
                               message.status === "pending"
                                 ? "var(--warning-color)"
                                 : message.status === "read"
-                                ? "var(--info-color)"
-                                : message.status === "replied"
-                                ? "var(--success-color)"
-                                : "var(--text-secondary)",
+                                  ? "var(--info-color)"
+                                  : message.status === "replied"
+                                    ? "var(--success-color)"
+                                    : "var(--text-secondary)",
                             color: "white",
                           }}
                         >
@@ -453,10 +374,10 @@ export default function TenantMessagesPage() {
                             selectedMessage.status === "pending"
                               ? "var(--warning-color)"
                               : selectedMessage.status === "read"
-                              ? "var(--info-color)"
-                              : selectedMessage.status === "replied"
-                              ? "var(--success-color)"
-                              : "var(--text-secondary)",
+                                ? "var(--info-color)"
+                                : selectedMessage.status === "replied"
+                                  ? "var(--success-color)"
+                                  : "var(--text-secondary)",
                           color: "white",
                         }}
                       >
@@ -488,8 +409,19 @@ export default function TenantMessagesPage() {
                       </select>
                       <button
                         onClick={() => handleDelete(selectedMessage.id)}
-                        className="btn btn-danger"
-                        style={{ fontSize: "0.875rem" }}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.375rem",
+                          padding: "0.5rem 1rem",
+                          background: "#fee2e2",
+                          color: "#991b1b",
+                          border: "1px solid #fecaca",
+                          borderRadius: "0.5rem",
+                          fontWeight: 500,
+                          cursor: "pointer",
+                          fontSize: "0.875rem",
+                        }}
                       >
                         Delete
                       </button>
@@ -546,7 +478,18 @@ export default function TenantMessagesPage() {
                     />
                     <button
                       onClick={() => handleReply(selectedMessage.id)}
-                      className="btn btn-primary"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        padding: "0.75rem 1.5rem",
+                        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "0.75rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
                     >
                       Send Reply
                     </button>
@@ -599,7 +542,19 @@ export default function TenantMessagesPage() {
                   setFilters({ ...filters, page: filters.page - 1 })
                 }
                 disabled={filters.page === 1}
-                className="btn btn-secondary"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.5rem 1rem",
+                  background: "var(--surface)",
+                  color: "var(--text-primary)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "0.75rem",
+                  fontWeight: 500,
+                  cursor: filters.page === 1 ? "not-allowed" : "pointer",
+                  opacity: filters.page === 1 ? 0.5 : 1,
+                }}
               >
                 Previous
               </button>
@@ -613,7 +568,22 @@ export default function TenantMessagesPage() {
                   setFilters({ ...filters, page: filters.page + 1 })
                 }
                 disabled={filters.page >= pagination.pages}
-                className="btn btn-secondary"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.5rem 1rem",
+                  background: "var(--surface)",
+                  color: "var(--text-primary)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "0.75rem",
+                  fontWeight: 500,
+                  cursor:
+                    filters.page >= pagination.pages
+                      ? "not-allowed"
+                      : "pointer",
+                  opacity: filters.page >= pagination.pages ? 0.5 : 1,
+                }}
               >
                 Next
               </button>

@@ -2,7 +2,18 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { authService } from "@/lib/authService";
-import { Menu, X, User, LogOut, ChevronDown } from "lucide-react";
+import siteConfig from "@/lib/siteConfig";
+import Logo from "@/components/Logo";
+import {
+  Menu,
+  X,
+  User,
+  LogOut,
+  ChevronDown,
+  LayoutDashboard,
+  Settings,
+  ArrowRight,
+} from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
@@ -10,20 +21,22 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     const userData = authService.getCurrentUser();
     setUser(userData);
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
-    // Close dropdowns on route change
     setMobileMenuOpen(false);
     setAccountDropdownOpen(false);
   }, [router.pathname]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -38,16 +51,11 @@ export default function Navbar() {
   }, [accountDropdownOpen]);
 
   const isAuthenticated = mounted && authService.isAuthenticated();
-
-  const handleLogout = () => {
-    authService.logout();
-  };
-
+  const handleLogout = () => authService.logout();
   const navLinks = [
     { label: "Home", href: "/" },
+    { label: "Docs", href: "/docs" },
     { label: "Contact", href: "/contact" },
-    { label: "Privacy Policy", href: "/privacy-policy" },
-    { label: "Terms of Service", href: "/terms-of-service" },
   ];
 
   const displayName =
@@ -65,12 +73,22 @@ export default function Navbar() {
 
   return (
     <header
+      className="site-navbar"
       style={{
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        color: "white",
         position: "sticky",
         top: 0,
         zIndex: 1100,
+        background: scrolled
+          ? "rgba(10, 17, 35, 0.97)"
+          : "rgba(10, 17, 35, 0.94)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderBottom: scrolled
+          ? "1px solid rgba(255,255,255,0.08)"
+          : "1px solid rgba(255,255,255,0.04)",
+        transition: "background 0.3s, border-color 0.3s, box-shadow 0.3s",
+        boxShadow: scrolled ? "0 4px 24px rgba(0,0,0,0.3)" : "none",
+        color: "white",
       }}
     >
       <div
@@ -79,77 +97,81 @@ export default function Navbar() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "0.75rem 1rem",
+          padding: "0.625rem 1rem",
+          maxWidth: "1200px",
         }}
       >
         {/* Logo */}
-        <Link href="/" style={{ textDecoration: "none", color: "white" }}>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: 0 }}>
-            PopArticle
-          </h1>
-        </Link>
+        <Logo variant="light" size="default" />
 
         {/* Desktop Nav */}
         <nav
           suppressHydrationWarning
+          className="desktop-nav"
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "0.25rem",
+            gap: "0.125rem",
           }}
-          className="desktop-nav"
         >
-          {navLinks.map((link) => (
-            <Link key={link.href} href={link.href}>
-              <span
-                style={{
-                  padding: "0.5rem 0.75rem",
-                  borderRadius: "0.375rem",
-                  fontSize: "0.9rem",
-                  fontWeight: router.pathname === link.href ? "600" : "400",
-                  background:
-                    router.pathname === link.href
-                      ? "rgba(255,255,255,0.2)"
+          {navLinks.map((link) => {
+            const active = router.pathname === link.href;
+            return (
+              <Link key={link.href} href={link.href}>
+                <span
+                  className="nav-link-item"
+                  style={{
+                    padding: "0.4375rem 0.875rem",
+                    borderRadius: "0.375rem",
+                    fontSize: "0.875rem",
+                    fontWeight: active ? 600 : 450,
+                    color: active ? "white" : "rgba(255,255,255,0.75)",
+                    background: active
+                      ? "rgba(255,255,255,0.1)"
                       : "transparent",
-                  cursor: "pointer",
-                  transition: "background 0.2s",
-                  whiteSpace: "nowrap",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "rgba(255,255,255,0.15)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background =
-                    router.pathname === link.href
-                      ? "rgba(255,255,255,0.2)"
-                      : "transparent")
-                }
-              >
-                {link.label}
-              </span>
-            </Link>
-          ))}
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {link.label}
+                </span>
+              </Link>
+            );
+          })}
+
+          {/* Separator */}
+          <div
+            style={{
+              width: 1,
+              height: 20,
+              background: "rgba(255,255,255,0.12)",
+              margin: "0 0.375rem",
+            }}
+          />
 
           {isAuthenticated ? (
             <div
               suppressHydrationWarning
               className="account-dropdown-container"
-              style={{ position: "relative", marginLeft: "0.5rem" }}
+              style={{ position: "relative" }}
             >
               <button
                 onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
+                className="nav-avatar-btn"
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "0.5rem",
-                  background: "rgba(255,255,255,0.2)",
-                  border: "none",
-                  borderRadius: "0.375rem",
-                  padding: "0.4rem 0.75rem",
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "0.5rem",
+                  padding: "0.35rem 0.75rem 0.35rem 0.35rem",
                   color: "white",
                   cursor: "pointer",
-                  fontSize: "0.9rem",
+                  fontSize: "0.875rem",
                   fontWeight: 500,
+                  transition: "all 0.15s",
                 }}
               >
                 {user?.profile_image ? (
@@ -157,19 +179,20 @@ export default function Navbar() {
                     src={user.profile_image}
                     alt=""
                     style={{
-                      width: 28,
-                      height: 28,
+                      width: 30,
+                      height: 30,
                       borderRadius: "50%",
                       objectFit: "cover",
+                      border: "2px solid rgba(255,255,255,0.15)",
                     }}
                   />
                 ) : (
                   <div
                     style={{
-                      width: 28,
-                      height: 28,
+                      width: 30,
+                      height: 30,
                       borderRadius: "50%",
-                      background: "rgba(255,255,255,0.3)",
+                      background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -181,30 +204,39 @@ export default function Navbar() {
                   </div>
                 )}
                 <span className="desktop-nav-text">{displayName}</span>
-                <ChevronDown size={16} />
+                <ChevronDown
+                  size={14}
+                  style={{
+                    transition: "transform 0.2s",
+                    transform: accountDropdownOpen ? "rotate(180deg)" : "none",
+                    opacity: 0.7,
+                  }}
+                />
               </button>
 
               {/* Account Dropdown */}
               {accountDropdownOpen && (
                 <div
+                  className="navbar-dropdown"
                   style={{
                     position: "absolute",
-                    top: "calc(100% + 0.5rem)",
+                    top: "calc(100% + 0.625rem)",
                     right: 0,
                     background: "white",
-                    borderRadius: "0.5rem",
+                    borderRadius: "0.75rem",
                     boxShadow:
-                      "0 10px 25px rgba(0,0,0,0.15), 0 4px 10px rgba(0,0,0,0.1)",
-                    minWidth: "280px",
+                      "0 20px 40px rgba(0,0,0,0.15), 0 8px 16px rgba(0,0,0,0.08)",
+                    minWidth: "260px",
                     zIndex: 1200,
                     overflow: "hidden",
-                    animation: "slideIn 0.15s ease-out",
+                    border: "1px solid var(--border-color)",
+                    animation: "navDropIn 0.15s ease-out",
                   }}
                 >
-                  {/* User Info Header */}
+                  {/* User info */}
                   <div
                     style={{
-                      padding: "1rem",
+                      padding: "1rem 1rem 0.875rem",
                       borderBottom: "1px solid var(--border-color)",
                       display: "flex",
                       gap: "0.75rem",
@@ -216,8 +248,8 @@ export default function Navbar() {
                         src={user.profile_image}
                         alt=""
                         style={{
-                          width: 48,
-                          height: 48,
+                          width: 44,
+                          height: 44,
                           borderRadius: "50%",
                           objectFit: "cover",
                           border: "2px solid var(--border-color)",
@@ -226,16 +258,16 @@ export default function Navbar() {
                     ) : (
                       <div
                         style={{
-                          width: 48,
-                          height: 48,
+                          width: 44,
+                          height: 44,
                           borderRadius: "50%",
                           background:
-                            "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                            "linear-gradient(135deg, #6366f1, #8b5cf6)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           color: "white",
-                          fontSize: "1rem",
+                          fontSize: "0.9rem",
                           fontWeight: 700,
                           flexShrink: 0,
                         }}
@@ -243,29 +275,19 @@ export default function Navbar() {
                         {initials}
                       </div>
                     )}
-                    <div style={{ overflow: "hidden" }}>
+                    <div style={{ overflow: "hidden", minWidth: 0 }}>
                       {user?.full_name && (
                         <div
                           style={{
                             fontWeight: 600,
                             color: "var(--text-primary)",
-                            fontSize: "0.95rem",
+                            fontSize: "0.9rem",
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                           }}
                         >
                           {user.full_name}
-                        </div>
-                      )}
-                      {user?.username && (
-                        <div
-                          style={{
-                            color: "var(--text-secondary)",
-                            fontSize: "0.8rem",
-                          }}
-                        >
-                          @{user.username}
                         </div>
                       )}
                       {user?.email && (
@@ -286,12 +308,13 @@ export default function Navbar() {
                           style={{
                             display: "inline-block",
                             marginTop: "0.25rem",
-                            fontSize: "0.7rem",
+                            fontSize: "0.675rem",
                             fontWeight: 600,
-                            padding: "0.1rem 0.5rem",
+                            padding: "0.125rem 0.5rem",
                             borderRadius: "9999px",
-                            background: "#dbeafe",
-                            color: "#1e40af",
+                            background: "#ede9fe",
+                            color: "#6d28d9",
+                            textTransform: "capitalize",
                           }}
                         >
                           {user.role}
@@ -300,77 +323,68 @@ export default function Navbar() {
                     </div>
                   </div>
 
-                  {/* Dropdown Links */}
-                  <div style={{ padding: "0.5rem 0" }}>
-                    <Link href="/dashboard">
-                      <div
-                        style={{
-                          padding: "0.6rem 1rem",
-                          color: "var(--text-primary)",
-                          fontSize: "0.9rem",
-                          cursor: "pointer",
-                          transition: "background 0.15s",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.background = "var(--surface)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.background = "transparent")
-                        }
-                      >
-                        Dashboard
-                      </div>
-                    </Link>
-                    <Link href="/dashboard/profile">
-                      <div
-                        style={{
-                          padding: "0.6rem 1rem",
-                          color: "var(--text-primary)",
-                          fontSize: "0.9rem",
-                          cursor: "pointer",
-                          transition: "background 0.15s",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.background = "var(--surface)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.background = "transparent")
-                        }
-                      >
-                        Profile Settings
-                      </div>
-                    </Link>
+                  {/* Links */}
+                  <div style={{ padding: "0.375rem 0" }}>
+                    {[
+                      {
+                        href: "/dashboard",
+                        label: "Dashboard",
+                        icon: LayoutDashboard,
+                      },
+                      {
+                        href: "/dashboard/profile",
+                        label: "Profile Settings",
+                        icon: Settings,
+                      },
+                    ].map((item) => (
+                      <Link key={item.href} href={item.href}>
+                        <div
+                          className="navbar-dropdown-item"
+                          style={{
+                            padding: "0.5rem 1rem",
+                            color: "var(--text-primary)",
+                            fontSize: "0.875rem",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.625rem",
+                            transition: "background 0.12s",
+                          }}
+                        >
+                          <item.icon
+                            size={16}
+                            style={{ color: "var(--text-secondary)" }}
+                          />
+                          {item.label}
+                        </div>
+                      </Link>
+                    ))}
                   </div>
 
                   {/* Logout */}
                   <div
                     style={{
                       borderTop: "1px solid var(--border-color)",
-                      padding: "0.5rem 0",
+                      padding: "0.375rem 0",
                     }}
                   >
                     <button
                       onClick={handleLogout}
+                      className="navbar-dropdown-item"
                       style={{
                         width: "100%",
-                        padding: "0.6rem 1rem",
+                        padding: "0.5rem 1rem",
                         background: "none",
                         border: "none",
                         color: "var(--danger-color)",
-                        fontSize: "0.9rem",
+                        fontSize: "0.875rem",
                         cursor: "pointer",
                         textAlign: "left",
                         display: "flex",
                         alignItems: "center",
-                        gap: "0.5rem",
-                        transition: "background 0.15s",
+                        gap: "0.625rem",
+                        transition: "background 0.12s",
                       }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background = "#fef2f2")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = "transparent")
-                      }
                     >
                       <LogOut size={16} />
                       Sign Out
@@ -382,30 +396,39 @@ export default function Navbar() {
           ) : (
             <div
               suppressHydrationWarning
-              style={{ display: "flex", gap: "0.5rem", marginLeft: "0.5rem" }}
+              style={{ display: "flex", gap: "0.5rem" }}
             >
               <Link href="/login">
                 <button
-                  className="btn"
+                  className="btn nav-link-item"
                   style={{
-                    background: "rgba(255,255,255,0.2)",
-                    color: "white",
-                    fontSize: "0.9rem",
+                    background: "transparent",
+                    color: "rgba(255,255,255,0.85)",
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                    padding: "0.4375rem 0.875rem",
+                    border: "none",
                   }}
                 >
-                  Login
+                  Log In
                 </button>
               </Link>
               <Link href="/register">
                 <button
                   className="btn"
                   style={{
-                    background: "white",
-                    color: "#667eea",
-                    fontSize: "0.9rem",
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    color: "white",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    padding: "0.4375rem 1.125rem",
+                    borderRadius: "0.4375rem",
+                    border: "none",
+                    boxShadow: "0 2px 8px rgba(99,102,241,0.3)",
                   }}
                 >
-                  Sign Up
+                  Get Started
+                  <ArrowRight size={14} />
                 </button>
               </Link>
             </div>
@@ -421,10 +444,10 @@ export default function Navbar() {
               color: "white",
               cursor: "pointer",
               padding: "0.5rem",
-              display: "none", // shown via CSS media query
+              display: "none",
             }}
           >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </nav>
       </div>
@@ -435,12 +458,12 @@ export default function Navbar() {
           suppressHydrationWarning
           className="mobile-menu"
           style={{
-            background: "rgba(102, 126, 234, 0.98)",
-            borderTop: "1px solid rgba(255,255,255,0.2)",
+            background: "rgba(15, 23, 42, 0.98)",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
             padding: "1rem",
+            backdropFilter: "blur(12px)",
           }}
         >
-          {/* User info in mobile menu */}
           {isAuthenticated && user && (
             <div
               style={{
@@ -448,9 +471,10 @@ export default function Navbar() {
                 alignItems: "center",
                 gap: "0.75rem",
                 padding: "0.75rem",
-                background: "rgba(255,255,255,0.1)",
-                borderRadius: "0.5rem",
-                marginBottom: "1rem",
+                background: "rgba(255,255,255,0.05)",
+                borderRadius: "0.625rem",
+                marginBottom: "0.75rem",
+                border: "1px solid rgba(255,255,255,0.06)",
               }}
             >
               {user.profile_image ? (
@@ -458,8 +482,8 @@ export default function Navbar() {
                   src={user.profile_image}
                   alt=""
                   style={{
-                    width: 40,
-                    height: 40,
+                    width: 38,
+                    height: 38,
                     borderRadius: "50%",
                     objectFit: "cover",
                   }}
@@ -467,14 +491,14 @@ export default function Navbar() {
               ) : (
                 <div
                   style={{
-                    width: 40,
-                    height: 40,
+                    width: 38,
+                    height: 38,
                     borderRadius: "50%",
-                    background: "rgba(255,255,255,0.3)",
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "0.85rem",
+                    fontSize: "0.8rem",
                     fontWeight: 700,
                     flexShrink: 0,
                   }}
@@ -483,11 +507,11 @@ export default function Navbar() {
                 </div>
               )}
               <div>
-                <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>
+                <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>
                   {user.full_name || user.username || "User"}
                 </div>
                 {user.email && (
-                  <div style={{ fontSize: "0.8rem", opacity: 0.8 }}>
+                  <div style={{ fontSize: "0.75rem", opacity: 0.6 }}>
                     {user.email}
                   </div>
                 )}
@@ -498,15 +522,21 @@ export default function Navbar() {
           {navLinks.map((link) => (
             <Link key={link.href} href={link.href}>
               <div
+                className="nav-link-item"
                 style={{
-                  padding: "0.75rem",
+                  padding: "0.625rem 0.75rem",
                   borderRadius: "0.375rem",
-                  fontWeight: router.pathname === link.href ? "600" : "400",
+                  fontWeight: router.pathname === link.href ? 600 : 400,
+                  color:
+                    router.pathname === link.href
+                      ? "white"
+                      : "rgba(255,255,255,0.7)",
                   background:
                     router.pathname === link.href
-                      ? "rgba(255,255,255,0.15)"
+                      ? "rgba(255,255,255,0.08)"
                       : "transparent",
-                  marginBottom: "0.25rem",
+                  marginBottom: "0.125rem",
+                  fontSize: "0.9rem",
                 }}
               >
                 {link.label}
@@ -516,47 +546,67 @@ export default function Navbar() {
 
           {isAuthenticated ? (
             <>
+              <div
+                style={{
+                  height: 1,
+                  background: "rgba(255,255,255,0.06)",
+                  margin: "0.5rem 0",
+                }}
+              />
               <Link href="/dashboard">
                 <div
                   style={{
-                    padding: "0.75rem",
+                    padding: "0.625rem 0.75rem",
                     borderRadius: "0.375rem",
-                    marginBottom: "0.25rem",
+                    marginBottom: "0.125rem",
+                    fontSize: "0.9rem",
+                    color: "rgba(255,255,255,0.7)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
                   }}
                 >
+                  <LayoutDashboard size={16} />
                   Dashboard
                 </div>
               </Link>
               <Link href="/dashboard/profile">
                 <div
                   style={{
-                    padding: "0.75rem",
+                    padding: "0.625rem 0.75rem",
                     borderRadius: "0.375rem",
-                    marginBottom: "0.25rem",
+                    marginBottom: "0.125rem",
+                    fontSize: "0.9rem",
+                    color: "rgba(255,255,255,0.7)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
                   }}
                 >
-                  Profile Settings
+                  <Settings size={16} />
+                  Profile
                 </div>
               </Link>
               <button
                 onClick={handleLogout}
                 style={{
                   width: "100%",
-                  padding: "0.75rem",
-                  background: "rgba(239,68,68,0.9)",
-                  border: "none",
+                  padding: "0.625rem 0.75rem",
+                  background: "rgba(239,68,68,0.12)",
+                  border: "1px solid rgba(239,68,68,0.2)",
                   borderRadius: "0.375rem",
-                  color: "white",
+                  color: "#fca5a5",
                   cursor: "pointer",
                   fontWeight: 500,
-                  marginTop: "0.5rem",
+                  marginTop: "0.375rem",
                   textAlign: "left",
                   display: "flex",
                   alignItems: "center",
                   gap: "0.5rem",
+                  fontSize: "0.9rem",
                 }}
               >
-                <LogOut size={18} />
+                <LogOut size={16} />
                 Sign Out
               </button>
             </>
@@ -573,11 +623,13 @@ export default function Navbar() {
                   className="btn"
                   style={{
                     width: "100%",
-                    background: "rgba(255,255,255,0.2)",
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.1)",
                     color: "white",
+                    fontSize: "0.875rem",
                   }}
                 >
-                  Login
+                  Log In
                 </button>
               </Link>
               <Link href="/register" style={{ flex: 1 }}>
@@ -585,11 +637,14 @@ export default function Navbar() {
                   className="btn"
                   style={{
                     width: "100%",
-                    background: "white",
-                    color: "#667eea",
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    color: "white",
+                    border: "none",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
                   }}
                 >
-                  Sign Up
+                  Get Started
                 </button>
               </Link>
             </div>
@@ -597,8 +652,29 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Responsive CSS */}
+      {/* Scoped styles */}
       <style jsx global>{`
+        .nav-link-item:hover {
+          color: white !important;
+          background: rgba(255, 255, 255, 0.08) !important;
+        }
+        .nav-avatar-btn:hover {
+          background: rgba(255, 255, 255, 0.12) !important;
+          border-color: rgba(255, 255, 255, 0.18) !important;
+        }
+        .navbar-dropdown-item:hover {
+          background: var(--surface) !important;
+        }
+        @keyframes navDropIn {
+          from {
+            opacity: 0;
+            transform: translateY(-6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
         .desktop-nav > a,
         .desktop-nav > .account-dropdown-container,
         .desktop-nav > div:not(.mobile-menu-btn) {
@@ -610,7 +686,6 @@ export default function Navbar() {
         .mobile-menu {
           display: block;
         }
-
         @media (max-width: 768px) {
           .desktop-nav > a {
             display: none !important;
@@ -625,7 +700,6 @@ export default function Navbar() {
             display: flex !important;
           }
         }
-
         @media (min-width: 769px) {
           .mobile-menu {
             display: none !important;

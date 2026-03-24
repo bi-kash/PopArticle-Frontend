@@ -48,7 +48,6 @@ export default function Subscription() {
 
       if (eventsObj) {
         eventsObj.on("checkout.completed", (data) => {
-          console.log("✅ Paddle checkout completed:", data);
           loadData().then(() => {
             setSuccessMessage(
               "Subscription successful! Your plan has been activated.",
@@ -57,12 +56,10 @@ export default function Subscription() {
         });
 
         eventsObj.on("checkout.closed", () => {
-          console.log("Paddle checkout closed");
           setActionLoading(false);
         });
 
         eventsObj.on("checkout.error", (error) => {
-          console.error("Paddle checkout error:", error);
           setError("Payment failed. Please try again.");
           setActionLoading(false);
         });
@@ -72,7 +69,6 @@ export default function Subscription() {
       // Fallback: some Paddle builds expose `on` directly on Checkout
       if (typeof checkout.on === "function") {
         checkout.on("checkout.completed", (data) => {
-          console.log("✅ Paddle checkout completed (fallback):", data);
           loadData().then(() => {
             setSuccessMessage(
               "Subscription successful! Your plan has been activated.",
@@ -81,12 +77,10 @@ export default function Subscription() {
         });
 
         checkout.on("checkout.closed", () => {
-          console.log("Paddle checkout closed (fallback)");
           setActionLoading(false);
         });
 
         checkout.on("checkout.error", (error) => {
-          console.error("Paddle checkout error (fallback):", error);
           setError("Payment failed. Please try again.");
           setActionLoading(false);
         });
@@ -118,7 +112,6 @@ export default function Subscription() {
   // Check for success/cancel query params (fallback for redirect mode)
   useEffect(() => {
     if (router.query.success === "true") {
-      console.log("User returned from successful checkout");
       loadData().then(() => {
         setSuccessMessage(
           "Subscription successful! Your plan has been activated.",
@@ -127,7 +120,6 @@ export default function Subscription() {
       router.replace("/dashboard/subscription", undefined, { shallow: true });
     }
     if (router.query.canceled === "true") {
-      console.log("User canceled checkout");
       setError("Checkout was canceled. You can try again when ready.");
       router.replace("/dashboard/subscription", undefined, { shallow: true });
     }
@@ -137,24 +129,15 @@ export default function Subscription() {
     try {
       setLoading(true);
       setError("");
-      console.log("=== Loading Subscription Data ===");
 
       const [subscriptionData, plansData] = await Promise.all([
         subscriptionService.getStatus().catch((err) => {
-          console.error(
-            "Subscription status error:",
-            err.response?.data || err.message,
-          );
           return null;
         }),
         subscriptionService.getPlans().catch((err) => {
-          console.error("Plans error:", err.response?.data || err.message);
           return { plans: [] };
         }),
       ]);
-
-      console.log("Subscription data:", subscriptionData);
-      console.log("Plans data from API:", plansData);
 
       setSubscription(subscriptionData);
       setPlans(plansData.plans || []);
@@ -164,8 +147,6 @@ export default function Subscription() {
         console.warn("⚠️ Paddle is NOT configured on the backend!");
       }
     } catch (err) {
-      console.error("Failed to load subscription data:", err);
-      console.error("Error response:", err.response?.data);
       setError(err.response?.data?.error || "Failed to load subscription data");
     } finally {
       setLoading(false);
@@ -178,8 +159,6 @@ export default function Subscription() {
       setError("");
       setSuccessMessage("");
       const normalizedPlan = planName?.toLowerCase().trim();
-      console.log("=== SUBSCRIBE BUTTON CLICKED ===");
-      console.log("Subscribing to plan:", normalizedPlan);
 
       // Find the plan to get its price_id
       const selectedPlan = plans.find(
@@ -187,18 +166,13 @@ export default function Subscription() {
       );
 
       if (!selectedPlan?.price_id) {
-        console.error("No price_id found for plan:", normalizedPlan);
         setError("Unable to find pricing for this plan. Please try again.");
         setActionLoading(false);
         return;
       }
 
-      console.log("Selected plan:", selectedPlan);
-      console.log("Price ID:", selectedPlan.price_id);
-
       // Check if Paddle is loaded
       if (!window.Paddle) {
-        console.error("Paddle SDK not loaded");
         setError(
           "Payment system is not ready. Please refresh the page and try again.",
         );
@@ -207,23 +181,17 @@ export default function Subscription() {
       }
 
       // Request checkout settings from backend (contains Paddle settings + customer email)
-      console.log("Requesting checkout settings from backend...");
       const checkoutResp = await subscriptionService
         .createCheckout({
           plan: normalizedPlan,
         })
         .catch((err) => {
-          console.error(
-            "Checkout settings error:",
-            err.response?.data || err.message,
-          );
           return null;
         });
 
       // If backend returned checkout settings, use them to open Paddle overlay
       if (checkoutResp && checkoutResp.checkout_settings) {
         const cs = checkoutResp.checkout_settings;
-        console.log("Opening Paddle checkout with settings from backend", cs);
 
         // Ensure items and settings exist; provide sensible defaults otherwise
         const items = cs.items || [
@@ -251,7 +219,6 @@ export default function Subscription() {
       }
 
       // Fallback: open checkout directly using price_id (for backwards compatibility)
-      console.log("Opening Paddle checkout (fallback)...");
       window.Paddle.Checkout.open({
         items: [{ priceId: selectedPlan.price_id, quantity: 1 }],
         settings: {
@@ -267,10 +234,6 @@ export default function Subscription() {
 
       setActionLoading(false);
     } catch (err) {
-      console.error("=== CHECKOUT ERROR ===");
-      console.error("Error:", err);
-      console.error("Response:", err.response?.data);
-
       const errorMessage =
         err.response?.data?.error ||
         err.response?.data?.message ||
@@ -293,7 +256,6 @@ export default function Subscription() {
       setSuccessMessage(`Successfully upgraded to ${planName} plan!`);
       await loadData();
     } catch (err) {
-      console.error("Failed to upgrade:", err);
       setError(err.response?.data?.error || "Failed to upgrade subscription");
     } finally {
       setActionLoading(false);
@@ -311,7 +273,6 @@ export default function Subscription() {
       setShowCancelModal(false);
       await loadData();
     } catch (err) {
-      console.error("Failed to cancel:", err);
       setError(err.response?.data?.error || "Failed to cancel subscription");
     } finally {
       setActionLoading(false);
@@ -326,7 +287,6 @@ export default function Subscription() {
       setSuccessMessage("Subscription paused successfully");
       await loadData();
     } catch (err) {
-      console.error("Failed to pause:", err);
       setError(err.response?.data?.error || "Failed to pause subscription");
     } finally {
       setActionLoading(false);
@@ -341,7 +301,6 @@ export default function Subscription() {
       setSuccessMessage("Subscription resumed successfully");
       await loadData();
     } catch (err) {
-      console.error("Failed to resume:", err);
       setError(err.response?.data?.error || "Failed to resume subscription");
     } finally {
       setActionLoading(false);

@@ -14,52 +14,32 @@ export default function AcceptInvitation() {
   const acceptingRef = useRef(false); // Prevent multiple calls
 
   useEffect(() => {
-    console.log("=== Accept Invitation Page Loaded ===");
-    console.log("Token from URL:", token);
-    console.log("Auto flag:", auto);
-    console.log("Full query:", router.query);
-    console.log(
-      "SessionStorage token:",
-      sessionStorage.getItem("pending_invitation_token")
-    );
-
     // Check if user is logged in
     const user = authService.getCurrentUser();
-    console.log("Current user:", user ? "Logged in" : "Not logged in");
     setIsLoggedIn(!!user);
 
     // If we have auto=true but no token in URL yet, wait for router to update
     if (!token && router.isReady) {
-      console.log("No token in URL, router is ready");
       setLoading(false);
       return;
     }
 
     // Auto-accept if user just logged in/registered
     if (user && token && auto === "true") {
-      console.log(
-        "✓ Conditions met for auto-accept: user exists, token exists, auto=true"
-      );
       handleAccept();
     } else if (token && !auto && !user) {
       // Verify invitation and check if user exists
-      console.log("Verifying invitation (no user logged in)");
       verifyAndRedirect();
     } else if (token && !auto && user) {
       // User is logged in but no auto flag, just show the accept button
-      console.log("User logged in, showing accept button");
       setLoading(false);
-    } else {
-      console.log("No matching condition, waiting...");
     }
   }, [token, auto, router.isReady]);
 
   const verifyAndRedirect = async () => {
     try {
       setLoading(true);
-      console.log("Verifying invitation token:", token);
       const data = await verifyInvitation(token);
-      console.log("Verification response:", data);
 
       setInvitationData(data);
 
@@ -76,27 +56,24 @@ export default function AcceptInvitation() {
       // Check if user exists
       if (data.user_exists === false) {
         // User doesn't exist, redirect to registration
-        console.log("User does not exist, redirecting to registration");
         router.push(
           `/register?invitation=true&email=${encodeURIComponent(
-            data.invitation?.email || data.email || ""
-          )}`
+            data.invitation?.email || data.email || "",
+          )}`,
         );
       } else {
         // User exists, redirect to login
-        console.log("User exists, redirecting to login");
         router.push(
           `/login?invitation=true&email=${encodeURIComponent(
-            data.invitation?.email || data.email || ""
-          )}`
+            data.invitation?.email || data.email || "",
+          )}`,
         );
       }
     } catch (err) {
-      console.error("Verification error:", err);
       setError(
         err.response?.data?.error ||
           err.response?.data?.message ||
-          "Invalid or expired invitation"
+          "Invalid or expired invitation",
       );
       setLoading(false);
     }
@@ -105,7 +82,6 @@ export default function AcceptInvitation() {
   const handleAccept = async () => {
     // Prevent multiple simultaneous calls
     if (acceptingRef.current) {
-      console.log("⚠️ Already accepting invitation, skipping duplicate call");
       return;
     }
 
@@ -117,7 +93,6 @@ export default function AcceptInvitation() {
     // Re-check if user is logged in right now
     const user = authService.getCurrentUser();
     if (!user) {
-      console.log("Not logged in, redirecting to login");
       sessionStorage.setItem("pending_invitation_token", token);
       router.push(`/login?invitation=true`);
       return;
@@ -128,9 +103,7 @@ export default function AcceptInvitation() {
       setLoading(true);
       setError("");
 
-      console.log("✓ Accepting invitation with token:", token);
       const response = await acceptInvitation(token);
-      console.log("✓ Accept response:", response);
 
       // Clear session storage
       sessionStorage.removeItem("pending_invitation_token");
@@ -149,8 +122,6 @@ export default function AcceptInvitation() {
         }
       }, 2000);
     } catch (err) {
-      console.error("❌ Accept invitation error:", err);
-      console.error("Error response:", err.response);
       const errorMsg =
         err.response?.data?.error ||
         err.response?.data?.message ||
@@ -353,8 +324,8 @@ export default function AcceptInvitation() {
             {loading
               ? "Accepting..."
               : isLoggedIn
-              ? "Accept Invitation"
-              : "Sign In to Accept"}
+                ? "Accept Invitation"
+                : "Sign In to Accept"}
           </button>
         </div>
       </div>

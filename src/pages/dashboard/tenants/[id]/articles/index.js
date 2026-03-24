@@ -60,7 +60,7 @@ export default function TenantArticles() {
   };
 
   const filteredArticles = articles.filter((article) =>
-    article.title.toLowerCase().includes(searchTerm.toLowerCase())
+    article.title.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
@@ -69,11 +69,23 @@ export default function TenantArticles() {
         <div>
           <div style={{ marginBottom: "2rem" }}>
             <button
-              className="btn btn-secondary"
               onClick={() => router.push(`/dashboard/tenants/${id}/dashboard`)}
-              style={{ marginBottom: "1rem" }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 1rem",
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "0.75rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                fontSize: "0.875rem",
+                marginBottom: "1rem",
+              }}
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={16} />
               Back to {tenant?.name} Dashboard
             </button>
 
@@ -84,17 +96,53 @@ export default function TenantArticles() {
                 alignItems: "center",
               }}
             >
-              <div>
-                <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
-                  Articles - {tenant?.name}
-                </h1>
-                <p style={{ color: "var(--text-secondary)" }}>
-                  Manage articles for {tenant?.primary_domain}
-                </p>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "1rem" }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "0.75rem",
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                  }}
+                >
+                  <FileText size={24} />
+                </div>
+                <div>
+                  <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
+                    Articles
+                  </h1>
+                  <p
+                    style={{
+                      color: "var(--text-secondary)",
+                      fontSize: "0.9375rem",
+                    }}
+                  >
+                    {tenant?.name} &mdash; {tenant?.primary_domain}
+                  </p>
+                </div>
               </div>
               <Link href={`/dashboard/tenants/${id}/articles/new`}>
-                <button className="btn btn-primary">
-                  <Plus size={20} />
+                <button
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.75rem 1.25rem",
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "0.75rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  <Plus size={18} />
                   New Article
                 </button>
               </Link>
@@ -162,7 +210,20 @@ export default function TenantArticles() {
               </p>
               {!searchTerm && (
                 <Link href={`/dashboard/tenants/${id}/articles/new`}>
-                  <button className="btn btn-primary">
+                  <button
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.75rem 1.5rem",
+                      background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "0.75rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
                     <Plus size={20} />
                     Create First Article
                   </button>
@@ -250,15 +311,16 @@ export default function TenantArticles() {
                               fontWeight: 500,
                               background:
                                 article.status === "published"
-                                  ? "var(--success-color)"
+                                  ? "#d1fae5"
                                   : article.status === "draft"
-                                  ? "var(--warning-color)"
-                                  : "var(--surface)",
+                                    ? "#fef3c7"
+                                    : "#dbeafe",
                               color:
-                                article.status === "published" ||
-                                article.status === "draft"
-                                  ? "white"
-                                  : "var(--text-primary)",
+                                article.status === "published"
+                                  ? "#065f46"
+                                  : article.status === "draft"
+                                    ? "#92400e"
+                                    : "#1e40af",
                             }}
                           >
                             {article.status}
@@ -298,8 +360,17 @@ export default function TenantArticles() {
                               href={`/dashboard/tenants/${id}/articles/${article.id}`}
                             >
                               <button
-                                className="btn btn-secondary"
-                                style={{ padding: "0.5rem" }}
+                                style={{
+                                  padding: "0.5rem",
+                                  background:
+                                    "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "0.5rem",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                }}
                                 title="Edit"
                               >
                                 <Edit size={18} />

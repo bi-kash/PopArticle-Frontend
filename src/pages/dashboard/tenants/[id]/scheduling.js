@@ -306,13 +306,25 @@ export default function TenantSchedulingPage() {
         <div>
           {/* Back Button */}
           <button
-            className="btn btn-secondary"
             onClick={() =>
               router.push(`/dashboard/tenants/${tenantId}/dashboard`)
             }
-            style={{ marginBottom: "1rem" }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.5rem 1rem",
+              background: "var(--surface)",
+              color: "var(--text-secondary)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "0.75rem",
+              fontWeight: 500,
+              cursor: "pointer",
+              fontSize: "0.875rem",
+              marginBottom: "1rem",
+            }}
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={16} />
             Back to {tenant?.name || "Tenant"} Dashboard
           </button>
 
@@ -325,29 +337,56 @@ export default function TenantSchedulingPage() {
             }}
           >
             <div>
-              <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
-                <Calendar
-                  size={32}
-                  style={{
-                    display: "inline",
-                    marginRight: "0.5rem",
-                    verticalAlign: "middle",
-                  }}
-                />
-                Article Scheduling
-              </h1>
-              <p
-                style={{ color: "var(--text-secondary)", marginTop: "0.5rem" }}
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "1rem" }}
               >
-                Automate article generation for {tenant?.name || "this tenant"}
-              </p>
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "0.75rem",
+                    background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                  }}
+                >
+                  <Calendar size={24} />
+                </div>
+                <div>
+                  <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
+                    Article Scheduling
+                  </h1>
+                  <p
+                    style={{
+                      color: "var(--text-secondary)",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    Automate article generation for{" "}
+                    {tenant?.name || "this tenant"}
+                  </p>
+                </div>
+              </div>
             </div>
             {!showForm && (
               <button
-                className="btn btn-primary"
                 onClick={() => setShowForm(true)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.75rem 1.25rem",
+                  background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.75rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
               >
-                <Plus size={20} />
+                <Plus size={18} />
                 New Schedule
               </button>
             )}
@@ -651,8 +690,16 @@ export default function TenantSchedulingPage() {
                     />
                     <button
                       type="button"
-                      className="btn btn-secondary"
                       onClick={handleAddKeyword}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        background: "var(--surface)",
+                        color: "var(--text-primary)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "0.5rem",
+                        fontWeight: 500,
+                        cursor: "pointer",
+                      }}
                     >
                       Add
                     </button>
@@ -663,8 +710,18 @@ export default function TenantSchedulingPage() {
                     {formData.target_keywords.map((keyword) => (
                       <span
                         key={keyword}
-                        className="badge badge-info"
-                        style={{ cursor: "pointer" }}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.25rem",
+                          padding: "0.25rem 0.75rem",
+                          borderRadius: "1rem",
+                          fontSize: "0.875rem",
+                          fontWeight: 500,
+                          background: "#dbeafe",
+                          color: "#1e40af",
+                          cursor: "pointer",
+                        }}
                         onClick={() => handleRemoveKeyword(keyword)}
                       >
                         {keyword} ×
@@ -853,8 +910,20 @@ export default function TenantSchedulingPage() {
                 >
                   <button
                     type="submit"
-                    className="btn btn-primary"
                     disabled={saving}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.75rem 1.5rem",
+                      background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "0.75rem",
+                      fontWeight: 600,
+                      cursor: saving ? "not-allowed" : "pointer",
+                      opacity: saving ? 0.7 : 1,
+                    }}
                   >
                     {saving
                       ? "Saving..."
@@ -864,8 +933,19 @@ export default function TenantSchedulingPage() {
                   </button>
                   <button
                     type="button"
-                    className="btn btn-secondary"
                     onClick={resetForm}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.75rem 1.5rem",
+                      background: "var(--surface)",
+                      color: "var(--text-primary)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "0.75rem",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                    }}
                   >
                     Cancel
                   </button>
@@ -878,18 +958,49 @@ export default function TenantSchedulingPage() {
           <div style={{ marginBottom: "1rem" }}>
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button
-                className={`btn ${
-                  activeTab === "configs" ? "btn-primary" : "btn-secondary"
-                }`}
                 onClick={() => setActiveTab("configs")}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.75rem 1.25rem",
+                  background:
+                    activeTab === "configs"
+                      ? "linear-gradient(135deg, #3b82f6, #2563eb)"
+                      : "var(--surface)",
+                  color:
+                    activeTab === "configs" ? "white" : "var(--text-primary)",
+                  border:
+                    activeTab === "configs"
+                      ? "none"
+                      : "1px solid var(--border-color)",
+                  borderRadius: "0.75rem",
+                  fontWeight: activeTab === "configs" ? 600 : 500,
+                  cursor: "pointer",
+                }}
               >
                 Schedules ({configs.length})
               </button>
               <button
-                className={`btn ${
-                  activeTab === "logs" ? "btn-primary" : "btn-secondary"
-                }`}
                 onClick={() => setActiveTab("logs")}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.75rem 1.25rem",
+                  background:
+                    activeTab === "logs"
+                      ? "linear-gradient(135deg, #3b82f6, #2563eb)"
+                      : "var(--surface)",
+                  color: activeTab === "logs" ? "white" : "var(--text-primary)",
+                  border:
+                    activeTab === "logs"
+                      ? "none"
+                      : "1px solid var(--border-color)",
+                  borderRadius: "0.75rem",
+                  fontWeight: activeTab === "logs" ? 600 : 500,
+                  cursor: "pointer",
+                }}
               >
                 Recent Logs ({logs.length})
               </button>
@@ -912,8 +1023,19 @@ export default function TenantSchedulingPage() {
                     No scheduling configurations yet.
                   </p>
                   <button
-                    className="btn btn-primary"
-                    style={{ marginTop: "1rem" }}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.75rem 1.5rem",
+                      background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "0.75rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      marginTop: "1rem",
+                    }}
                     onClick={() => setShowForm(true)}
                   >
                     <Plus size={20} />
@@ -992,11 +1114,21 @@ export default function TenantSchedulingPage() {
                           </td>
                           <td style={{ padding: "0.75rem" }}>
                             <span
-                              className={`badge ${
-                                config.is_enabled
-                                  ? "badge-success"
-                                  : "badge-secondary"
-                              }`}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.375rem",
+                                padding: "0.25rem 0.75rem",
+                                borderRadius: "1rem",
+                                fontSize: "0.875rem",
+                                fontWeight: 500,
+                                background: config.is_enabled
+                                  ? "#d1fae5"
+                                  : "#f3f4f6",
+                                color: config.is_enabled
+                                  ? "#065f46"
+                                  : "#6b7280",
+                              }}
                             >
                               {config.is_enabled ? "Active" : "Paused"}
                             </span>
@@ -1012,8 +1144,21 @@ export default function TenantSchedulingPage() {
                               }}
                             >
                               <button
-                                className="btn btn-secondary"
-                                style={{ padding: "0.5rem" }}
+                                style={{
+                                  padding: "0.5rem",
+                                  background: "var(--surface)",
+                                  color: "var(--text-secondary)",
+                                  border: "1px solid var(--border-color)",
+                                  borderRadius: "0.5rem",
+                                  cursor:
+                                    triggering === config.id
+                                      ? "not-allowed"
+                                      : "pointer",
+                                  opacity: triggering === config.id ? 0.7 : 1,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
                                 onClick={() => handleTrigger(config.id)}
                                 disabled={triggering === config.id}
                                 title="Trigger generation now"
@@ -1025,8 +1170,17 @@ export default function TenantSchedulingPage() {
                                 )}
                               </button>
                               <button
-                                className="btn btn-secondary"
-                                style={{ padding: "0.5rem" }}
+                                style={{
+                                  padding: "0.5rem",
+                                  background: "var(--surface)",
+                                  color: "var(--text-secondary)",
+                                  border: "1px solid var(--border-color)",
+                                  borderRadius: "0.5rem",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
                                 onClick={() => handleToggleEnabled(config)}
                                 title={config.is_enabled ? "Pause" : "Enable"}
                               >
@@ -1037,16 +1191,35 @@ export default function TenantSchedulingPage() {
                                 )}
                               </button>
                               <button
-                                className="btn btn-secondary"
-                                style={{ padding: "0.5rem" }}
+                                style={{
+                                  padding: "0.5rem",
+                                  background:
+                                    "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "0.5rem",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
                                 onClick={() => handleEdit(config)}
                                 title="Edit"
                               >
                                 <Edit size={16} />
                               </button>
                               <button
-                                className="btn btn-danger"
-                                style={{ padding: "0.5rem" }}
+                                style={{
+                                  padding: "0.5rem",
+                                  background: "#fee2e2",
+                                  color: "#991b1b",
+                                  border: "1px solid #fecaca",
+                                  borderRadius: "0.5rem",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
                                 onClick={() => handleDelete(config.id)}
                                 title="Delete"
                               >

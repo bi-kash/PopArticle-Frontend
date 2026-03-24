@@ -92,10 +92,50 @@ export default function CategoriesPage() {
               marginBottom: "2rem",
             }}
           >
-            <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>Categories</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: "0.75rem",
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <FolderTree size={24} color="white" />
+              </div>
+              <div>
+                <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
+                  Categories
+                </h1>
+                <p
+                  style={{
+                    color: "var(--text-secondary)",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Organize your articles by topic
+                </p>
+              </div>
+            </div>
             {!showForm && (
               <button
-                className="btn btn-primary"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.625rem 1.25rem",
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.5rem",
+                  fontWeight: 600,
+                  fontSize: "0.875rem",
+                  cursor: "pointer",
+                }}
                 onClick={() => setShowForm(true)}
               >
                 <Plus size={20} />
@@ -149,18 +189,41 @@ export default function CategoriesPage() {
                 <div style={{ display: "flex", gap: "1rem" }}>
                   <button
                     type="submit"
-                    className="btn btn-primary"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.625rem 1.25rem",
+                      background: saving
+                        ? "#a5b4fc"
+                        : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "0.5rem",
+                      fontWeight: 600,
+                      cursor: saving ? "not-allowed" : "pointer",
+                    }}
                     disabled={saving}
                   >
                     {saving
                       ? "Saving..."
                       : editingCategory
-                      ? "Update"
-                      : "Create"}
+                        ? "Update"
+                        : "Create"}
                   </button>
                   <button
                     type="button"
-                    className="btn btn-secondary"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      padding: "0.625rem 1.25rem",
+                      background: "var(--surface)",
+                      color: "var(--text-primary)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "0.5rem",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                    }}
                     onClick={handleCancel}
                   >
                     Cancel
@@ -193,9 +256,21 @@ export default function CategoriesPage() {
                   No categories yet
                 </p>
                 <button
-                  className="btn btn-primary"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.625rem 1.25rem",
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "0.5rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
                   onClick={() => setShowForm(true)}
                 >
+                  <Plus size={20} />
                   Create your first category
                 </button>
               </div>
@@ -220,20 +295,31 @@ export default function CategoriesPage() {
                       <td>
                         <div style={{ display: "flex", gap: "0.5rem" }}>
                           <button
-                            className="btn btn-primary"
                             style={{
-                              padding: "0.25rem 0.5rem",
-                              fontSize: "0.875rem",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              padding: "0.35rem 0.6rem",
+                              background:
+                                "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "0.375rem",
+                              cursor: "pointer",
                             }}
                             onClick={() => handleEdit(category)}
                           >
                             <Edit size={16} />
                           </button>
                           <button
-                            className="btn btn-danger"
                             style={{
-                              padding: "0.25rem 0.5rem",
-                              fontSize: "0.875rem",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              padding: "0.35rem 0.6rem",
+                              background: "#fee2e2",
+                              color: "#991b1b",
+                              border: "none",
+                              borderRadius: "0.375rem",
+                              cursor: "pointer",
                             }}
                             onClick={() => handleDelete(category.id)}
                           >

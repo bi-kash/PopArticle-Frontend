@@ -18,6 +18,8 @@ import {
   Mail,
   Calendar,
   Share2,
+  LayoutDashboard,
+  Sparkles,
 } from "lucide-react";
 
 export default function TenantDashboard() {
@@ -41,24 +43,21 @@ export default function TenantDashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      console.log("Loading tenant dashboard for ID:", id);
 
       // Try to load tenant details directly first
       let tenantData;
       try {
         tenantData = await tenantService.getTenant(id);
-        console.log("Tenant data received:", tenantData);
+
         setTenant(tenantData.tenant || tenantData);
       } catch (err) {
         // If 403, try to find it in my-tenants list
         if (err.response?.status === 403 || err.response?.status === 404) {
-          console.log("Direct access denied, checking my-tenants list...");
           const myTenantsData = await tenantService.getMyTenants();
           const myTenants = myTenantsData.tenants || [];
           const foundTenant = myTenants.find((t) => t.id == id || t.id === id);
 
           if (foundTenant) {
-            console.log("Found tenant in my-tenants:", foundTenant);
             setTenant(foundTenant);
           } else {
             throw new Error("Tenant not found or you don't have access");
@@ -70,7 +69,6 @@ export default function TenantDashboard() {
 
       // Load all articles for this tenant to calculate stats
       try {
-        console.log("Fetching articles for tenant:", id);
         const articlesData = await articleService.getArticles({
           tenant_id: id,
         });
@@ -96,7 +94,6 @@ export default function TenantDashboard() {
       }
     } catch (error) {
       console.error("Failed to load tenant dashboard:", error);
-      console.error("Error details:", error.response);
 
       const errorMessage =
         error.response?.status === 403
@@ -138,8 +135,19 @@ export default function TenantDashboard() {
               may not have permission to access it.
             </p>
             <button
-              className="btn btn-primary"
               onClick={() => router.push("/dashboard")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.75rem 1.5rem",
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                color: "white",
+                border: "none",
+                borderRadius: "0.75rem",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
             >
               <ArrowLeft size={20} />
               Back to Dashboard
@@ -157,11 +165,23 @@ export default function TenantDashboard() {
           {/* Header */}
           <div style={{ marginBottom: "2rem" }}>
             <button
-              className="btn btn-secondary"
               onClick={() => router.push("/dashboard")}
-              style={{ marginBottom: "1rem" }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 1rem",
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "0.75rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                fontSize: "0.875rem",
+                marginBottom: "1rem",
+              }}
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={16} />
               Back to Main Dashboard
             </button>
 
@@ -172,30 +192,79 @@ export default function TenantDashboard() {
                 alignItems: "center",
               }}
             >
-              <div>
-                <h1
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "1rem" }}
+              >
+                <div
                   style={{
-                    fontSize: "2rem",
-                    fontWeight: "bold",
-                    marginBottom: "0.5rem",
+                    width: 48,
+                    height: 48,
+                    borderRadius: "0.75rem",
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
                   }}
                 >
-                  {tenant.name}
-                </h1>
-                <p style={{ color: "var(--text-secondary)" }}>
-                  {tenant.primary_domain}
-                </p>
+                  <LayoutDashboard size={24} />
+                </div>
+                <div>
+                  <h1
+                    style={{
+                      fontSize: "2rem",
+                      fontWeight: "bold",
+                      marginBottom: "0.25rem",
+                    }}
+                  >
+                    {tenant.name}
+                  </h1>
+                  <p
+                    style={{
+                      color: "var(--text-secondary)",
+                      fontSize: "0.9375rem",
+                    }}
+                  >
+                    {tenant.primary_domain}
+                  </p>
+                </div>
               </div>
-              <div style={{ display: "flex", gap: "1rem" }}>
+              <div style={{ display: "flex", gap: "0.75rem" }}>
                 <Link href={`/dashboard/tenants/${id}/articles/new`}>
-                  <button className="btn btn-primary">
-                    <Plus size={20} />
+                  <button
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.75rem 1.25rem",
+                      background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "0.75rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Plus size={18} />
                     New Article
                   </button>
                 </Link>
                 <Link href={`/dashboard/tenants/${id}/edit`}>
-                  <button className="btn btn-secondary">
-                    <Edit size={20} />
+                  <button
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.75rem 1.25rem",
+                      background: "var(--surface)",
+                      color: "var(--text-primary)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "0.75rem",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Edit size={18} />
                     Settings
                   </button>
                 </Link>
@@ -297,66 +366,113 @@ export default function TenantDashboard() {
               style={{
                 fontSize: "1.25rem",
                 fontWeight: "bold",
-                marginBottom: "1rem",
+                marginBottom: "1.25rem",
               }}
             >
               Quick Actions
             </h2>
-            <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-              <Link href={`/dashboard/tenants/${id}/articles/new`}>
-                <button className="btn btn-primary">
-                  <Plus size={20} />
-                  Create Article
-                </button>
-              </Link>
-              <Link href={`/dashboard/tenants/${id}/articles/generate`}>
-                <button className="btn btn-success">
-                  <FileText size={20} />
-                  Generate with AI
-                </button>
-              </Link>
-              <Link href={`/dashboard/tenants/${id}/scheduling`}>
-                <button className="btn btn-info">
-                  <Calendar size={20} />
-                  Article Scheduling
-                </button>
-              </Link>
-              <Link href={`/dashboard/tenants/${id}/articles`}>
-                <button className="btn btn-secondary">
-                  <Eye size={20} />
-                  View All Articles
-                </button>
-              </Link>
-              <Link href={`/dashboard/tenants/${id}/messages`}>
-                <button className="btn btn-secondary">
-                  <Mail size={20} />
-                  Messages
-                </button>
-              </Link>
-              <Link href={`/dashboard/tenants/${id}/categories`}>
-                <button className="btn btn-secondary">
-                  <FolderTree size={20} />
-                  Manage Categories
-                </button>
-              </Link>
-              <Link href={`/dashboard/tenants/${id}/members`}>
-                <button className="btn btn-secondary">
-                  <Users size={20} />
-                  Manage Members
-                </button>
-              </Link>
-              <Link href={`/dashboard/tenants/${id}/team`}>
-                <button className="btn btn-secondary">
-                  <UserCog size={20} />
-                  Team Management
-                </button>
-              </Link>
-              <Link href={`/dashboard/tenants/${id}/social-media`}>
-                <button className="btn btn-secondary">
-                  <Share2 size={20} />
-                  Social Media
-                </button>
-              </Link>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                gap: "0.75rem",
+              }}
+            >
+              {[
+                {
+                  href: `/dashboard/tenants/${id}/articles/new`,
+                  icon: Plus,
+                  label: "Create Article",
+                  gradient: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                },
+                {
+                  href: `/dashboard/tenants/${id}/articles/generate`,
+                  icon: Sparkles,
+                  label: "Generate with AI",
+                  gradient: "linear-gradient(135deg, #10b981, #059669)",
+                },
+                {
+                  href: `/dashboard/tenants/${id}/scheduling`,
+                  icon: Calendar,
+                  label: "Scheduling",
+                  gradient: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                },
+                {
+                  href: `/dashboard/tenants/${id}/articles`,
+                  icon: Eye,
+                  label: "All Articles",
+                  outline: true,
+                },
+                {
+                  href: `/dashboard/tenants/${id}/messages`,
+                  icon: Mail,
+                  label: "Messages",
+                  outline: true,
+                },
+                {
+                  href: `/dashboard/tenants/${id}/categories`,
+                  icon: FolderTree,
+                  label: "Categories",
+                  outline: true,
+                },
+                {
+                  href: `/dashboard/tenants/${id}/members`,
+                  icon: Users,
+                  label: "Members",
+                  outline: true,
+                },
+                {
+                  href: `/dashboard/tenants/${id}/team`,
+                  icon: UserCog,
+                  label: "Team",
+                  outline: true,
+                },
+                {
+                  href: `/dashboard/tenants/${id}/social-media`,
+                  icon: Share2,
+                  label: "Social Media",
+                  outline: true,
+                },
+              ].map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Link key={action.href} href={action.href}>
+                    <button
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        padding: "0.75rem 1rem",
+                        width: "100%",
+                        background: action.gradient || "var(--surface)",
+                        color: action.gradient
+                          ? "white"
+                          : "var(--text-primary)",
+                        border: action.gradient
+                          ? "none"
+                          : "1px solid var(--border-color)",
+                        borderRadius: "0.75rem",
+                        fontWeight: action.gradient ? 600 : 500,
+                        cursor: "pointer",
+                        fontSize: "0.875rem",
+                        transition: "transform 0.15s, box-shadow 0.15s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                        e.currentTarget.style.boxShadow =
+                          "0 4px 12px rgba(0,0,0,0.1)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    >
+                      <Icon size={18} />
+                      {action.label}
+                    </button>
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
@@ -397,7 +513,20 @@ export default function TenantDashboard() {
                   No articles yet. Create your first article for this tenant!
                 </p>
                 <Link href={`/dashboard/tenants/${id}/articles/new`}>
-                  <button className="btn btn-primary">
+                  <button
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.75rem 1.5rem",
+                      background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "0.75rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
                     <Plus size={20} />
                     Create First Article
                   </button>
@@ -468,15 +597,16 @@ export default function TenantDashboard() {
                               fontWeight: 500,
                               background:
                                 article.status === "published"
-                                  ? "var(--success-color)"
+                                  ? "#d1fae5"
                                   : article.status === "draft"
-                                    ? "var(--warning-color)"
-                                    : "var(--surface)",
+                                    ? "#fef3c7"
+                                    : "#dbeafe",
                               color:
-                                article.status === "published" ||
-                                article.status === "draft"
-                                  ? "white"
-                                  : "var(--text-primary)",
+                                article.status === "published"
+                                  ? "#065f46"
+                                  : article.status === "draft"
+                                    ? "#92400e"
+                                    : "#1e40af",
                             }}
                           >
                             {article.status}
@@ -495,10 +625,19 @@ export default function TenantDashboard() {
                             href={`/dashboard/tenants/${id}/articles/${article.id}`}
                           >
                             <button
-                              className="btn btn-secondary"
                               style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.375rem",
                                 padding: "0.5rem 1rem",
                                 fontSize: "0.875rem",
+                                background:
+                                  "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "0.5rem",
+                                fontWeight: 500,
+                                cursor: "pointer",
                               }}
                             >
                               <Edit size={16} />

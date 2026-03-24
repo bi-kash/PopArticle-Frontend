@@ -134,12 +134,10 @@ export default function AdminUsersPage() {
       if (filterStatus !== "") params.is_active = filterStatus === "active";
       if (filterTenant.trim()) params.tenant_id = filterTenant.trim();
       const data = await adminService.listUsers(params);
-      console.log("Admin users response:", data);
       setUsers(data.users || []);
       setTotal(data.total || 0);
       setPages(data.pages || 1);
     } catch (err) {
-      console.error("Admin users error:", err);
       const status = err.response?.status;
       if (status === 403 || status === 401) {
         router.replace("/dashboard");
@@ -189,7 +187,6 @@ export default function AdminUsersPage() {
       showToast(messages[action]);
       load();
     } catch (err) {
-      console.error("Admin user action error:", err);
       showToast(err.response?.data?.error || "Action failed", "error");
     } finally {
       setActionLoading(null);
@@ -232,7 +229,19 @@ export default function AdminUsersPage() {
               marginBottom: "0.4rem",
             }}
           >
-            <Users size={26} color="#3b82f6" />
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: "0.75rem",
+                background: "linear-gradient(135deg, #3b82f6, #6366f1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Users size={24} color="white" />
+            </div>
             <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
               User Management
             </h1>

@@ -100,12 +100,10 @@ export default function AdminTenantsPage() {
       const params = { page, per_page: perPage, search };
       if (filterStatus !== "") params.is_active = filterStatus === "active";
       const data = await adminService.listTenants(params);
-      console.log("Admin tenants response:", data);
       setTenants(data.tenants || []);
       setTotal(data.total || 0);
       setPages(data.pages || 1);
     } catch (err) {
-      console.error("Admin tenants error:", err);
       const status = err.response?.status;
       if (status === 403 || status === 401) {
         router.replace("/dashboard");
@@ -157,7 +155,6 @@ export default function AdminTenantsPage() {
       );
       load();
     } catch (err) {
-      console.error("Admin tenant action error:", err);
       showToast(err.response?.data?.error || "Action failed", "error");
     } finally {
       setActionLoading(null);
@@ -177,7 +174,19 @@ export default function AdminTenantsPage() {
               marginBottom: "0.4rem",
             }}
           >
-            <Building2 size={26} color="#8b5cf6" />
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: "0.75rem",
+                background: "linear-gradient(135deg, #8b5cf6, #a78bfa)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Building2 size={24} color="white" />
+            </div>
             <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
               Tenant Management
             </h1>

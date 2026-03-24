@@ -2,22 +2,24 @@ import Head from "next/head";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import siteConfig from "@/lib/siteConfig";
 
 export default function PrivacyPolicy() {
+  const name = siteConfig.siteName;
   return (
     <>
       <Head>
-        <title>Privacy Policy - PopArticle</title>
+        <title>Privacy Policy - {name}</title>
         <meta
           name="description"
-          content="Privacy Policy for PopArticle - AI-Powered Content Platform"
+          content={`Privacy Policy for ${name} - AI-Powered Content Platform`}
         />
 
         {/* Open Graph */}
-        <meta property="og:title" content="Privacy Policy - PopArticle" />
+        <meta property="og:title" content={`Privacy Policy - ${name}`} />
         <meta
           property="og:description"
-          content="Privacy Policy for PopArticle - AI-Powered Content Platform"
+          content={`Privacy Policy for ${name} - AI-Powered Content Platform`}
         />
         <meta property="og:image" content="/og-default.svg" />
       </Head>
@@ -63,12 +65,12 @@ export default function PrivacyPolicy() {
             1. Introduction
           </h2>
           <p style={{ marginBottom: "1rem" }}>
-            PopArticle (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;)
-            operates the PopArticle platform, an AI-powered content generation
-            and management service. This Privacy Policy explains how we collect,
-            use, disclose, and safeguard your information when you use our
-            platform, including our website, APIs, and related services
-            (collectively, the &quot;Service&quot;).
+            {name} (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) operates
+            the {name} platform, an AI-powered content generation and management
+            service. This Privacy Policy explains how we collect, use, disclose,
+            and safeguard your information when you use our platform, including
+            our website, APIs, and related services (collectively, the
+            &quot;Service&quot;).
           </p>
           <p>
             By accessing or using the Service, you agree to this Privacy Policy.

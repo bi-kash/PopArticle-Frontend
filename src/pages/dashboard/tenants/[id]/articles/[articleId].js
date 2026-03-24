@@ -6,7 +6,7 @@ import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import CommentsSection from "@/components/CommentsSection";
 import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
-import { Save, Trash2, Eye, Edit3 } from "lucide-react";
+import { Save, Trash2, Eye, Edit3, ArrowLeft, FileText } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -52,7 +52,6 @@ export default function EditArticle() {
 
       console.log("Article data:", articleResponse.article);
       console.log("Categories:", categoriesResponse.categories);
-
       setArticleData(articleResponse.article);
       setCategories(categoriesResponse.categories || []);
     } catch (error) {
@@ -88,8 +87,6 @@ export default function EditArticle() {
         }
       }
     }
-
-    console.log("Final category_id:", categoryId);
 
     // Handle SEO nested object
     const metaTitle =
@@ -272,21 +269,77 @@ export default function EditArticle() {
     <ProtectedRoute>
       <DashboardLayout>
         <div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "2rem",
-            }}
-          >
-            <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
-              Edit Article
-            </h1>
-            <button className="btn btn-danger" onClick={handleDelete}>
-              <Trash2 size={20} />
-              Delete
+          <div style={{ marginBottom: "2rem" }}>
+            <button
+              onClick={() =>
+                router.push(`/dashboard/tenants/${tenantId}/articles`)
+              }
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 1rem",
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "0.75rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                fontSize: "0.875rem",
+                marginBottom: "1rem",
+              }}
+            >
+              <ArrowLeft size={16} />
+              Back to Articles
             </button>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "1rem" }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "0.75rem",
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                  }}
+                >
+                  <FileText size={24} />
+                </div>
+                <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
+                  Edit Article
+                </h1>
+              </div>
+              <button
+                onClick={handleDelete}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.75rem 1.25rem",
+                  background: "#fee2e2",
+                  color: "#991b1b",
+                  border: "1px solid #fecaca",
+                  borderRadius: "0.75rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                <Trash2 size={18} />
+                Delete
+              </button>
+            </div>
           </div>
 
           {error && <div className="alert alert-error">{error}</div>}
@@ -509,9 +562,26 @@ export default function EditArticle() {
                 <div style={{ display: "flex", gap: "0.5rem" }}>
                   <button
                     type="button"
-                    className={`btn ${
-                      viewMode === "edit" ? "btn-primary" : "btn-secondary"
-                    }`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.375rem",
+                      padding: "0.5rem 1rem",
+                      background:
+                        viewMode === "edit"
+                          ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                          : "var(--surface)",
+                      color:
+                        viewMode === "edit" ? "white" : "var(--text-secondary)",
+                      border:
+                        viewMode === "edit"
+                          ? "none"
+                          : "1px solid var(--border-color)",
+                      borderRadius: "0.5rem",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      fontSize: "0.875rem",
+                    }}
                     onClick={() => setViewMode("edit")}
                   >
                     <Edit3 size={16} />
@@ -519,9 +589,28 @@ export default function EditArticle() {
                   </button>
                   <button
                     type="button"
-                    className={`btn ${
-                      viewMode === "preview" ? "btn-primary" : "btn-secondary"
-                    }`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.375rem",
+                      padding: "0.5rem 1rem",
+                      background:
+                        viewMode === "preview"
+                          ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                          : "var(--surface)",
+                      color:
+                        viewMode === "preview"
+                          ? "white"
+                          : "var(--text-secondary)",
+                      border:
+                        viewMode === "preview"
+                          ? "none"
+                          : "1px solid var(--border-color)",
+                      borderRadius: "0.5rem",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      fontSize: "0.875rem",
+                    }}
                     onClick={() => setViewMode("preview")}
                   >
                     <Eye size={16} />
@@ -649,16 +738,41 @@ export default function EditArticle() {
             <div style={{ display: "flex", gap: "1rem" }}>
               <button
                 type="submit"
-                className="btn btn-primary"
                 disabled={saving}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.75rem 1.5rem",
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.75rem",
+                  fontWeight: 600,
+                  cursor: saving ? "not-allowed" : "pointer",
+                  opacity: saving ? 0.7 : 1,
+                }}
               >
                 <Save size={20} />
                 {saving ? "Saving..." : "Save Changes"}
               </button>
               <button
                 type="button"
-                className="btn btn-secondary"
-                onClick={() => router.push("/dashboard/articles")}
+                onClick={() =>
+                  router.push(`/dashboard/tenants/${tenantId}/articles`)
+                }
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.75rem 1.5rem",
+                  background: "var(--surface)",
+                  color: "var(--text-primary)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "0.75rem",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
               >
                 Cancel
               </button>

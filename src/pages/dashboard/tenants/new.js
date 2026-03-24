@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { tenantService } from "@/lib/tenantService";
+import siteConfig from "@/lib/siteConfig";
 import { Building2, Save } from "lucide-react";
 
 export default function NewTenant() {
@@ -36,8 +37,6 @@ export default function NewTenant() {
         router.push("/dashboard");
       }
     } catch (err) {
-      console.error("Tenant registration error:", err);
-      console.error("Error response:", err.response);
       const errorMessage =
         err.response?.data?.message ||
         err.response?.data?.error ||
@@ -76,10 +75,20 @@ export default function NewTenant() {
       <DashboardLayout>
         <div style={{ maxWidth: "600px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <Building2
-              size={48}
-              style={{ color: "var(--primary-color)", margin: "0 auto 1rem" }}
-            />
+            <div
+              style={{
+                width: "64px",
+                height: "64px",
+                borderRadius: "1rem",
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 1rem",
+              }}
+            >
+              <Building2 size={32} color="#fff" />
+            </div>
             <h1
               style={{
                 fontSize: "2rem",
@@ -90,8 +99,8 @@ export default function NewTenant() {
               Register New Tenant
             </h1>
             <p style={{ color: "var(--text-secondary)" }}>
-              Register a new website that can use PopArticle for authentication
-              and content
+              Register a new website that can use {siteConfig.siteName} for
+              authentication and content
             </p>
           </div>
 
@@ -256,17 +265,44 @@ export default function NewTenant() {
               <div style={{ display: "flex", gap: "1rem" }}>
                 <button
                   type="submit"
-                  className="btn btn-primary"
                   disabled={loading}
-                  style={{ flex: 1 }}
+                  style={{
+                    flex: 1,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem",
+                    padding: "0.75rem 1.25rem",
+                    background: loading
+                      ? "#a5b4fc"
+                      : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "0.5rem",
+                    cursor: loading ? "not-allowed" : "pointer",
+                    fontWeight: 600,
+                    fontSize: "0.9375rem",
+                  }}
                 >
-                  <Save size={20} />
+                  <Save size={18} />
                   {loading ? "Registering..." : "Register Tenant"}
                 </button>
                 <button
                   type="button"
-                  className="btn btn-secondary"
                   onClick={() => router.push("/dashboard/tenants")}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0.75rem 1.25rem",
+                    background: "var(--surface)",
+                    color: "var(--text-primary)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "0.5rem",
+                    cursor: "pointer",
+                    fontWeight: 500,
+                    fontSize: "0.9375rem",
+                  }}
                 >
                   Cancel
                 </button>
