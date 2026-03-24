@@ -1,6 +1,7 @@
 const sharp = require("sharp");
 const fs = require("fs");
 const path = require("path");
+const pngToIco = require("png-to-ico").default;
 
 // Read site settings
 const siteSettings = require("../src/contents/site-settings.json");
@@ -64,6 +65,18 @@ async function generateAllIcons() {
       path.join(__dirname, "../public/favicon.png"),
     );
     console.log("📋 Copied favicon.png to public root");
+
+    // Generate favicon.ico for maximum browser tab compatibility
+    const faviconIcoBuffer = await pngToIco([
+      fs.readFileSync(path.join(OUTPUT_DIR, "favicon-16x16.png")),
+      fs.readFileSync(path.join(OUTPUT_DIR, "favicon-32x32.png")),
+    ]);
+    fs.writeFileSync(path.join(OUTPUT_DIR, "favicon.ico"), faviconIcoBuffer);
+    fs.writeFileSync(
+      path.join(__dirname, "../public/favicon.ico"),
+      faviconIcoBuffer,
+    );
+    console.log("📋 Generated favicon.ico in meta and public root");
 
     // Generate OG banner (1200x630)
     console.log("⏳ Generating og-default.png (1200x630)...");
