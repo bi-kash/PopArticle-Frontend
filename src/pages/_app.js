@@ -16,8 +16,8 @@ const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   (typeof window !== "undefined" ? window.location.origin : "");
 const DEFAULT_OG_IMAGE = SITE_URL
-  ? `${SITE_URL.replace(/\/$/, "")}/og-default.svg`
-  : "/og-default.svg";
+  ? `${SITE_URL.replace(/\/$/, "")}/og-default.png`
+  : "/og-default.png";
 
 // Paddle environment (safe to expose)
 const PADDLE_ENVIRONMENT =

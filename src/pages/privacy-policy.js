@@ -21,7 +21,7 @@ export default function PrivacyPolicy() {
           property="og:description"
           content={`Privacy Policy for ${name} - AI-Powered Content Platform`}
         />
-        <meta property="og:image" content="/og-default.svg" />
+        <meta property="og:image" content="/og-default.png" />
       </Head>
 
       <Navbar />
