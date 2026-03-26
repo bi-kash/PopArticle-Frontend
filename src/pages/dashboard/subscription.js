@@ -695,174 +695,353 @@ export default function Subscription() {
           </div>
 
           {/* Available Plans */}
-          <div className="card">
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "600",
-                marginBottom: "1.5rem",
-              }}
-            >
-              Available Plans
-            </h2>
+          <div
+            style={{
+              background: "white",
+              border: "1px solid var(--border-color)",
+              borderRadius: "0.75rem",
+              padding: "1.5rem",
+            }}
+          >
+            <div style={{ marginBottom: "1.5rem" }}>
+              <h2
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "700",
+                  marginBottom: "0.25rem",
+                }}
+              >
+                Choose Your Plan
+              </h2>
+              <p
+                style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}
+              >
+                Upgrade or change your plan at any time.
+              </p>
+            </div>
 
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                gap: "1.5rem",
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: "1.25rem",
               }}
             >
-              {plans.map((plan) => (
-                <div
-                  key={plan.name}
-                  style={{
-                    border: isCurrentPlan(plan.name)
-                      ? `2px solid ${getPlanColor(plan.name)}`
-                      : "1px solid var(--border-color)",
-                    borderRadius: "0.75rem",
-                    padding: "1.5rem",
-                    position: "relative",
-                    background: isCurrentPlan(plan.name)
-                      ? "#f8fafc"
-                      : "transparent",
-                  }}
-                >
-                  {isCurrentPlan(plan.name) && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "-12px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        background: getPlanColor(plan.name),
-                        color: "white",
-                        padding: "0.25rem 0.75rem",
-                        borderRadius: "9999px",
-                        fontSize: "0.75rem",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Current Plan
-                    </div>
-                  )}
+              {plans.map((plan) => {
+                const isDark = plan.name?.toLowerCase() === "pro";
+                const isPopular = plan.name?.toLowerCase() === "pro";
+                const planColor = getPlanColor(plan.name);
+                const isCurrent = isCurrentPlan(plan.name);
 
+                return (
                   <div
+                    key={plan.name}
                     style={{
+                      border: isCurrent
+                        ? `2px solid ${planColor}`
+                        : isDark
+                          ? "2px solid #6366f1"
+                          : "1px solid var(--border-color)",
+                      borderRadius: "1rem",
+                      padding: "1.5rem",
+                      position: "relative",
+                      background: isDark
+                        ? "linear-gradient(145deg, #1e1b4b 0%, #312e81 100%)"
+                        : isCurrent
+                          ? `${planColor}08`
+                          : "white",
+                      color: isDark ? "white" : "var(--text-primary)",
                       display: "flex",
-                      alignItems: "center",
-                      gap: "0.75rem",
-                      marginBottom: "1rem",
+                      flexDirection: "column",
+                      boxShadow: isDark
+                        ? "0 6px 28px rgba(99,102,241,0.2)"
+                        : isCurrent
+                          ? `0 4px 16px ${planColor}20`
+                          : "none",
                     }}
                   >
-                    <span style={{ color: getPlanColor(plan.name) }}>
-                      {getPlanIcon(plan.name)}
-                    </span>
-                    <h3 style={{ fontSize: "1.25rem", fontWeight: "600" }}>
-                      {plan.display_name}
-                    </h3>
-                  </div>
-
-                  <div style={{ marginBottom: "1rem" }}>
-                    <span style={{ fontSize: "2.5rem", fontWeight: "bold" }}>
-                      ${plan.price}
-                    </span>
-                    {plan.price !== "0" && (
-                      <span style={{ color: "var(--text-secondary)" }}>
-                        /month
-                      </span>
-                    )}
-                  </div>
-
-                  <ul style={{ marginBottom: "1.5rem", listStyle: "none" }}>
-                    {(plan.features || []).map((feature, idx) => (
-                      <li
-                        key={idx}
+                    {/* Badge */}
+                    {isCurrent ? (
+                      <div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          marginBottom: "0.5rem",
+                          position: "absolute",
+                          top: "-0.7rem",
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          background: planColor,
+                          color: "white",
+                          padding: "0.2rem 0.75rem",
+                          borderRadius: "999px",
+                          fontSize: "0.6875rem",
+                          fontWeight: "700",
+                          letterSpacing: "0.05em",
+                          textTransform: "uppercase",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        <Check
-                          size={16}
-                          style={{
-                            color: "var(--success-color)",
-                            flexShrink: 0,
-                          }}
-                        />
-                        <span style={{ fontSize: "0.875rem" }}>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+                        Current Plan
+                      </div>
+                    ) : isPopular && !isCurrent ? (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "-0.7rem",
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          background:
+                            "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                          color: "white",
+                          padding: "0.2rem 0.75rem",
+                          borderRadius: "999px",
+                          fontSize: "0.6875rem",
+                          fontWeight: "700",
+                          letterSpacing: "0.05em",
+                          textTransform: "uppercase",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Most Popular
+                      </div>
+                    ) : null}
 
-                  {isCurrentPlan(plan.name) ? (
-                    <button
-                      className="btn btn-secondary"
-                      style={{ width: "100%", justifyContent: "center" }}
-                      disabled
+                    {/* Icon */}
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: "0.75rem",
+                        background: isDark
+                          ? "rgba(255,255,255,0.12)"
+                          : `${planColor}15`,
+                        border: `1px solid ${isDark ? "rgba(255,255,255,0.15)" : planColor + "35"}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginBottom: "1rem",
+                        color: isDark ? "rgba(255,255,255,0.9)" : planColor,
+                      }}
                     >
-                      Current Plan
-                    </button>
-                  ) : plan.name === "free" ? (
-                    <button
-                      className="btn btn-secondary"
-                      style={{ width: "100%", justifyContent: "center" }}
-                      disabled
+                      {getPlanIcon(plan.name)}
+                    </div>
+
+                    {/* Name */}
+                    <h3
+                      style={{
+                        fontSize: "1.125rem",
+                        fontWeight: "700",
+                        marginBottom: "0.125rem",
+                        color: isDark ? "white" : "var(--text-primary)",
+                      }}
                     >
-                      Free Plan
-                    </button>
-                  ) : subscription?.has_subscription &&
-                    canUpgrade(plan.name) ? (
-                    <button
-                      className="btn btn-primary"
-                      style={{ width: "100%", justifyContent: "center" }}
-                      onClick={() => handleUpgrade(plan.name)}
-                      disabled={actionLoading}
+                      {plan.display_name}
+                    </h3>
+
+                    {/* Price */}
+                    <div
+                      style={{
+                        marginBottom: "1rem",
+                        marginTop: "0.5rem",
+                        display: "flex",
+                        alignItems: "flex-end",
+                        gap: "0.2rem",
+                      }}
                     >
-                      {actionLoading ? (
-                        <Loader2 size={18} className="animate-spin" />
-                      ) : (
-                        <>
-                          <Zap size={18} />
-                          Upgrade
-                        </>
-                      )}
-                    </button>
-                  ) : !subscription?.has_subscription ||
-                    subscription?.plan?.toLowerCase() === "free" ? (
-                    <button
-                      className="btn btn-primary"
-                      style={{ width: "100%", justifyContent: "center" }}
-                      onClick={() => handleSubscribe(plan.name)}
-                      disabled={actionLoading || !isPaddleConfigured}
+                      <span
+                        style={{
+                          fontSize: "2.25rem",
+                          fontWeight: "800",
+                          lineHeight: 1,
+                          color: isDark ? "white" : planColor,
+                        }}
+                      >
+                        ${plan.price}
+                      </span>
+                      <span
+                        style={{
+                          color: isDark
+                            ? "rgba(255,255,255,0.55)"
+                            : "var(--text-secondary)",
+                          fontSize: "0.8125rem",
+                          paddingBottom: "0.25rem",
+                        }}
+                      >
+                        /month
+                      </span>
+                    </div>
+
+                    {/* Features */}
+                    <ul
+                      style={{
+                        marginBottom: "1.25rem",
+                        listStyle: "none",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.375rem",
+                        flex: 1,
+                      }}
                     >
-                      {actionLoading ? (
-                        <Loader2 size={18} className="animate-spin" />
-                      ) : (
-                        <>
-                          <CreditCard size={18} />
-                          Subscribe
-                        </>
-                      )}
-                    </button>
-                  ) : (
-                    <button
-                      className="btn btn-secondary"
-                      style={{ width: "100%", justifyContent: "center" }}
-                      onClick={() => handleUpgrade(plan.name)}
-                      disabled={actionLoading}
-                    >
-                      {actionLoading ? (
-                        <Loader2 size={18} className="animate-spin" />
-                      ) : (
-                        "Switch Plan"
-                      )}
-                    </button>
-                  )}
-                </div>
-              ))}
+                      {(plan.features || []).map((feature, idx) => (
+                        <li
+                          key={idx}
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "0.5rem",
+                            fontSize: "0.8125rem",
+                            color: isDark
+                              ? "rgba(255,255,255,0.78)"
+                              : "var(--text-secondary)",
+                            lineHeight: 1.45,
+                          }}
+                        >
+                          <Check
+                            size={13}
+                            style={{
+                              color: isDark ? "#a78bfa" : planColor,
+                              flexShrink: 0,
+                              marginTop: "0.15rem",
+                            }}
+                          />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* CTA */}
+                    {isCurrent ? (
+                      <button
+                        style={{
+                          width: "100%",
+                          padding: "0.625rem",
+                          borderRadius: "0.5rem",
+                          background: isDark
+                            ? "rgba(255,255,255,0.12)"
+                            : `${planColor}15`,
+                          border: `1px solid ${isDark ? "rgba(255,255,255,0.2)" : planColor + "40"}`,
+                          color: isDark ? "rgba(255,255,255,0.7)" : planColor,
+                          fontWeight: "600",
+                          fontSize: "0.875rem",
+                          cursor: "default",
+                        }}
+                        disabled
+                      >
+                        ✓ Active Plan
+                      </button>
+                    ) : plan.name === "free" ? (
+                      <button
+                        style={{
+                          width: "100%",
+                          padding: "0.625rem",
+                          borderRadius: "0.5rem",
+                          background: "transparent",
+                          border: "1px solid var(--border-color)",
+                          color: "var(--text-secondary)",
+                          fontWeight: "600",
+                          fontSize: "0.875rem",
+                          cursor: "default",
+                        }}
+                        disabled
+                      >
+                        Free Plan
+                      </button>
+                    ) : subscription?.has_subscription &&
+                      canUpgrade(plan.name) ? (
+                      <button
+                        style={{
+                          width: "100%",
+                          padding: "0.625rem",
+                          borderRadius: "0.5rem",
+                          background: isDark
+                            ? "white"
+                            : `linear-gradient(135deg, ${planColor}, ${planColor}cc)`,
+                          border: "none",
+                          color: isDark ? "#312e81" : "white",
+                          fontWeight: "700",
+                          fontSize: "0.875rem",
+                          cursor: actionLoading ? "not-allowed" : "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "0.375rem",
+                          boxShadow: `0 3px 12px ${planColor}35`,
+                        }}
+                        onClick={() => handleUpgrade(plan.name)}
+                        disabled={actionLoading}
+                      >
+                        {actionLoading ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <>
+                            <Zap size={15} />
+                            Upgrade
+                          </>
+                        )}
+                      </button>
+                    ) : !subscription?.has_subscription ||
+                      subscription?.plan?.toLowerCase() === "free" ? (
+                      <button
+                        style={{
+                          width: "100%",
+                          padding: "0.625rem",
+                          borderRadius: "0.5rem",
+                          background: isDark
+                            ? "white"
+                            : `linear-gradient(135deg, ${planColor}, ${planColor}cc)`,
+                          border: "none",
+                          color: isDark ? "#312e81" : "white",
+                          fontWeight: "700",
+                          fontSize: "0.875rem",
+                          cursor:
+                            actionLoading || !isPaddleConfigured
+                              ? "not-allowed"
+                              : "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "0.375rem",
+                          opacity: !isPaddleConfigured ? 0.6 : 1,
+                          boxShadow: isPaddleConfigured
+                            ? `0 3px 12px ${planColor}35`
+                            : "none",
+                        }}
+                        onClick={() => handleSubscribe(plan.name)}
+                        disabled={actionLoading || !isPaddleConfigured}
+                      >
+                        {actionLoading ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <>
+                            <CreditCard size={15} />
+                            Subscribe
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        style={{
+                          width: "100%",
+                          padding: "0.625rem",
+                          borderRadius: "0.5rem",
+                          background: "transparent",
+                          border: `1px solid ${planColor}`,
+                          color: planColor,
+                          fontWeight: "600",
+                          fontSize: "0.875rem",
+                          cursor: actionLoading ? "not-allowed" : "pointer",
+                        }}
+                        onClick={() => handleUpgrade(plan.name)}
+                        disabled={actionLoading}
+                      >
+                        {actionLoading ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          "Switch Plan"
+                        )}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

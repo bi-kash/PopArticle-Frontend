@@ -4,28 +4,93 @@ import { useRouter } from "next/router";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { articleService } from "@/lib/articleService";
-import { Plus, Search, Edit, Trash2, Eye, FileText } from "lucide-react";
+import { tenantService } from "@/lib/tenantService";
+import { getTenantSlug } from "@/lib/tenantUtils";
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Eye,
+  FileText,
+  Globe,
+  Building2,
+} from "lucide-react";
 
 export default function ArticlesPage() {
   const router = useRouter();
   const [articles, setArticles] = useState([]);
+  const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const [tenantFilter, setTenantFilter] = useState("all");
+
+  useEffect(() => {
+    loadTenants();
+  }, []);
 
   useEffect(() => {
     loadArticles();
-  }, [filter]);
+  }, [filter, tenantFilter, tenants]);
+
+  const loadTenants = async () => {
+    try {
+      const data = await tenantService.getMyTenants();
+      let arr = [];
+      if (Array.isArray(data)) arr = data;
+      else if (data.tenants) arr = data.tenants;
+      else if (data.data) arr = data.data;
+      setTenants(arr);
+    } catch (error) {
+      console.error("Failed to load tenants:", error);
+    }
+  };
 
   const loadArticles = async () => {
     try {
       setLoading(true);
       const params = {};
-      if (filter !== "all") {
-        params.status = filter;
+      if (filter !== "all") params.status = filter;
+
+      if (tenantFilter !== "all") {
+        params.tenant_id = tenantFilter;
+        const data = await articleService.getArticles(params);
+        setArticles(
+          (data.articles || []).map((a) => ({
+            ...a,
+            _tenant_id: tenantFilter,
+          })),
+        );
+      } else if (tenants.length > 0) {
+        // Load from all tenants
+        const all = await Promise.all(
+          tenants.map(async (t) => {
+            try {
+              const data = await articleService.getArticles({
+                ...params,
+                tenant_id: t.id,
+              });
+              return (data.articles || []).map((a) => ({
+                ...a,
+                _tenant_id: t.id,
+                _tenant_name: t.name,
+                _tenant_slug: getTenantSlug(t),
+              }));
+            } catch {
+              return [];
+            }
+          }),
+        );
+        setArticles(
+          all
+            .flat()
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
+        );
+      } else {
+        const data = await articleService.getArticles(params);
+        setArticles(data.articles || []);
       }
-      const data = await articleService.getArticles(params);
-      setArticles(data.articles || []);
     } catch (error) {
       console.error("Failed to load articles:", error);
     } finally {
@@ -60,6 +125,22 @@ export default function ArticlesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getTenantName = (article) => {
+    if (article._tenant_name) return article._tenant_name;
+    const t = tenants.find(
+      (t) => t.id === article._tenant_id || t.id === article.tenant_id,
+    );
+    return t?.name || "";
+  };
+
+  const getTenantSlugForArticle = (article) => {
+    if (article._tenant_slug) return article._tenant_slug;
+    const t = tenants.find(
+      (t) => t.id === article._tenant_id || t.id === article.tenant_id,
+    );
+    return t ? getTenantSlug(t) : "";
   };
 
   return (
@@ -186,6 +267,28 @@ export default function ArticlesPage() {
                   <option value="archived">Archived</option>
                 </select>
               </div>
+
+              {/* Tenant Filter */}
+              {tenants.length > 0 && (
+                <div
+                  className="form-group"
+                  style={{ marginBottom: 0, minWidth: "200px" }}
+                >
+                  <label className="label">Filter by Tenant</label>
+                  <select
+                    className="select"
+                    value={tenantFilter}
+                    onChange={(e) => setTenantFilter(e.target.value)}
+                  >
+                    <option value="all">All Tenants</option>
+                    {tenants.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 
@@ -231,6 +334,7 @@ export default function ArticlesPage() {
                   <thead>
                     <tr>
                       <th>Title</th>
+                      <th>Tenant</th>
                       <th>Status</th>
                       <th>Category</th>
                       <th>Created</th>
@@ -239,7 +343,7 @@ export default function ArticlesPage() {
                   </thead>
                   <tbody>
                     {articles.map((article) => (
-                      <tr key={article.id}>
+                      <tr key={`${article._tenant_id || ""}-${article.id}`}>
                         <td>
                           <div style={{ fontWeight: 500 }}>{article.title}</div>
                           {article.excerpt && (
@@ -252,6 +356,33 @@ export default function ArticlesPage() {
                             >
                               {article.excerpt.substring(0, 80)}...
                             </div>
+                          )}
+                        </td>
+                        <td>
+                          {getTenantName(article) ? (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.3rem",
+                                fontSize: "0.8rem",
+                                color: "#6366f1",
+                                fontWeight: 500,
+                              }}
+                            >
+                              <Globe size={13} />
+                              {getTenantName(article)}
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                color: "var(--text-secondary)",
+                                fontStyle: "italic",
+                                fontSize: "0.8rem",
+                              }}
+                            >
+                              —
+                            </span>
                           )}
                         </td>
                         <td>
@@ -298,7 +429,13 @@ export default function ArticlesPage() {
                         </td>
                         <td>
                           <div style={{ display: "flex", gap: "0.5rem" }}>
-                            <Link href={`/dashboard/articles/${article.id}`}>
+                            <Link
+                              href={
+                                getTenantSlugForArticle(article)
+                                  ? `/dashboard/tenants/${getTenantSlugForArticle(article)}/articles/${article.id}`
+                                  : `/dashboard/articles/${article.id}`
+                              }
+                            >
                               <button
                                 style={{
                                   display: "inline-flex",

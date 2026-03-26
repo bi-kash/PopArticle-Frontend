@@ -4,6 +4,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { schedulingService } from "@/lib/schedulingService";
 import { categoryService } from "@/lib/categoryService";
+import { tenantService } from "@/lib/tenantService";
 import {
   Calendar,
   Plus,
@@ -17,6 +18,7 @@ import {
   AlertCircle,
   RefreshCw,
   BarChart3,
+  Globe,
 } from "lucide-react";
 
 export default function SchedulingPage() {
@@ -32,6 +34,7 @@ export default function SchedulingPage() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("configs");
   const [keywordInput, setKeywordInput] = useState("");
+  const [tenants, setTenants] = useState([]);
 
   const [formData, setFormData] = useState({
     category_id: "",
@@ -55,17 +58,23 @@ export default function SchedulingPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [configsData, categoriesData, logsData, statsData] =
+      const [configsData, categoriesData, logsData, statsData, tenantsData] =
         await Promise.all([
           schedulingService.getConfigs(),
           categoryService.getCategories(),
           schedulingService.getLogs({ limit: 20 }),
           schedulingService.getStats(7),
+          tenantService.getMyTenants().catch(() => []),
         ]);
       setConfigs(configsData.configs || []);
       setCategories(categoriesData.categories || []);
       setLogs(logsData.logs || []);
       setStats(statsData);
+      let tArr = [];
+      if (Array.isArray(tenantsData)) tArr = tenantsData;
+      else if (tenantsData?.tenants) tArr = tenantsData.tenants;
+      else if (tenantsData?.data) tArr = tenantsData.data;
+      setTenants(tArr);
     } catch (error) {
       console.error("Failed to load scheduling data:", error);
     } finally {
@@ -766,6 +775,9 @@ export default function SchedulingPage() {
                           Category
                         </th>
                         <th style={{ padding: "0.75rem", textAlign: "left" }}>
+                          Tenant
+                        </th>
+                        <th style={{ padding: "0.75rem", textAlign: "left" }}>
                           Schedule
                         </th>
                         <th style={{ padding: "0.75rem", textAlign: "left" }}>
@@ -802,6 +814,46 @@ export default function SchedulingPage() {
                                 {config.default_topic}
                               </div>
                             )}
+                          </td>
+                          <td style={{ padding: "0.75rem" }}>
+                            {(() => {
+                              const t = tenants.find(
+                                (t) => t.id === config.tenant_id,
+                              );
+                              return t ? (
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "0.3rem",
+                                    fontSize: "0.8rem",
+                                    color: "#6366f1",
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  <Globe size={13} />
+                                  {t.name}
+                                </span>
+                              ) : config.tenant_id ? (
+                                <span
+                                  style={{
+                                    fontSize: "0.8rem",
+                                    color: "var(--text-secondary)",
+                                  }}
+                                >
+                                  #{config.tenant_id}
+                                </span>
+                              ) : (
+                                <span
+                                  style={{
+                                    color: "var(--text-secondary)",
+                                    fontSize: "0.8rem",
+                                  }}
+                                >
+                                  —
+                                </span>
+                              );
+                            })()}
                           </td>
                           <td style={{ padding: "0.75rem" }}>
                             <Clock
@@ -925,6 +977,9 @@ export default function SchedulingPage() {
                           Status
                         </th>
                         <th style={{ padding: "0.75rem", textAlign: "left" }}>
+                          Tenant
+                        </th>
+                        <th style={{ padding: "0.75rem", textAlign: "left" }}>
                           Category
                         </th>
                         <th style={{ padding: "0.75rem", textAlign: "left" }}>
@@ -962,6 +1017,37 @@ export default function SchedulingPage() {
                                 {log.status}
                               </span>
                             </div>
+                          </td>
+                          <td style={{ padding: "0.75rem" }}>
+                            {(() => {
+                              const t = tenants.find(
+                                (t) => t.id === log.tenant_id,
+                              );
+                              return t ? (
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "0.3rem",
+                                    fontSize: "0.8rem",
+                                    color: "#6366f1",
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  <Globe size={13} />
+                                  {t.name}
+                                </span>
+                              ) : (
+                                <span
+                                  style={{
+                                    color: "var(--text-secondary)",
+                                    fontSize: "0.8rem",
+                                  }}
+                                >
+                                  —
+                                </span>
+                              );
+                            })()}
                           </td>
                           <td style={{ padding: "0.75rem" }}>
                             {log.category_name || "Unknown"}

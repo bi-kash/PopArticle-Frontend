@@ -25,6 +25,7 @@ import {
   Bot,
   CheckCircle2,
   ChevronRight,
+  Crown,
 } from "lucide-react";
 
 /* ───────── small reusable pieces ───────── */
@@ -967,6 +968,358 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+            </div>
+          </section>
+
+          {/* ===================== PRICING ===================== */}
+          <section
+            id="pricing"
+            style={{ background: "var(--surface)", padding: "5rem 1rem" }}
+          >
+            <div className="container" style={{ maxWidth: "1200px" }}>
+              <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
+                <span
+                  style={{
+                    display: "inline-block",
+                    fontSize: "0.8125rem",
+                    fontWeight: 600,
+                    color: "#6366f1",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  Pricing
+                </span>
+                <h2
+                  style={{
+                    fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)",
+                    fontWeight: 800,
+                    marginBottom: "1rem",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  Simple, Transparent Pricing
+                </h2>
+                <p
+                  style={{
+                    maxWidth: "560px",
+                    margin: "0 auto 1.25rem",
+                    fontSize: "1.0625rem",
+                    color: "var(--text-secondary)",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Start <strong>completely free</strong> — no credit card
+                  required. Four plans to match every stage of your growth.
+                </p>
+                <Link
+                  href="/pricing"
+                  style={{
+                    color: "#6366f1",
+                    fontSize: "0.9rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  View full pricing &amp; feature comparison →
+                </Link>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(245px, 1fr))",
+                  gap: "1.25rem",
+                  alignItems: "stretch",
+                }}
+              >
+                {[
+                  {
+                    name: "Free",
+                    price: "$0",
+                    desc: "No commitment, forever",
+                    icon: <Shield size={20} style={{ color: "#10b981" }} />,
+                    iconBg: "rgba(16,185,129,0.08)",
+                    iconBorder: "#6ee7b7",
+                    accentColor: "#10b981",
+                    dark: false,
+                    popular: false,
+                    features: [
+                      "1 tenant website",
+                      "5 articles / month",
+                      "Basic AI generation",
+                      "1 team member",
+                      "Community support",
+                    ],
+                    cta: "Start Free",
+                    ctaHref: "/register",
+                  },
+                  {
+                    name: "Basic",
+                    price: "$19",
+                    desc: "For individual creators",
+                    icon: <Layers size={20} style={{ color: "#2563eb" }} />,
+                    iconBg: "#eff6ff",
+                    iconBorder: "#93c5fd",
+                    accentColor: "#2563eb",
+                    dark: false,
+                    popular: false,
+                    features: [
+                      "1 tenant website",
+                      "30 articles / month",
+                      "Standard AI generation",
+                      "2 team members",
+                      "SEO tools",
+                      "Email support",
+                    ],
+                    cta: "Start Basic",
+                    ctaHref: "/register",
+                  },
+                  {
+                    name: "Pro",
+                    price: "$29",
+                    desc: "For growing teams",
+                    icon: <Zap size={20} style={{ color: "#a78bfa" }} />,
+                    iconBg: "rgba(139,92,246,0.18)",
+                    iconBorder: "rgba(139,92,246,0.35)",
+                    accentColor: "#6366f1",
+                    dark: true,
+                    popular: true,
+                    features: [
+                      "5 tenant websites",
+                      "200 articles / month",
+                      "Advanced AI generation",
+                      "Scheduling & analytics",
+                      "10 team members",
+                      "Social media tools",
+                      "Priority support",
+                    ],
+                    cta: "Start Pro",
+                    ctaHref: "/register",
+                  },
+                  {
+                    name: "Enterprise",
+                    price: "$79",
+                    desc: "For agencies & large teams",
+                    icon: <Crown size={20} style={{ color: "#7c3aed" }} />,
+                    iconBg: "#faf5ff",
+                    iconBorder: "#c4b5fd",
+                    accentColor: "#7c3aed",
+                    dark: false,
+                    popular: false,
+                    features: [
+                      "Unlimited websites",
+                      "Unlimited articles",
+                      "All AI models",
+                      "Unlimited team members",
+                      "API access",
+                      "Dedicated manager",
+                    ],
+                    cta: "Contact Sales",
+                    ctaHref: "/contact",
+                  },
+                ].map((plan) => (
+                  <div
+                    key={plan.name}
+                    style={{
+                      background: plan.dark
+                        ? "linear-gradient(145deg, #1e1b4b 0%, #312e81 100%)"
+                        : "white",
+                      border: plan.popular
+                        ? "2px solid #6366f1"
+                        : "1px solid var(--border-color)",
+                      borderRadius: "1rem",
+                      padding: "1.75rem",
+                      display: "flex",
+                      flexDirection: "column",
+                      position: "relative",
+                      boxShadow: plan.popular
+                        ? "0 8px 32px rgba(99,102,241,0.22)"
+                        : "none",
+                    }}
+                    className={plan.popular ? "" : "feature-card"}
+                  >
+                    {plan.popular && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "-0.75rem",
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          background:
+                            "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                          color: "white",
+                          fontSize: "0.6875rem",
+                          fontWeight: 700,
+                          padding: "0.2rem 0.875rem",
+                          borderRadius: "999px",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.07em",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Most Popular
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: "0.625rem",
+                        background: plan.iconBg,
+                        border: `1px solid ${plan.iconBorder}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginBottom: "1rem",
+                      }}
+                    >
+                      {plan.icon}
+                    </div>
+                    <h3
+                      style={{
+                        fontSize: "1.25rem",
+                        fontWeight: 800,
+                        marginBottom: "0.25rem",
+                        color: plan.dark ? "white" : "var(--text-primary)",
+                      }}
+                    >
+                      {plan.name}
+                    </h3>
+                    <p
+                      style={{
+                        fontSize: "0.8125rem",
+                        color: plan.dark
+                          ? "rgba(255,255,255,0.6)"
+                          : "var(--text-secondary)",
+                        marginBottom: "1.25rem",
+                      }}
+                    >
+                      {plan.desc}
+                    </p>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-end",
+                        gap: "0.2rem",
+                        marginBottom: "1.25rem",
+                        paddingBottom: "1.25rem",
+                        borderBottom: `1px solid ${plan.dark ? "rgba(255,255,255,0.1)" : "var(--border-color)"}`,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "2.625rem",
+                          fontWeight: 800,
+                          lineHeight: 1,
+                          color: plan.dark ? "white" : plan.accentColor,
+                        }}
+                      >
+                        {plan.price}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "0.8125rem",
+                          color: plan.dark
+                            ? "rgba(255,255,255,0.5)"
+                            : "var(--text-secondary)",
+                          paddingBottom: "0.3rem",
+                        }}
+                      >
+                        /mo
+                      </span>
+                    </div>
+                    <ul
+                      style={{
+                        listStyle: "none",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.5rem",
+                        marginBottom: "1.75rem",
+                        flex: 1,
+                      }}
+                    >
+                      {plan.features.map((f) => (
+                        <li
+                          key={f}
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "0.5rem",
+                            fontSize: "0.875rem",
+                            color: plan.dark
+                              ? "rgba(255,255,255,0.78)"
+                              : "var(--text-secondary)",
+                          }}
+                        >
+                          <Check
+                            size={14}
+                            style={{
+                              color: plan.dark ? "#a78bfa" : plan.accentColor,
+                              marginTop: "0.15rem",
+                              flexShrink: 0,
+                            }}
+                          />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link href={plan.ctaHref}>
+                      <button
+                        style={{
+                          width: "100%",
+                          padding: "0.6875rem 1rem",
+                          borderRadius: "0.5rem",
+                          fontWeight: 600,
+                          fontSize: "0.9rem",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "0.375rem",
+                          background: plan.dark
+                            ? "white"
+                            : plan.popular
+                              ? `linear-gradient(135deg, ${plan.accentColor}, #8b5cf6)`
+                              : "transparent",
+                          color: plan.dark
+                            ? "#312e81"
+                            : plan.popular
+                              ? "white"
+                              : plan.accentColor,
+                          border:
+                            plan.dark || plan.popular
+                              ? "none"
+                              : `2px solid ${plan.accentColor}`,
+                          boxShadow: plan.popular
+                            ? `0 4px 14px ${plan.accentColor}40`
+                            : "none",
+                        }}
+                      >
+                        {plan.cta} <ArrowRight size={14} />
+                      </button>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bottom note */}
+              <p
+                style={{
+                  textAlign: "center",
+                  marginTop: "2.5rem",
+                  fontSize: "0.875rem",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                All plans include SSL and regular updates.{" "}
+                <Link
+                  href="/pricing"
+                  style={{ color: "#6366f1", fontWeight: 600 }}
+                >
+                  See full feature comparison →
+                </Link>
+              </p>
             </div>
           </section>
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { tenantService } from "@/lib/tenantService";
@@ -21,6 +22,7 @@ import {
 export default function TenantMembers() {
   const router = useRouter();
   const { id } = router.query;
+  const { tenantId: resolvedId } = useTenantBySlug();
   const [tenant, setTenant] = useState(null);
   const [members, setMembers] = useState([]);
   const [invitations, setInvitations] = useState([]);
@@ -32,19 +34,19 @@ export default function TenantMembers() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (id) {
+    if (resolvedId) {
       loadData();
     }
-  }, [id]);
+  }, [resolvedId]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError("");
       const [tenantData, membersData, invitationsData] = await Promise.all([
-        tenantService.getTenant(id),
-        tenantService.getTenantMembers(id),
-        getInvitations(id).catch(() => ({ invitations: [] })),
+        tenantService.getTenant(resolvedId || id),
+        tenantService.getTenantMembers(resolvedId || id),
+        getInvitations(resolvedId).catch(() => ({ invitations: [] })),
       ]);
       setTenant(tenantData.tenant || tenantData);
       setMembers(membersData.members || membersData || []);
@@ -60,7 +62,7 @@ export default function TenantMembers() {
   const handleAddMember = async (e) => {
     e.preventDefault();
     try {
-      await tenantService.addTenantMember(id, newMember);
+      await tenantService.addTenantMember(resolvedId || id, newMember);
       setNewMember({ email: "", role: "member" });
       setShowAddForm(false);
       loadData();
@@ -73,7 +75,7 @@ export default function TenantMembers() {
     if (!confirm("Are you sure you want to remove this member?")) return;
 
     try {
-      await tenantService.removeTenantMember(id, userId);
+      await tenantService.removeTenantMember(resolvedId || id, userId);
       loadData();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to remove member");

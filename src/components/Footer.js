@@ -76,6 +76,20 @@ export default function Footer() {
               Home
             </Link>
             <Link
+              href="/pricing"
+              style={{
+                color: "rgba(255,255,255,0.7)",
+                fontSize: "0.9rem",
+                transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "white")}
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.color = "rgba(255,255,255,0.7)")
+              }
+            >
+              Pricing
+            </Link>
+            <Link
               href="/contact"
               style={{
                 color: "rgba(255,255,255,0.7)",

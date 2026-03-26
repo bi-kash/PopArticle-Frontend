@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { articleService } from "@/lib/articleService";
@@ -11,6 +12,7 @@ import remarkGfm from "remark-gfm";
 export default function NewArticle() {
   const router = useRouter();
   const { id: tenantId } = router.query;
+  const { tenantId: resolvedTenantId } = useTenantBySlug();
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -34,16 +36,13 @@ export default function NewArticle() {
   const [imagePreview, setImagePreview] = useState("");
 
   useEffect(() => {
-    // Load categories for the current tenant when `tenantId` is available.
-    // If tenantId is not yet present, call without tenant header so global
-    // categories may still appear.
-    if (tenantId) {
-      loadCategories(tenantId);
-      setFormData((prev) => ({ ...prev, tenant_id: tenantId }));
+    if (resolvedTenantId) {
+      loadCategories(resolvedTenantId);
+      setFormData((prev) => ({ ...prev, tenant_id: resolvedTenantId }));
     } else {
       loadCategories();
     }
-  }, [tenantId]);
+  }, [resolvedTenantId]);
 
   const loadCategories = async (tenant = null) => {
     try {
@@ -95,7 +94,7 @@ export default function NewArticle() {
             ? parseInt(formData.category_id)
             : null,
           is_featured: Boolean(formData.is_featured),
-          tenant_id: tenantId,
+          tenant_id: resolvedTenantId || tenantId,
         };
       }
 

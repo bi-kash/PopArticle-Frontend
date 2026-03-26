@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { articleService } from "@/lib/articleService";
@@ -9,6 +10,7 @@ import { Sparkles, ArrowLeft } from "lucide-react";
 export default function GenerateArticle() {
   const router = useRouter();
   const { id: tenantId } = router.query;
+  const { tenantId: resolvedTenantId } = useTenantBySlug();
   const [formData, setFormData] = useState({
     topic: "",
     category_id: "",
@@ -25,15 +27,17 @@ export default function GenerateArticle() {
   const [keywordInput, setKeywordInput] = useState("");
 
   useEffect(() => {
-    if (tenantId) {
+    if (resolvedTenantId) {
       loadCategories();
-      setFormData((prev) => ({ ...prev, tenant_id: tenantId }));
+      setFormData((prev) => ({ ...prev, tenant_id: resolvedTenantId }));
     }
-  }, [tenantId]);
+  }, [resolvedTenantId]);
 
   const loadCategories = async () => {
     try {
-      const data = await categoryService.getCategories({ tenant_id: tenantId });
+      const data = await categoryService.getCategories({
+        tenant_id: resolvedTenantId || tenantId,
+      });
       setCategories(data.categories || []);
     } catch (error) {
       console.error("Failed to load categories:", error);
@@ -51,10 +55,13 @@ export default function GenerateArticle() {
         category_id: formData.category_id
           ? parseInt(formData.category_id)
           : null,
-        tenant_id: tenantId,
+        tenant_id: resolvedTenantId || tenantId,
       };
 
-      const response = await articleService.generateArticle(data, tenantId);
+      const response = await articleService.generateArticle(
+        data,
+        resolvedTenantId || tenantId,
+      );
       router.push(
         `/dashboard/tenants/${tenantId}/articles/${response.article.id}`,
       );

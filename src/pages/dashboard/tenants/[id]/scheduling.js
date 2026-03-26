@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { schedulingService } from "@/lib/schedulingService";
@@ -29,6 +30,7 @@ import {
 export default function TenantSchedulingPage() {
   const router = useRouter();
   const { id: tenantId } = router.query;
+  const { tenantId: resolvedTenantId } = useTenantBySlug();
 
   const [tenant, setTenant] = useState(null);
   const [configs, setConfigs] = useState([]);
@@ -63,10 +65,10 @@ export default function TenantSchedulingPage() {
   });
 
   useEffect(() => {
-    if (tenantId) {
+    if (resolvedTenantId) {
       loadData();
     }
-  }, [tenantId]);
+  }, [resolvedTenantId]);
 
   const loadData = async () => {
     try {
@@ -75,14 +77,14 @@ export default function TenantSchedulingPage() {
       // Load tenant info first
       let tenantData;
       try {
-        tenantData = await tenantService.getTenant(tenantId);
+        tenantData = await tenantService.getTenant(resolvedTenantId);
         setTenant(tenantData.tenant || tenantData);
       } catch (err) {
         if (err.response?.status === 403 || err.response?.status === 404) {
           const myTenantsData = await tenantService.getMyTenants();
           const myTenants = myTenantsData.tenants || [];
           const foundTenant = myTenants.find(
-            (t) => t.id == tenantId || t.id === tenantId,
+            (t) => String(t.id) === resolvedTenantId,
           );
           if (foundTenant) {
             setTenant(foundTenant);
@@ -97,11 +99,11 @@ export default function TenantSchedulingPage() {
         statsData,
         socialMediaData,
       ] = await Promise.all([
-        schedulingService.getConfigs({}, tenantId),
-        categoryService.getCategories({ tenant_id: tenantId }),
-        schedulingService.getLogs({ limit: 20 }, tenantId),
-        schedulingService.getStats(7, tenantId),
-        socialMediaService.getConfigs({ scope: "tenant" }, tenantId),
+        schedulingService.getConfigs({}, resolvedTenantId),
+        categoryService.getCategories({ tenant_id: resolvedTenantId }),
+        schedulingService.getLogs({ limit: 20 }, resolvedTenantId),
+        schedulingService.getStats(7, resolvedTenantId),
+        socialMediaService.getConfigs({ scope: "tenant" }, resolvedTenantId),
       ]);
       setConfigs(configsData.configs || []);
       setCategories(categoriesData.categories || []);
@@ -135,9 +137,13 @@ export default function TenantSchedulingPage() {
       };
 
       if (editingConfig) {
-        await schedulingService.updateConfig(editingConfig.id, data, tenantId);
+        await schedulingService.updateConfig(
+          editingConfig.id,
+          data,
+          resolvedTenantId,
+        );
       } else {
-        await schedulingService.createConfig(data, tenantId);
+        await schedulingService.createConfig(data, resolvedTenantId);
       }
 
       resetForm();
@@ -184,7 +190,7 @@ export default function TenantSchedulingPage() {
       return;
 
     try {
-      await schedulingService.deleteConfig(id, tenantId);
+      await schedulingService.deleteConfig(id, resolvedTenantId);
       setConfigs(configs.filter((c) => c.id !== id));
     } catch (error) {
       alert("Failed to delete scheduling configuration");
@@ -196,7 +202,7 @@ export default function TenantSchedulingPage() {
       await schedulingService.updateConfig(
         config.id,
         { is_enabled: !config.is_enabled },
-        tenantId,
+        resolvedTenantId,
       );
       loadData();
     } catch (error) {
@@ -207,7 +213,7 @@ export default function TenantSchedulingPage() {
   const handleTrigger = async (configId) => {
     setTriggering(configId);
     try {
-      await schedulingService.triggerGeneration(configId, tenantId);
+      await schedulingService.triggerGeneration(configId, resolvedTenantId);
       alert("Article generation triggered successfully!");
       loadData();
     } catch (error) {

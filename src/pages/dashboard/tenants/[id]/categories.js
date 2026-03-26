@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
+import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import Link from "next/link";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
@@ -33,6 +34,7 @@ const EMPTY_FORM = { name: "", slug: "", description: "", slugTouched: false };
 export default function TenantCategories() {
   const router = useRouter();
   const { id: tenantId } = router.query;
+  const { tenantId: resolvedTenantId } = useTenantBySlug();
   const [tenant, setTenant] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,17 +48,17 @@ export default function TenantCategories() {
   const [reassignCategoryId, setReassignCategoryId] = useState("");
 
   useEffect(() => {
-    if (tenantId) loadData();
-  }, [tenantId]);
+    if (resolvedTenantId) loadData();
+  }, [resolvedTenantId]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [tenantData, categoriesData, articlesData] = await Promise.all([
-        tenantService.getTenant(tenantId),
-        categoryService.getCategories({ tenant_id: tenantId }),
+        tenantService.getTenant(resolvedTenantId),
+        categoryService.getCategories({ tenant_id: resolvedTenantId }),
         articleService
-          .getArticles({ tenant_id: tenantId, per_page: 1000 })
+          .getArticles({ tenant_id: resolvedTenantId, per_page: 1000 })
           .catch(() => ({ articles: [] })),
       ]);
       setTenant(tenantData.tenant || tenantData);
@@ -112,7 +114,7 @@ export default function TenantCategories() {
           name: form.name.trim(),
           slug: form.slug.trim() || toSlug(form.name.trim()) || undefined,
           description: form.description.trim() || undefined,
-          tenant_id: tenantId,
+          tenant_id: resolvedTenantId || tenantId,
         },
         tenantId,
       );

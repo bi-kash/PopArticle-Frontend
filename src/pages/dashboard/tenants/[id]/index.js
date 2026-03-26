@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import Link from "next/link";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { tenantService } from "@/lib/tenantService";
+import { getTenantSlug } from "@/lib/tenantUtils";
 import {
   Building2,
   Globe,
@@ -14,29 +16,31 @@ import {
   Edit,
   UserCog,
   Share2,
+  Key,
 } from "lucide-react";
 
 export default function TenantDetails() {
   const router = useRouter();
   const { id } = router.query;
+  const { tenantId: resolvedId } = useTenantBySlug();
   const [tenant, setTenant] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (id) {
+    if (resolvedId) {
       loadTenantData();
     }
-  }, [id]);
+  }, [resolvedId]);
 
   const loadTenantData = async () => {
     try {
       setLoading(true);
       setError("");
       const [tenantData, statsData] = await Promise.all([
-        tenantService.getTenant(id),
-        tenantService.getTenantStats(id).catch(() => null),
+        tenantService.getTenant(resolvedId || id),
+        tenantService.getTenantStats(resolvedId || id).catch(() => null),
       ]);
       setTenant(tenantData.tenant || tenantData);
       setStats(statsData?.stats || statsData);
@@ -159,11 +163,11 @@ export default function TenantDetails() {
                     {tenant.name}
                   </h1>
                   <p style={{ color: "var(--text-secondary)" }}>
-                    Tenant ID: {tenant.id}
+                    {tenant.primary_domain}
                   </p>
                 </div>
               </div>
-              <Link href={`/dashboard/tenants/${id}/edit`}>
+              <Link href={`/dashboard/tenants/${getTenantSlug(tenant)}/edit`}>
                 <button className="btn btn-primary">
                   <Edit size={20} />
                   Edit
@@ -288,7 +292,9 @@ export default function TenantDetails() {
                 gap: "1rem",
               }}
             >
-              <Link href={`/dashboard/tenants/${id}/members`}>
+              <Link
+                href={`/dashboard/tenants/${getTenantSlug(tenant)}/members`}
+              >
                 <button
                   className="btn btn-secondary"
                   style={{ width: "100%", justifyContent: "flex-start" }}
@@ -298,7 +304,7 @@ export default function TenantDetails() {
                 </button>
               </Link>
 
-              <Link href={`/dashboard/tenants/${id}/team`}>
+              <Link href={`/dashboard/tenants/${getTenantSlug(tenant)}/team`}>
                 <button
                   className="btn btn-secondary"
                   style={{ width: "100%", justifyContent: "flex-start" }}
@@ -308,7 +314,19 @@ export default function TenantDetails() {
                 </button>
               </Link>
 
-              <Link href={`/dashboard/tenants/${id}/edit`}>
+              <Link
+                href={`/dashboard/tenants/${getTenantSlug(tenant)}/credentials`}
+              >
+                <button
+                  className="btn btn-secondary"
+                  style={{ width: "100%", justifyContent: "flex-start" }}
+                >
+                  <Key size={20} />
+                  API Credentials
+                </button>
+              </Link>
+
+              <Link href={`/dashboard/tenants/${getTenantSlug(tenant)}/edit`}>
                 <button
                   className="btn btn-secondary"
                   style={{ width: "100%", justifyContent: "flex-start" }}
@@ -318,7 +336,9 @@ export default function TenantDetails() {
                 </button>
               </Link>
 
-              <Link href={`/dashboard/tenants/${id}/social-media`}>
+              <Link
+                href={`/dashboard/tenants/${getTenantSlug(tenant)}/social-media`}
+              >
                 <button
                   className="btn btn-secondary"
                   style={{ width: "100%", justifyContent: "flex-start" }}

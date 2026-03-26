@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { messageService } from "../lib/messageService";
+import { tenantService } from "../lib/tenantService";
 import {
   Mail,
   RefreshCw,
@@ -8,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Inbox,
+  Globe,
 } from "lucide-react";
 import Cookies from "js-cookie";
 
@@ -23,19 +25,47 @@ export default function MessagesInbox() {
   });
   const [pagination, setPagination] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [tenants, setTenants] = useState([]);
+  const [tenantFilter, setTenantFilter] = useState("all");
 
   const user = JSON.parse(Cookies.get("user") || "{}");
   const tenantId = user?.tenant_id;
 
   useEffect(() => {
+    loadTenants();
+  }, []);
+
+  useEffect(() => {
     fetchMessages();
-  }, [filters]);
+  }, [filters, tenantFilter]);
+
+  const loadTenants = async () => {
+    try {
+      const data = await tenantService.getMyTenants();
+      let arr = [];
+      if (Array.isArray(data)) arr = data;
+      else if (data.tenants) arr = data.tenants;
+      else if (data.data) arr = data.data;
+      setTenants(arr);
+    } catch (error) {
+      console.error("Failed to load tenants:", error);
+    }
+  };
 
   const fetchMessages = async () => {
     setLoading(true);
     try {
-      const response = await messageService.getMessages(filters, tenantId);
-      setMessages(response.messages);
+      const effectiveTenantId =
+        tenantFilter !== "all" ? tenantFilter : tenantId;
+      const response = await messageService.getMessages(
+        filters,
+        effectiveTenantId,
+      );
+      const msgs = (response.messages || []).map((m) => ({
+        ...m,
+        _tenant_id: effectiveTenantId,
+      }));
+      setMessages(msgs);
       setPagination(response.pagination);
       setUnreadCount(response.unread_count || 0);
     } catch (error) {
@@ -170,6 +200,29 @@ export default function MessagesInbox() {
           <option value="archived">Archived</option>
           <option value="spam">Spam</option>
         </select>
+
+        {tenants.length > 0 && (
+          <select
+            value={tenantFilter}
+            onChange={(e) => setTenantFilter(e.target.value)}
+            style={{
+              padding: "0.5rem 0.75rem",
+              border: "1px solid var(--border-color, #d1d5db)",
+              borderRadius: "0.5rem",
+              background: "var(--background, #fff)",
+              color: "var(--text-primary, #111827)",
+              fontSize: "0.875rem",
+              outline: "none",
+            }}
+          >
+            <option value="all">All Tenants</option>
+            {tenants.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        )}
 
         <button
           onClick={() => fetchMessages()}
@@ -331,6 +384,29 @@ export default function MessagesInbox() {
                       >
                         {formatDate(message.created_at)}
                       </div>
+                      {(() => {
+                        const t = tenants.find(
+                          (t) =>
+                            t.id === message.tenant_id ||
+                            t.id === message._tenant_id,
+                        );
+                        return t ? (
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.25rem",
+                              marginTop: "0.25rem",
+                              fontSize: "0.6875rem",
+                              color: "#6366f1",
+                              fontWeight: 500,
+                            }}
+                          >
+                            <Globe size={10} />
+                            {t.name}
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   );
                 })
@@ -470,6 +546,29 @@ export default function MessagesInbox() {
                       }}
                     >
                       {formatDate(selectedMessage.created_at)}
+                      {(() => {
+                        const t = tenants.find(
+                          (t) =>
+                            t.id === selectedMessage.tenant_id ||
+                            t.id === selectedMessage._tenant_id,
+                        );
+                        return t ? (
+                          <span
+                            style={{
+                              marginLeft: "0.75rem",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.25rem",
+                              color: "#6366f1",
+                              fontWeight: 500,
+                              fontSize: "0.75rem",
+                            }}
+                          >
+                            <Globe size={11} />
+                            {t.name}
+                          </span>
+                        ) : null;
+                      })()}
                     </p>
                   </div>
                   <span

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { socialMediaService } from "@/lib/socialMediaService";
@@ -36,6 +37,7 @@ import {
 export default function TenantSocialMediaPage() {
   const router = useRouter();
   const { id: tenantId } = router.query;
+  const { tenantId: resolvedTenantId } = useTenantBySlug();
 
   const [tenant, setTenant] = useState(null);
   const [tenantConfigs, setTenantConfigs] = useState([]);
@@ -87,7 +89,7 @@ export default function TenantSocialMediaPage() {
   const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
-    if (tenantId) {
+    if (resolvedTenantId) {
       const urlParams = new URLSearchParams(window.location.search);
       const success = urlParams.get("success");
       const errorParam = urlParams.get("error");
@@ -119,7 +121,7 @@ export default function TenantSocialMediaPage() {
 
       loadData();
     }
-  }, [tenantId]);
+  }, [resolvedTenantId]);
 
   const loadData = async () => {
     try {
@@ -129,14 +131,14 @@ export default function TenantSocialMediaPage() {
       // Load tenant info
       let tenantData;
       try {
-        tenantData = await tenantService.getTenant(tenantId);
+        tenantData = await tenantService.getTenant(resolvedTenantId);
         setTenant(tenantData.tenant || tenantData);
       } catch (err) {
         if (err.response?.status === 403 || err.response?.status === 404) {
           const myTenantsData = await tenantService.getMyTenants();
           const myTenants = myTenantsData.tenants || [];
           const foundTenant = myTenants.find(
-            (t) => t.id == tenantId || t.id === tenantId,
+            (t) => String(t.id) === resolvedTenantId,
           );
           if (foundTenant) {
             setTenant(foundTenant);
@@ -146,12 +148,12 @@ export default function TenantSocialMediaPage() {
 
       // Use allSettled so partial failures don't break the page
       const results = await Promise.allSettled([
-        socialMediaService.getConfigs({ scope: "tenant" }, tenantId),
-        socialMediaService.getConfigs({ scope: "user" }, tenantId),
-        socialMediaService.getLogs({ limit: 20 }, tenantId),
-        socialMediaService.getStats(30, tenantId),
+        socialMediaService.getConfigs({ scope: "tenant" }, resolvedTenantId),
+        socialMediaService.getConfigs({ scope: "user" }, resolvedTenantId),
+        socialMediaService.getLogs({ limit: 20 }, resolvedTenantId),
+        socialMediaService.getStats(30, resolvedTenantId),
         articleService.getArticles({
-          tenant_id: tenantId,
+          tenant_id: resolvedTenantId,
           status: "published",
         }),
       ]);
@@ -267,10 +269,10 @@ export default function TenantSocialMediaPage() {
         await socialMediaService.updateConfig(
           editingConfig.id,
           payload,
-          tenantId,
+          resolvedTenantId,
         );
       } else {
-        await socialMediaService.createConfig(payload, tenantId);
+        await socialMediaService.createConfig(payload, resolvedTenantId);
       }
 
       await loadData();
@@ -293,7 +295,7 @@ export default function TenantSocialMediaPage() {
     }
 
     try {
-      await socialMediaService.deleteConfig(configId, tenantId);
+      await socialMediaService.deleteConfig(configId, resolvedTenantId);
       await loadData();
     } catch (err) {
       console.error("Failed to delete:", err);
@@ -304,7 +306,11 @@ export default function TenantSocialMediaPage() {
   const handleAttachToTenant = async (configId) => {
     setAttaching(configId);
     try {
-      await socialMediaService.attachToTenant(configId, tenantId, attachData);
+      await socialMediaService.attachToTenant(
+        configId,
+        resolvedTenantId,
+        attachData,
+      );
       setShowAttachModal(null);
       setAttachData({ article_base_url: "", auto_post_enabled: false });
       await loadData();
@@ -330,7 +336,7 @@ export default function TenantSocialMediaPage() {
     }
 
     try {
-      await socialMediaService.detachFromTenant(configId, tenantId);
+      await socialMediaService.detachFromTenant(configId, resolvedTenantId);
       await loadData();
       setOauthSuccess({
         type: "success",
@@ -355,7 +361,7 @@ export default function TenantSocialMediaPage() {
 
     const oauthUrl = socialMediaService.getOAuthConnectUrl(
       callbackUrl,
-      tenantId,
+      resolvedTenantId,
       accessToken,
     );
     window.location.href = oauthUrl;
@@ -371,7 +377,7 @@ export default function TenantSocialMediaPage() {
     }
 
     try {
-      await socialMediaService.disconnectOAuth(configId, tenantId);
+      await socialMediaService.disconnectOAuth(configId, resolvedTenantId);
       await loadData();
       setOauthSuccess({
         type: "success",
@@ -386,7 +392,10 @@ export default function TenantSocialMediaPage() {
   const handleVerifyToken = async (configId) => {
     setVerifying(configId);
     try {
-      const result = await socialMediaService.verifyToken(configId, tenantId);
+      const result = await socialMediaService.verifyToken(
+        configId,
+        resolvedTenantId,
+      );
       if (result.valid) {
         alert("Token is valid and working!");
       } else {
@@ -444,7 +453,7 @@ export default function TenantSocialMediaPage() {
           style: postStyle,
           include_link: true,
         },
-        tenantId,
+        resolvedTenantId,
       );
       setGeneratedPost(result);
     } catch (err) {
@@ -477,7 +486,7 @@ export default function TenantSocialMediaPage() {
           ai_generated: true,
           was_edited: false,
         },
-        tenantId,
+        resolvedTenantId,
       );
       alert("Posted successfully!");
       setGeneratedPost(null);

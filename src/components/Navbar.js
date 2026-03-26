@@ -54,6 +54,7 @@ export default function Navbar() {
   const handleLogout = () => authService.logout();
   const navLinks = [
     { label: "Home", href: "/" },
+    { label: "Pricing", href: "/pricing" },
     { label: "Docs", href: "/docs" },
     { label: "Contact", href: "/contact" },
   ];

@@ -25,6 +25,7 @@ import {
   BarChart2,
   PieChart,
   DollarSign,
+  Key,
 } from "lucide-react";
 
 export default function DashboardLayout({ children }) {
@@ -82,6 +83,7 @@ export default function DashboardLayout({ children }) {
       href: "/dashboard/subscription",
     },
     { icon: UserCircle, label: "Profile", href: "/dashboard/profile" },
+    { icon: Key, label: "API Credentials", href: "/dashboard/credentials" },
   ];
 
   const adminMenuItems = [

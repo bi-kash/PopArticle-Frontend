@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { useState, useEffect } from "react";
@@ -9,6 +10,7 @@ import Link from "next/link";
 export default function TenantMessagesPage() {
   const router = useRouter();
   const { id: tenantId } = router.query;
+  const { tenantId: resolvedTenantId } = useTenantBySlug();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -22,15 +24,18 @@ export default function TenantMessagesPage() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    if (tenantId) {
+    if (resolvedTenantId) {
       fetchMessages();
     }
-  }, [tenantId, filters]);
+  }, [resolvedTenantId, filters]);
 
   const fetchMessages = async () => {
     setLoading(true);
     try {
-      const response = await messageService.getMessages(filters, tenantId);
+      const response = await messageService.getMessages(
+        filters,
+        resolvedTenantId,
+      );
 
       setMessages(response.messages);
       setPagination(response.pagination);
@@ -47,7 +52,7 @@ export default function TenantMessagesPage() {
       await messageService.updateMessage(
         messageId,
         { status: newStatus },
-        tenantId,
+        resolvedTenantId,
       );
       await fetchMessages();
       if (selectedMessage?.id === messageId) {
@@ -69,7 +74,7 @@ export default function TenantMessagesPage() {
       await messageService.updateMessage(
         messageId,
         { status: "replied", reply_text: replyText },
-        tenantId,
+        resolvedTenantId,
       );
       setReplyText("");
       await fetchMessages();
@@ -84,7 +89,7 @@ export default function TenantMessagesPage() {
     if (!confirm("Are you sure you want to delete this message?")) return;
 
     try {
-      await messageService.deleteMessage(messageId, tenantId);
+      await messageService.deleteMessage(messageId, resolvedTenantId);
       await fetchMessages();
       if (selectedMessage?.id === messageId) {
         setSelectedMessage(null);

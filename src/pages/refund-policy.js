@@ -59,7 +59,27 @@ export default function RefundPolicy() {
           </p>
         </section>
 
-        {/* 30-day */}
+        {/* Free Basic Plan Note */}
+        <section
+          style={{
+            background: "linear-gradient(135deg, #ede9fe, #e0e7ff)",
+            borderRadius: "0.875rem",
+            padding: "1.5rem",
+            marginBottom: "2rem",
+            borderLeft: "4px solid #6366f1",
+          }}
+        >
+          <p
+            style={{ margin: 0, color: "var(--text-primary)", fontWeight: 500 }}
+          >
+            <strong>Try before you buy:</strong> {name} offers a{" "}
+            <strong>Basic plan that is permanently free</strong> with limited
+            features. You can explore the platform fully before committing to a
+            paid subscription — no credit card required.
+          </p>
+        </section>
+
+        {/* Refund Eligibility */}
         <section style={{ marginBottom: "2rem" }}>
           <h2
             style={{
@@ -68,18 +88,44 @@ export default function RefundPolicy() {
               marginBottom: "0.75rem",
             }}
           >
-            30-Day Money-Back Guarantee
+            Refund Eligibility
           </h2>
+          <p style={{ marginBottom: "1rem" }}>
+            Refunds are granted only in cases where {name} is not functioning as
+            promised due to a technical failure or system glitch on our side. If
+            the platform fails to deliver its core functionality as described,
+            you may be eligible for a full refund provided the following
+            conditions are met:
+          </p>
+          <ul
+            style={{
+              paddingLeft: "1.5rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.5rem",
+              marginBottom: "1rem",
+            }}
+          >
+            <li>
+              The refund request is submitted{" "}
+              <strong>within 3 days of your initial purchase</strong>.
+            </li>
+            <li>
+              The issue is caused by a verified malfunction or system error on
+              the {name} platform — not by user error, third-party service
+              outages, or misuse.
+            </li>
+            <li>
+              You have contacted our support team and given us a reasonable
+              opportunity to resolve the issue before requesting a refund.
+            </li>
+          </ul>
           <p>
-            If you are not satisfied with {name} for any reason, you may request
-            a full refund within
-            <strong> 30 days</strong> of your initial purchase. This applies to
-            first-time purchases of any subscription plan. To request a refund,
-            contact us at{" "}
-            <a href={`mailto:${email}`} style={{ color: "#6366f1" }}>
-              {email}
-            </a>{" "}
-            with your account email and order details.
+            We do <strong>not</strong> issue refunds for change-of-mind,
+            dissatisfaction with AI-generated content quality, or unused
+            subscription time where the platform was functioning normally. We
+            encourage all users to test the platform on the free Basic plan
+            before upgrading.
           </p>
         </section>
 
@@ -114,7 +160,7 @@ export default function RefundPolicy() {
             <li>You will not be charged for subsequent billing periods.</li>
             <li>
               No partial refunds are issued for unused time within a billing
-              period, except as covered by the 30-day guarantee above.
+              period, except as covered by the refund eligibility policy above.
             </li>
           </ul>
         </section>
@@ -140,7 +186,10 @@ export default function RefundPolicy() {
               gap: "0.5rem",
             }}
           >
-            <li>Renewals after the 30-day guarantee window has passed.</li>
+            <li>
+              Subscription renewals or charges where the platform was
+              functioning normally at the time of billing.
+            </li>
             <li>
               Add-on credits or one-time purchases once they have been consumed
               or used.

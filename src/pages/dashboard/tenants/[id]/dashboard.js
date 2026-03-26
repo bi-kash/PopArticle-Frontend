@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
-import { tenantService } from "@/lib/tenantService";
 import { articleService } from "@/lib/articleService";
 import {
   FileText,
@@ -20,11 +20,20 @@ import {
   Share2,
   LayoutDashboard,
   Sparkles,
+  Key,
+  Copy,
+  Check,
 } from "lucide-react";
 
 export default function TenantDashboard() {
   const router = useRouter();
   const { id } = router.query;
+  const {
+    tenant: resolvedTenant,
+    tenantId: resolvedId,
+    loading: tenantLoading,
+    error: tenantError,
+  } = useTenantBySlug();
   const [tenant, setTenant] = useState(null);
   const [stats, setStats] = useState({
     total_articles: 0,
@@ -32,80 +41,69 @@ export default function TenantDashboard() {
     draft_articles: 0,
   });
   const [recentArticles, setRecentArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
 
+  // Sync tenant from hook once resolved
   useEffect(() => {
-    if (id) {
-      loadDashboardData();
+    if (resolvedTenant) setTenant(resolvedTenant);
+  }, [resolvedTenant]);
+
+  // Load article stats once we have the real UUID
+  useEffect(() => {
+    if (resolvedId) {
+      loadArticleStats(resolvedId);
     }
-  }, [id]);
+  }, [resolvedId]);
 
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-
-      // Try to load tenant details directly first
-      let tenantData;
-      try {
-        tenantData = await tenantService.getTenant(id);
-
-        setTenant(tenantData.tenant || tenantData);
-      } catch (err) {
-        // If 403, try to find it in my-tenants list
-        if (err.response?.status === 403 || err.response?.status === 404) {
-          const myTenantsData = await tenantService.getMyTenants();
-          const myTenants = myTenantsData.tenants || [];
-          const foundTenant = myTenants.find((t) => t.id == id || t.id === id);
-
-          if (foundTenant) {
-            setTenant(foundTenant);
-          } else {
-            throw new Error("Tenant not found or you don't have access");
-          }
-        } else {
-          throw err;
-        }
-      }
-
-      // Load all articles for this tenant to calculate stats
-      try {
-        const articlesData = await articleService.getArticles({
-          tenant_id: id,
-        });
-
-        const articlesList = articlesData.articles || articlesData.data || [];
-
-        // Backend now filters by X-Tenant-ID header, so we get only tenant's articles
-        const calculatedStats = {
-          total_articles: articlesList.length,
-          published_articles: articlesList.filter(
-            (a) => a.status === "published",
-          ).length,
-          draft_articles: articlesList.filter((a) => a.status === "draft")
-            .length,
-        };
-        setStats(calculatedStats);
-
-        // Set recent articles (first 5)
-        setRecentArticles(articlesList.slice(0, 5));
-      } catch (err) {
-        console.error("Failed to load articles:", err);
-        // If articles fail to load, keep default stats at 0
-      }
-    } catch (error) {
-      console.error("Failed to load tenant dashboard:", error);
-
-      const errorMessage =
-        error.response?.status === 403
-          ? "You don't have permission to access this tenant"
-          : error.response?.data?.message || error.message;
-
-      alert(`Failed to load tenant dashboard: ${errorMessage}`);
+  // Show error if hook fails to resolve tenant
+  useEffect(() => {
+    if (tenantError) {
+      alert(`Failed to load tenant dashboard: ${tenantError}`);
       router.push("/dashboard");
+    }
+  }, [tenantError]);
+
+  const loadArticleStats = async (tenantUUID) => {
+    try {
+      setStatsLoading(true);
+      const articlesData = await articleService.getArticles({
+        tenant_id: tenantUUID,
+      });
+      const articlesList = articlesData.articles || articlesData.data || [];
+      setStats({
+        total_articles: articlesList.length,
+        published_articles: articlesList.filter((a) => a.status === "published")
+          .length,
+        draft_articles: articlesList.filter((a) => a.status === "draft").length,
+      });
+      setRecentArticles(articlesList.slice(0, 5));
+    } catch (err) {
+      console.error("Failed to load articles:", err);
     } finally {
-      setLoading(false);
+      setStatsLoading(false);
     }
   };
+
+  const [copiedTenantId, setCopiedTenantId] = useState(false);
+
+  const handleCopyTenantId = async () => {
+    if (!tenant?.id) return;
+    try {
+      await navigator.clipboard.writeText(String(tenant.id));
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = String(tenant.id);
+      ta.style.cssText = "position:fixed;opacity:0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopiedTenantId(true);
+    setTimeout(() => setCopiedTenantId(false), 2000);
+  };
+
+  const loading = tenantLoading || statsLoading;
 
   if (loading) {
     return (
@@ -473,6 +471,121 @@ export default function TenantDashboard() {
                   </Link>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Tenant Credentials */}
+          <div className="card" style={{ marginBottom: "2rem" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "1.25rem",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                }}
+              >
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: "0.625rem",
+                    background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Key size={18} color="#fff" />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>
+                    Credentials
+                  </h2>
+                  <p
+                    style={{
+                      color: "var(--text-secondary)",
+                      fontSize: "0.8125rem",
+                    }}
+                  >
+                    Tenant ID
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "0.875rem 1rem",
+                background: "var(--background, #f8f9fa)",
+                borderRadius: "0.625rem",
+                border: "1px solid var(--border-color)",
+                gap: "1rem",
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    color: "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    marginBottom: "0.35rem",
+                  }}
+                >
+                  Tenant ID
+                </div>
+                <div
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "0.875rem",
+                    letterSpacing: "0.04em",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  ••••••••‑••••‑••••‑••••‑••••••••••••
+                </div>
+              </div>
+              <button
+                onClick={handleCopyTenantId}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.3rem",
+                  padding: "0.45rem 0.875rem",
+                  flexShrink: 0,
+                  background: copiedTenantId ? "#d1fae5" : "var(--surface)",
+                  color: copiedTenantId ? "#065f46" : "var(--text-secondary)",
+                  border: `1px solid ${
+                    copiedTenantId ? "#6ee7b7" : "var(--border-color)"
+                  }`,
+                  borderRadius: "0.5rem",
+                  cursor: "pointer",
+                  fontSize: "0.8125rem",
+                  fontWeight: 500,
+                  transition: "all 0.15s",
+                }}
+              >
+                {copiedTenantId ? (
+                  <>
+                    <Check size={14} /> Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy size={14} /> Copy ID
+                  </>
+                )}
+              </button>
             </div>
           </div>
 

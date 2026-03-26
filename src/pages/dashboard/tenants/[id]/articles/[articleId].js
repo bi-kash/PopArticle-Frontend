@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
+import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import dynamic from "next/dynamic";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
@@ -18,6 +19,7 @@ const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
 export default function EditArticle() {
   const router = useRouter();
   const { id: tenantId, articleId } = router.query;
+  const { tenantId: resolvedTenantId } = useTenantBySlug();
   const [formData, setFormData] = useState(null);
   const [viewMode, setViewMode] = useState("edit"); // "edit" or "preview"
   const [categories, setCategories] = useState([]);
@@ -30,10 +32,10 @@ export default function EditArticle() {
   const [imagePreview, setImagePreview] = useState("");
 
   useEffect(() => {
-    if (articleId && tenantId) {
+    if (articleId && resolvedTenantId) {
       loadData();
     }
-  }, [articleId, tenantId]);
+  }, [articleId, resolvedTenantId]);
 
   // When both article and categories are loaded, process the form data
   useEffect(() => {
@@ -46,8 +48,10 @@ export default function EditArticle() {
     try {
       setLoading(true);
       const [articleResponse, categoriesResponse] = await Promise.all([
-        articleService.getArticle(articleId, tenantId),
-        categoryService.getCategories({ tenant_id: tenantId }),
+        articleService.getArticle(articleId, resolvedTenantId || tenantId),
+        categoryService.getCategories({
+          tenant_id: resolvedTenantId || tenantId,
+        }),
       ]);
 
       console.log("Article data:", articleResponse.article);
@@ -176,7 +180,10 @@ export default function EditArticle() {
     if (!confirm("Are you sure you want to delete this article?")) return;
 
     try {
-      await articleService.deleteArticle(articleId, tenantId);
+      await articleService.deleteArticle(
+        articleId,
+        resolvedTenantId || tenantId,
+      );
       router.push(`/dashboard/tenants/${tenantId}/articles`);
     } catch (error) {
       alert("Failed to delete article");

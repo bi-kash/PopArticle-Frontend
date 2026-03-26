@@ -461,7 +461,7 @@ export default function DocsPage() {
                 color: "#a5b4fc",
               }}
             >
-              http://localhost:5000
+              {process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.yoursite.com"}
             </code>
           </p>
         </div>

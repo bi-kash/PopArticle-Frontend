@@ -5,6 +5,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { authService } from "@/lib/authService";
 import { tenantService } from "@/lib/tenantService";
+import { getTenantSlug } from "@/lib/tenantUtils";
 import {
   Building2,
   ArrowRight,
@@ -304,7 +305,9 @@ export default function Dashboard() {
                       e.currentTarget.style.transform = "translateY(0)";
                     }}
                     onClick={() =>
-                      router.push(`/dashboard/tenants/${tenant.id}/dashboard`)
+                      router.push(
+                        `/dashboard/tenants/${getTenantSlug(tenant)}/dashboard`,
+                      )
                     }
                   >
                     <div
@@ -476,7 +479,7 @@ export default function Dashboard() {
                       any of your websites.
                     </p>
                     <Link
-                      href={`/dashboard/tenants/${tenants[0].id}/social-media`}
+                      href={`/dashboard/tenants/${getTenantSlug(tenants[0])}/social-media`}
                       style={{ textDecoration: "none" }}
                     >
                       <button

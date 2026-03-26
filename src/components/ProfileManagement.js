@@ -199,7 +199,7 @@ export default function ProfileManagement() {
   ];
 
   return (
-    <div style={{ maxWidth: "720px" }}>
+    <div style={{ maxWidth: "720px", margin: "0 auto" }}>
       {/* Header */}
       <div style={{ marginBottom: "1.75rem" }}>
         <h1

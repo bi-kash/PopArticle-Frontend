@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { tenantService } from "@/lib/tenantService";
@@ -8,6 +9,7 @@ import { Building2, Save, ArrowLeft } from "lucide-react";
 export default function EditTenant() {
   const router = useRouter();
   const { id } = router.query;
+  const { tenantId: resolvedId } = useTenantBySlug();
   const [formData, setFormData] = useState({
     name: "",
     primary_domain: "",
@@ -17,15 +19,15 @@ export default function EditTenant() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (id) {
+    if (resolvedId) {
       loadTenant();
     }
-  }, [id]);
+  }, [resolvedId]);
 
   const loadTenant = async () => {
     try {
       setLoading(true);
-      const data = await tenantService.getTenant(id);
+      const data = await tenantService.getTenant(resolvedId || id);
       const tenant = data.tenant || data;
       setFormData({
         name: tenant.name || "",
@@ -45,7 +47,7 @@ export default function EditTenant() {
     setSaving(true);
 
     try {
-      await tenantService.updateTenant(id, formData);
+      await tenantService.updateTenant(resolvedId || id, formData);
       router.push(`/dashboard/tenants/${id}`);
     } catch (err) {
       console.error("Update error:", err);

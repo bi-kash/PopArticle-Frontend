@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { articleService } from "@/lib/articleService";
@@ -18,23 +19,24 @@ import {
 export default function TenantArticles() {
   const router = useRouter();
   const { id } = router.query;
+  const { tenantId: resolvedId } = useTenantBySlug();
   const [tenant, setTenant] = useState(null);
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (id) {
+    if (resolvedId) {
       loadData();
     }
-  }, [id]);
+  }, [resolvedId]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [tenantData, articlesData] = await Promise.all([
-        tenantService.getTenant(id),
-        articleService.getArticles({ tenant_id: id }),
+        tenantService.getTenant(resolvedId || id),
+        articleService.getArticles({ tenant_id: resolvedId || id }),
       ]);
       setTenant(tenantData.tenant || tenantData);
 

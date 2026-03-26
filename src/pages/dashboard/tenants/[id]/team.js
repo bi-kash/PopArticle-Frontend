@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { teamService } from "@/lib/teamService";
@@ -23,6 +24,7 @@ import {
 export default function TenantTeam() {
   const router = useRouter();
   const { id } = router.query;
+  const { tenantId: resolvedId } = useTenantBySlug();
   const [tenant, setTenant] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,18 +34,18 @@ export default function TenantTeam() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (id) {
+    if (resolvedId) {
       loadData();
     }
-  }, [id, includeInactive]);
+  }, [resolvedId, includeInactive]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError("");
       const [tenantData, teamData] = await Promise.all([
-        tenantService.getTenant(id),
-        teamService.getTeamMembers(id, includeInactive),
+        tenantService.getTenant(resolvedId || id),
+        teamService.getTeamMembers(resolvedId, includeInactive),
       ]);
       setTenant(tenantData.tenant || tenantData);
       setTeamMembers(teamData.team_members || []);
@@ -59,7 +61,7 @@ export default function TenantTeam() {
     if (!confirm("Are you sure you want to remove this team member?")) return;
 
     try {
-      await teamService.deleteTeamMember(id, memberId);
+      await teamService.deleteTeamMember(resolvedId, memberId);
       await loadData();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to delete team member");
@@ -68,7 +70,7 @@ export default function TenantTeam() {
 
   const handleSyncUsers = async () => {
     try {
-      const result = await teamService.syncTenantUsers(id);
+      const result = await teamService.syncTenantUsers(resolvedId);
       alert(result.message || "Users synced successfully");
       await loadData();
     } catch (err) {

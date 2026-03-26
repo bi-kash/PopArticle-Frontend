@@ -95,6 +95,24 @@ const authService = {
     authService.setTokens(access_token, refreshToken);
     return access_token;
   },
+
+  // List user API keys
+  async getApiKeys() {
+    const response = await api.get("/api/v1/auth/api-keys");
+    return response.data;
+  },
+
+  // Create a new API key
+  async createApiKey(name) {
+    const response = await api.post("/api/v1/auth/api-keys", { name });
+    return response.data;
+  },
+
+  // Delete an API key
+  async deleteApiKey(keyId) {
+    const response = await api.delete(`/api/v1/auth/api-keys/${keyId}`);
+    return response.data;
+  },
 };
 
 export default authService;
