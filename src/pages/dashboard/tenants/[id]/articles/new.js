@@ -104,7 +104,7 @@ export default function NewArticle() {
       );
       const response = await articleService.createArticle(
         dataToSend,
-        tenantId,
+        resolvedTenantId || tenantId,
         isFormData,
       );
       console.log("API Response:", response);
