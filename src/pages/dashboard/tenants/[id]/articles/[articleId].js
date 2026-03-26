@@ -161,7 +161,7 @@ export default function EditArticle() {
       await articleService.updateArticle(
         articleId,
         dataToSend,
-        tenantId,
+        resolvedTenantId || tenantId,
         isFormData,
       );
       router.push(`/dashboard/tenants/${tenantId}/articles`);
