@@ -5,6 +5,8 @@ import { useTenantBySlug } from "@/lib/useTenantBySlug";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { articleService } from "@/lib/articleService";
+import { tenantService } from "@/lib/tenantService";
+import { authService } from "@/lib/authService";
 import {
   FileText,
   Plus,
@@ -42,16 +44,18 @@ export default function TenantDashboard() {
   });
   const [recentArticles, setRecentArticles] = useState([]);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [userTenantRole, setUserTenantRole] = useState(null);
 
   // Sync tenant from hook once resolved
   useEffect(() => {
     if (resolvedTenant) setTenant(resolvedTenant);
   }, [resolvedTenant]);
 
-  // Load article stats once we have the real UUID
+  // Load article stats and check user role once we have the real UUID
   useEffect(() => {
     if (resolvedId) {
       loadArticleStats(resolvedId);
+      loadUserRole(resolvedId);
     }
   }, [resolvedId]);
 
@@ -62,6 +66,27 @@ export default function TenantDashboard() {
       router.push("/dashboard");
     }
   }, [tenantError]);
+
+  const loadUserRole = async (tenantUUID) => {
+    try {
+      const currentUser = authService.getCurrentUser();
+      if (currentUser?.is_super_admin) {
+        setUserTenantRole("owner");
+        return;
+      }
+      const data = await tenantService.getTenantMembers(tenantUUID);
+      const members = data.members || data || [];
+      const me = members.find(
+        (m) => m.user_id === currentUser?.id || m.email === currentUser?.email,
+      );
+      setUserTenantRole(me?.role || null);
+    } catch (err) {
+      console.error("Failed to check user role:", err);
+    }
+  };
+
+  const canViewCredentials =
+    userTenantRole === "owner" || userTenantRole === "admin";
 
   const loadArticleStats = async (tenantUUID) => {
     try {
@@ -139,10 +164,10 @@ export default function TenantDashboard() {
                 alignItems: "center",
                 gap: "0.5rem",
                 padding: "0.75rem 1.5rem",
-                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                background: "var(--primary-color)",
                 color: "white",
                 border: "none",
-                borderRadius: "0.75rem",
+                borderRadius: "0.625rem",
                 fontWeight: 600,
                 cursor: "pointer",
               }}
@@ -167,20 +192,20 @@ export default function TenantDashboard() {
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "0.5rem",
-                padding: "0.5rem 1rem",
-                background: "var(--surface)",
+                gap: "0.375rem",
+                padding: "0.4rem 0.875rem",
+                background: "none",
                 color: "var(--text-secondary)",
                 border: "1px solid var(--border-color)",
-                borderRadius: "0.75rem",
+                borderRadius: "0.5rem",
                 fontWeight: 500,
                 cursor: "pointer",
-                fontSize: "0.875rem",
-                marginBottom: "1rem",
+                fontSize: "0.8125rem",
+                marginBottom: "1.25rem",
               }}
             >
-              <ArrowLeft size={16} />
-              Back to Main Dashboard
+              <ArrowLeft size={14} />
+              Back
             </button>
 
             <div
@@ -188,62 +213,73 @@ export default function TenantDashboard() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                flexWrap: "wrap",
+                gap: "1rem",
               }}
             >
               <div
-                style={{ display: "flex", alignItems: "center", gap: "1rem" }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.875rem",
+                }}
               >
                 <div
                   style={{
-                    width: 48,
-                    height: 48,
+                    width: 44,
+                    height: 44,
                     borderRadius: "0.75rem",
-                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    background: "#eef2ff",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "white",
+                    color: "#6366f1",
+                    flexShrink: 0,
                   }}
                 >
-                  <LayoutDashboard size={24} />
+                  <LayoutDashboard size={22} />
                 </div>
                 <div>
                   <h1
                     style={{
-                      fontSize: "2rem",
-                      fontWeight: "bold",
-                      marginBottom: "0.25rem",
+                      fontSize: "1.5rem",
+                      fontWeight: 700,
+                      marginBottom: "0.125rem",
+                      color: "var(--text-primary)",
                     }}
                   >
                     {tenant.name}
                   </h1>
-                  <p
-                    style={{
-                      color: "var(--text-secondary)",
-                      fontSize: "0.9375rem",
-                    }}
-                  >
-                    {tenant.primary_domain}
-                  </p>
+                  {tenant.primary_domain && (
+                    <p
+                      style={{
+                        color: "var(--text-secondary)",
+                        fontSize: "0.8125rem",
+                      }}
+                    >
+                      {tenant.primary_domain}
+                    </p>
+                  )}
                 </div>
               </div>
-              <div style={{ display: "flex", gap: "0.75rem" }}>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
                 <Link href={`/dashboard/tenants/${id}/articles/new`}>
                   <button
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: "0.5rem",
-                      padding: "0.75rem 1.25rem",
-                      background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                      gap: "0.375rem",
+                      padding: "0.6rem 1rem",
+                      background: "var(--primary-color)",
                       color: "white",
                       border: "none",
-                      borderRadius: "0.75rem",
+                      borderRadius: "0.625rem",
                       fontWeight: 600,
                       cursor: "pointer",
+                      fontSize: "0.8125rem",
                     }}
                   >
-                    <Plus size={18} />
+                    <Plus size={16} />
                     New Article
                   </button>
                 </Link>
@@ -252,17 +288,18 @@ export default function TenantDashboard() {
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: "0.5rem",
-                      padding: "0.75rem 1.25rem",
-                      background: "var(--surface)",
+                      gap: "0.375rem",
+                      padding: "0.6rem 1rem",
+                      background: "var(--background)",
                       color: "var(--text-primary)",
                       border: "1px solid var(--border-color)",
-                      borderRadius: "0.75rem",
+                      borderRadius: "0.625rem",
                       fontWeight: 500,
                       cursor: "pointer",
+                      fontSize: "0.8125rem",
                     }}
                   >
-                    <Edit size={18} />
+                    <Edit size={16} />
                     Settings
                   </button>
                 </Link>
@@ -274,97 +311,97 @@ export default function TenantDashboard() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-              gap: "1.5rem",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "1rem",
               marginBottom: "2rem",
             }}
           >
-            <div
-              className="card"
-              style={{
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "white",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "start",
-                }}
-              >
-                <div>
-                  <p style={{ opacity: 0.9, marginBottom: "0.5rem" }}>
-                    Total Articles
-                  </p>
-                  <h3 style={{ fontSize: "2rem", fontWeight: "bold" }}>
-                    {stats.total_articles || 0}
-                  </h3>
+            {[
+              {
+                label: "Total Articles",
+                value: stats.total_articles || 0,
+                icon: FileText,
+                accent: "#6366f1",
+                bg: "#eef2ff",
+              },
+              {
+                label: "Published",
+                value: stats.published_articles || 0,
+                icon: TrendingUp,
+                accent: "#059669",
+                bg: "#ecfdf5",
+              },
+              {
+                label: "Drafts",
+                value: stats.draft_articles || 0,
+                icon: Edit,
+                accent: "#d97706",
+                bg: "#fffbeb",
+              },
+            ].map((stat) => {
+              const Icon = stat.icon;
+              return (
+                <div
+                  className="card"
+                  key={stat.label}
+                  style={{ padding: "1.25rem" }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <div>
+                      <p
+                        style={{
+                          fontSize: "0.8125rem",
+                          color: "var(--text-secondary)",
+                          marginBottom: "0.5rem",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {stat.label}
+                      </p>
+                      <h3
+                        style={{
+                          fontSize: "1.75rem",
+                          fontWeight: 700,
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        {stat.value}
+                      </h3>
+                    </div>
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "0.75rem",
+                        background: stat.bg,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Icon size={20} color={stat.accent} />
+                    </div>
+                  </div>
                 </div>
-                <FileText size={40} style={{ opacity: 0.8 }} />
-              </div>
-            </div>
-
-            <div
-              className="card"
-              style={{
-                background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                color: "white",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "start",
-                }}
-              >
-                <div>
-                  <p style={{ opacity: 0.9, marginBottom: "0.5rem" }}>
-                    Published
-                  </p>
-                  <h3 style={{ fontSize: "2rem", fontWeight: "bold" }}>
-                    {stats.published_articles || 0}
-                  </h3>
-                </div>
-                <TrendingUp size={40} style={{ opacity: 0.8 }} />
-              </div>
-            </div>
-
-            <div
-              className="card"
-              style={{
-                background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                color: "white",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "start",
-                }}
-              >
-                <div>
-                  <p style={{ opacity: 0.9, marginBottom: "0.5rem" }}>
-                    Draft Articles
-                  </p>
-                  <h3 style={{ fontSize: "2rem", fontWeight: "bold" }}>
-                    {stats.draft_articles || 0}
-                  </h3>
-                </div>
-                <Edit size={40} style={{ opacity: 0.8 }} />
-              </div>
-            </div>
+              );
+            })}
           </div>
 
           {/* Quick Actions */}
           <div className="card" style={{ marginBottom: "2rem" }}>
             <h2
               style={{
-                fontSize: "1.25rem",
-                fontWeight: "bold",
-                marginBottom: "1.25rem",
+                fontSize: "1rem",
+                fontWeight: 700,
+                marginBottom: "1rem",
+                color: "var(--text-primary)",
               }}
             >
               Quick Actions
@@ -372,8 +409,8 @@ export default function TenantDashboard() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-                gap: "0.75rem",
+                gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+                gap: "0.625rem",
               }}
             >
               {[
@@ -381,91 +418,79 @@ export default function TenantDashboard() {
                   href: `/dashboard/tenants/${id}/articles/new`,
                   icon: Plus,
                   label: "Create Article",
-                  gradient: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  primary: true,
                 },
                 {
                   href: `/dashboard/tenants/${id}/articles/generate`,
                   icon: Sparkles,
                   label: "Generate with AI",
-                  gradient: "linear-gradient(135deg, #10b981, #059669)",
+                  primary: true,
                 },
                 {
                   href: `/dashboard/tenants/${id}/scheduling`,
                   icon: Calendar,
                   label: "Scheduling",
-                  gradient: "linear-gradient(135deg, #3b82f6, #2563eb)",
                 },
                 {
                   href: `/dashboard/tenants/${id}/articles`,
                   icon: Eye,
                   label: "All Articles",
-                  outline: true,
                 },
                 {
                   href: `/dashboard/tenants/${id}/messages`,
                   icon: Mail,
                   label: "Messages",
-                  outline: true,
                 },
                 {
                   href: `/dashboard/tenants/${id}/categories`,
                   icon: FolderTree,
                   label: "Categories",
-                  outline: true,
                 },
                 {
                   href: `/dashboard/tenants/${id}/members`,
                   icon: Users,
                   label: "Members",
-                  outline: true,
                 },
                 {
                   href: `/dashboard/tenants/${id}/team`,
                   icon: UserCog,
                   label: "Team",
-                  outline: true,
                 },
                 {
                   href: `/dashboard/tenants/${id}/social-media`,
                   icon: Share2,
                   label: "Social Media",
-                  outline: true,
                 },
               ].map((action) => {
                 const Icon = action.icon;
                 return (
-                  <Link key={action.href} href={action.href}>
+                  <Link
+                    key={action.href}
+                    href={action.href}
+                    style={{ textDecoration: "none" }}
+                  >
                     <button
                       style={{
                         display: "flex",
                         alignItems: "center",
                         gap: "0.5rem",
-                        padding: "0.75rem 1rem",
+                        padding: "0.625rem 0.875rem",
                         width: "100%",
-                        background: action.gradient || "var(--surface)",
-                        color: action.gradient
-                          ? "white"
-                          : "var(--text-primary)",
-                        border: action.gradient
+                        background: action.primary
+                          ? "var(--primary-color)"
+                          : "var(--background)",
+                        color: action.primary ? "white" : "var(--text-primary)",
+                        border: action.primary
                           ? "none"
                           : "1px solid var(--border-color)",
-                        borderRadius: "0.75rem",
-                        fontWeight: action.gradient ? 600 : 500,
+                        borderRadius: "0.625rem",
+                        fontWeight: action.primary ? 600 : 500,
                         cursor: "pointer",
-                        fontSize: "0.875rem",
-                        transition: "transform 0.15s, box-shadow 0.15s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-1px)";
-                        e.currentTarget.style.boxShadow =
-                          "0 4px 12px rgba(0,0,0,0.1)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "none";
+                        fontSize: "0.8125rem",
+                        transition: "opacity 0.15s",
                       }}
                     >
-                      <Icon size={18} />
+                      <Icon size={16} />
                       {action.label}
                     </button>
                   </Link>
@@ -474,120 +499,122 @@ export default function TenantDashboard() {
             </div>
           </div>
 
-          {/* Tenant Credentials */}
-          <div className="card" style={{ marginBottom: "2rem" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "1.25rem",
-              }}
-            >
+          {/* Tenant Credentials — only for owner/admin */}
+          {canViewCredentials && (
+            <div className="card" style={{ marginBottom: "2rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "1.25rem",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "0.625rem",
+                      background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Key size={18} color="#fff" />
+                  </div>
+                  <div>
+                    <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>
+                      Credentials
+                    </h2>
+                    <p
+                      style={{
+                        color: "var(--text-secondary)",
+                        fontSize: "0.8125rem",
+                      }}
+                    >
+                      Tenant ID
+                    </p>
+                  </div>
+                </div>
+              </div>
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.75rem",
+                  justifyContent: "space-between",
+                  padding: "0.875rem 1rem",
+                  background: "var(--background, #f8f9fa)",
+                  borderRadius: "0.625rem",
+                  border: "1px solid var(--border-color)",
+                  gap: "1rem",
                 }}
               >
-                <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: "0.625rem",
-                    background: "linear-gradient(135deg, #f59e0b, #d97706)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Key size={18} color="#fff" />
-                </div>
-                <div>
-                  <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>
-                    Credentials
-                  </h2>
-                  <p
+                <div style={{ minWidth: 0 }}>
+                  <div
                     style={{
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
                       color: "var(--text-secondary)",
-                      fontSize: "0.8125rem",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      marginBottom: "0.35rem",
                     }}
                   >
                     Tenant ID
-                  </p>
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "0.875rem",
+                      letterSpacing: "0.04em",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    ••••••••‑••••‑••••‑••••‑••••••••••••
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0.875rem 1rem",
-                background: "var(--background, #f8f9fa)",
-                borderRadius: "0.625rem",
-                border: "1px solid var(--border-color)",
-                gap: "1rem",
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <div
+                <button
+                  onClick={handleCopyTenantId}
                   style={{
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    color: "var(--text-secondary)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    marginBottom: "0.35rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                    padding: "0.45rem 0.875rem",
+                    flexShrink: 0,
+                    background: copiedTenantId ? "#d1fae5" : "var(--surface)",
+                    color: copiedTenantId ? "#065f46" : "var(--text-secondary)",
+                    border: `1px solid ${
+                      copiedTenantId ? "#6ee7b7" : "var(--border-color)"
+                    }`,
+                    borderRadius: "0.5rem",
+                    cursor: "pointer",
+                    fontSize: "0.8125rem",
+                    fontWeight: 500,
+                    transition: "all 0.15s",
                   }}
                 >
-                  Tenant ID
-                </div>
-                <div
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: "0.875rem",
-                    letterSpacing: "0.04em",
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  ••••••••‑••••‑••••‑••••‑••••••••••••
-                </div>
+                  {copiedTenantId ? (
+                    <>
+                      <Check size={14} /> Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} /> Copy ID
+                    </>
+                  )}
+                </button>
               </div>
-              <button
-                onClick={handleCopyTenantId}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "0.3rem",
-                  padding: "0.45rem 0.875rem",
-                  flexShrink: 0,
-                  background: copiedTenantId ? "#d1fae5" : "var(--surface)",
-                  color: copiedTenantId ? "#065f46" : "var(--text-secondary)",
-                  border: `1px solid ${
-                    copiedTenantId ? "#6ee7b7" : "var(--border-color)"
-                  }`,
-                  borderRadius: "0.5rem",
-                  cursor: "pointer",
-                  fontSize: "0.8125rem",
-                  fontWeight: 500,
-                  transition: "all 0.15s",
-                }}
-              >
-                {copiedTenantId ? (
-                  <>
-                    <Check size={14} /> Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy size={14} /> Copy ID
-                  </>
-                )}
-              </button>
             </div>
-          </div>
+          )}
 
           {/* Recent Articles */}
           <div className="card">
@@ -632,10 +659,10 @@ export default function TenantDashboard() {
                       alignItems: "center",
                       gap: "0.5rem",
                       padding: "0.75rem 1.5rem",
-                      background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                      background: "var(--primary-color)",
                       color: "white",
                       border: "none",
-                      borderRadius: "0.75rem",
+                      borderRadius: "0.625rem",
                       fontWeight: 600,
                       cursor: "pointer",
                     }}
@@ -742,10 +769,9 @@ export default function TenantDashboard() {
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: "0.375rem",
-                                padding: "0.5rem 1rem",
-                                fontSize: "0.875rem",
-                                background:
-                                  "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                                padding: "0.4rem 0.875rem",
+                                fontSize: "0.8125rem",
+                                background: "var(--primary-color)",
                                 color: "white",
                                 border: "none",
                                 borderRadius: "0.5rem",
