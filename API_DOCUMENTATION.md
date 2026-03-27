@@ -740,7 +740,9 @@ X-Tenant-ID: <tenant_id> (optional)
   "tone": "professional",
   "length": "medium",
   "generate_image": true,
-  "include_content_images": false
+  "include_content_images": false,
+  "additional_context": "Focus on recent breakthroughs in generative AI and their impact on healthcare and education.",
+  "model": "gpt-4o-mini"
 }
 ```
 
@@ -753,6 +755,8 @@ X-Tenant-ID: <tenant_id> (optional)
 - `length` (optional): Article length - "short", "medium", or "long" (default: "medium")
 - `generate_image` (optional): Whether to generate a main featured image using DALL-E (default: `true`)
 - `include_content_images` (optional): Whether to include relevant images within the content (default: `false`)
+- `additional_context` (optional): Additional context, ideas, facts, or must-include details for the article. Accepts a string or an array of strings. The AI will prioritize incorporating this information into the generated article. Useful when the topic is based on specific news, real events, or when certain facts and angles must not be missed
+- `model` (optional): OpenAI model to use for this request (e.g. `gpt-4o`, `gpt-4o-mini`). If not specified the system-wide default (configured via `OPENAI_MODEL`) will be used.
 
 **Response (201):**
 
@@ -789,6 +793,8 @@ X-Tenant-ID: <tenant_id> (optional)
 - **NEW**: Generated images are automatically processed and uploaded to S3/CDN
 - **DALL-E Costs**: Standard quality 1792x1024 images cost approximately $0.080 per image
 - Image URLs from DALL-E expire after 1 hour - they are automatically downloaded and uploaded to your S3 bucket
+
+**Model Selection:** The platform uses the `OPENAI_MODEL` environment variable as the default model (see `.env.example`). You can override the model per-request by providing the optional `model` field in AI endpoints. Accepted values depend on your OpenAI/Provider plan (for example: `gpt-4o`, `gpt-4o-mini`).
 
 ---
 
@@ -2756,6 +2762,7 @@ X-Tenant-ID: <tenant_id> (optional)
       "target_keywords": ["technology", "innovation", "AI"],
       "word_count": 1500,
       "tone": "professional",
+      "ai_model": null,
       "generate_image": true,
       "auto_publish": false,
       "auto_post_social": false,
@@ -2796,6 +2803,7 @@ X-Tenant-ID: <tenant_id> (optional)
   "target_keywords": ["technology", "innovation", "AI"],
   "word_count": 1500,
   "tone": "professional",
+  "ai_model": null,
   "generate_image": true,
   "auto_publish": false,
   "auto_post_social": false,
@@ -2842,6 +2850,7 @@ X-Tenant-ID: <tenant_id> (optional)
   "word_count": 1500,
   "tone": "professional",
   "generate_image": true,
+  "ai_model": "gpt-4o-mini",
   "auto_publish": false,
   "auto_post_social": false,
   "social_media_config_id": null,
@@ -2858,21 +2867,22 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Optional Fields:**
 
-| Field                    | Type    | Default        | Description                                                            |
-| ------------------------ | ------- | -------------- | ---------------------------------------------------------------------- |
-| `articles_per_day`       | integer | 1              | Number of articles to generate daily (1-10)                            |
-| `scheduled_hour`         | integer | 6              | Hour in UTC (0-23) to run                                              |
-| `scheduled_minute`       | integer | 0              | Minute (0-59) to run                                                   |
-| `default_topic`          | string  | null           | Default topic/theme for article generation                             |
-| `target_keywords`        | array   | null           | List of target keywords for SEO                                        |
-| `word_count`             | integer | 1000           | Target word count for generated articles                               |
-| `tone`                   | string  | "professional" | Writing tone (e.g., professional, casual, formal)                      |
-| `generate_image`         | boolean | true           | Generate main article image using DALL-E                               |
-| `auto_publish`           | boolean | false          | Auto-publish articles or save as draft                                 |
-| `auto_post_social`       | boolean | false          | Auto-post generated articles to social media                           |
-| `social_media_config_id` | integer | null           | Social media config ID to use for auto-posting (must belong to tenant) |
-| `is_enabled`             | boolean | true           | Enable/disable scheduling                                              |
-| `priority`               | integer | 0              | Processing priority (higher = processed first)                         |
+| Field                    | Type    | Default        | Description                                                                                                                                |
+| ------------------------ | ------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `articles_per_day`       | integer | 1              | Number of articles to generate daily (1-10)                                                                                                |
+| `scheduled_hour`         | integer | 6              | Hour in UTC (0-23) to run                                                                                                                  |
+| `scheduled_minute`       | integer | 0              | Minute (0-59) to run                                                                                                                       |
+| `default_topic`          | string  | null           | Default topic/theme for article generation                                                                                                 |
+| `target_keywords`        | array   | null           | List of target keywords for SEO                                                                                                            |
+| `word_count`             | integer | 1000           | Target word count for generated articles                                                                                                   |
+| `tone`                   | string  | "professional" | Writing tone (e.g., professional, casual, formal)                                                                                          |
+| `generate_image`         | boolean | true           | Generate main article image using DALL-E                                                                                                   |
+| `auto_publish`           | boolean | false          | Auto-publish articles or save as draft                                                                                                     |
+| `auto_post_social`       | boolean | false          | Auto-post generated articles to social media                                                                                               |
+| `social_media_config_id` | integer | null           | Social media config ID to use for auto-posting (must belong to tenant)                                                                     |
+| `is_enabled`             | boolean | true           | Enable/disable scheduling                                                                                                                  |
+| `priority`               | integer | 0              | Processing priority (higher = processed first)                                                                                             |
+| `ai_model`               | string  | null           | OpenAI model to use for scheduled generation (e.g. `gpt-4o`, `gpt-4o-mini`). If omitted uses system default configured via `OPENAI_MODEL`. |
 
 **Response (201):** Same format as Get Scheduling Configuration.
 
@@ -2902,12 +2912,16 @@ X-Tenant-ID: <tenant_id> (optional)
   "articles_per_day": 5,
   "scheduled_hour": 10,
   "scheduled_minute": 30,
+  "tone": "casual",
+  "ai_model": "gpt-4o",
   "is_enabled": false,
   "auto_publish": true,
   "auto_post_social": false,
   "social_media_config_id": null
 }
 ```
+
+**Updatable fields include:** `articles_per_day`, `scheduled_hour`, `scheduled_minute`, `default_topic`, `target_keywords`, `word_count`, `tone`, `ai_model`, `generate_image`, `auto_publish`, `auto_post_social`, `social_media_config_id`, `is_enabled`, `priority`.
 
 **Response (200):** Same format as Get Scheduling Configuration.
 
@@ -4393,18 +4407,18 @@ Content-Type: application/json
 }
 ```
 
-| Field              | Type     | Required | Description                                              |
-| ------------------ | -------- | -------- | -------------------------------------------------------- |
-| product_name       | string   | Yes      | Name of the product                                      |
-| affiliate_link     | string   | Yes*     | Destination affiliate URL (*or provide `html_snippet`)   |
-| affiliate_service  | string   | No       | Service name (e.g., Amazon, AliExpress)                  |
-| image_url          | string   | No       | Product image URL                                        |
-| notes              | string   | No       | Free-form notes                                          |
-| price              | string   | No       | Product price                                            |
-| currency           | string   | No       | Currency code (e.g., USD, EUR)                           |
-| product_url        | string   | No       | Non-affiliate product URL                                |
-| tags               | string[] | No       | Array of tag strings                                     |
-| html_snippet       | string   | No       | HTML snippet to parse for affiliate_link and image_url   |
+| Field             | Type     | Required | Description                                             |
+| ----------------- | -------- | -------- | ------------------------------------------------------- |
+| product_name      | string   | Yes      | Name of the product                                     |
+| affiliate_link    | string   | Yes\*    | Destination affiliate URL (\*or provide `html_snippet`) |
+| affiliate_service | string   | No       | Service name (e.g., Amazon, AliExpress)                 |
+| image_url         | string   | No       | Product image URL                                       |
+| notes             | string   | No       | Free-form notes                                         |
+| price             | string   | No       | Product price                                           |
+| currency          | string   | No       | Currency code (e.g., USD, EUR)                          |
+| product_url       | string   | No       | Non-affiliate product URL                               |
+| tags              | string[] | No       | Array of tag strings                                    |
+| html_snippet      | string   | No       | HTML snippet to parse for affiliate_link and image_url  |
 
 **Request Body (with HTML Snippet):**
 
@@ -4742,7 +4756,9 @@ Public endpoint (no authentication required). Logs the click and redirects (302)
 **Usage in Articles:**
 
 ```html
-<a href="https://yourdomain.com/go/wireless-headphones?tenant_id=550e8400-e29b-41d4-a716-446655440000">
+<a
+  href="https://yourdomain.com/go/wireless-headphones?tenant_id=550e8400-e29b-41d4-a716-446655440000"
+>
   Buy Wireless Headphones
 </a>
 ```
@@ -4837,9 +4853,9 @@ Returns comprehensive platform insights combining subscription analytics, conten
 
 **Query Parameters:**
 
-| Parameter | Type | Default | Description                          |
-| --------- | ---- | ------- | ------------------------------------ |
-| days      | int  | 30      | Lookback period in days (max: 365)   |
+| Parameter | Type | Default | Description                        |
+| --------- | ---- | ------- | ---------------------------------- |
+| days      | int  | 30      | Lookback period in days (max: 365) |
 
 **Response (200):**
 
@@ -4863,7 +4879,7 @@ Returns comprehensive platform insights combining subscription analytics, conten
       "trialing": 5
     },
     "estimated_mrr": {
-      "USD": 2450.00
+      "USD": 2450.0
     },
     "billing_cycles": {
       "month": 60,
@@ -5001,9 +5017,9 @@ Returns detailed content and article generation analytics, including affiliate l
 
 **Query Parameters:**
 
-| Parameter | Type | Default | Description                          |
-| --------- | ---- | ------- | ------------------------------------ |
-| days      | int  | 30      | Lookback period in days (max: 365)   |
+| Parameter | Type | Default | Description                        |
+| --------- | ---- | ------- | ---------------------------------- |
+| days      | int  | 30      | Lookback period in days (max: 365) |
 
 **Response (200):**
 
@@ -5061,9 +5077,9 @@ Returns detailed subscription and revenue analytics to support financial decisio
 
 **Query Parameters:**
 
-| Parameter | Type | Default | Description                          |
-| --------- | ---- | ------- | ------------------------------------ |
-| days      | int  | 30      | Lookback period in days (max: 365)   |
+| Parameter | Type | Default | Description                        |
+| --------- | ---- | ------- | ---------------------------------- |
+| days      | int  | 30      | Lookback period in days (max: 365) |
 
 **Response (200):**
 
@@ -5085,7 +5101,7 @@ Returns detailed subscription and revenue analytics to support financial decisio
       "past_due": 3
     },
     "estimated_mrr": {
-      "USD": 2450.00
+      "USD": 2450.0
     },
     "billing_cycles": {
       "month": 60,
@@ -5120,12 +5136,12 @@ Authorization: Bearer <access_token>
 
 **Query Parameters:**
 
-| Parameter  | Type    | Default | Description                                 |
-| ---------- | ------- | ------- | ------------------------------------------- |
-| page       | int     | 1       | Page number                                 |
-| per_page   | int     | 20      | Results per page (max: 100)                 |
-| search     | string  | —       | Search by name, slug, or domain             |
-| is_active  | boolean | —       | Filter by active (`true`) / suspended (`false`) |
+| Parameter | Type    | Default | Description                                     |
+| --------- | ------- | ------- | ----------------------------------------------- |
+| page      | int     | 1       | Page number                                     |
+| per_page  | int     | 20      | Results per page (max: 100)                     |
+| search    | string  | —       | Search by name, slug, or domain                 |
+| is_active | boolean | —       | Filter by active (`true`) / suspended (`false`) |
 
 **Response (200):**
 
@@ -5245,13 +5261,13 @@ Lists all users across the platform with cross-tenant visibility.
 
 **Query Parameters:**
 
-| Parameter  | Type    | Default | Description                                      |
-| ---------- | ------- | ------- | ------------------------------------------------ |
-| page       | int     | 1       | Page number                                      |
-| per_page   | int     | 20      | Results per page (max: 100)                      |
-| search     | string  | —       | Search by email, username, or full name          |
-| is_active  | boolean | —       | Filter by active (`true`) / inactive (`false`)   |
-| tenant_id  | string  | —       | Filter by tenant ID (UUID)                       |
+| Parameter | Type    | Default | Description                                    |
+| --------- | ------- | ------- | ---------------------------------------------- |
+| page      | int     | 1       | Page number                                    |
+| per_page  | int     | 20      | Results per page (max: 100)                    |
+| search    | string  | —       | Search by email, username, or full name        |
+| is_active | boolean | —       | Filter by active (`true`) / inactive (`false`) |
+| tenant_id | string  | —       | Filter by tenant ID (UUID)                     |
 
 **Response (200):**
 
@@ -5413,13 +5429,13 @@ Returns a paginated, filterable list of all admin actions recorded in the audit 
 
 **Query Parameters:**
 
-| Parameter      | Type   | Default | Description                                         |
-| -------------- | ------ | ------- | --------------------------------------------------- |
-| page           | int    | 1       | Page number                                         |
-| per_page       | int    | 50      | Results per page (max: 100)                         |
-| admin_user_id  | int    | —       | Filter by admin user ID                             |
-| action         | string | —       | Filter by action (e.g., `tenant.suspend`, `admin.grant`) |
-| resource_type  | string | —       | Filter by resource type (`tenant`, `user`, `system`)     |
+| Parameter     | Type   | Default | Description                                              |
+| ------------- | ------ | ------- | -------------------------------------------------------- |
+| page          | int    | 1       | Page number                                              |
+| per_page      | int    | 50      | Results per page (max: 100)                              |
+| admin_user_id | int    | —       | Filter by admin user ID                                  |
+| action        | string | —       | Filter by action (e.g., `tenant.suspend`, `admin.grant`) |
+| resource_type | string | —       | Filter by resource type (`tenant`, `user`, `system`)     |
 
 **Response (200):**
 
@@ -5449,16 +5465,16 @@ Returns a paginated, filterable list of all admin actions recorded in the audit 
 
 **Tracked Action Types:**
 
-| Action             | Resource Type | Description                          |
-| ------------------ | ------------- | ------------------------------------ |
-| `dashboard.view`   | `system`      | Admin viewed the dashboard           |
-| `tenant.suspend`   | `tenant`      | Tenant was suspended                 |
-| `tenant.activate`  | `tenant`      | Tenant was activated                 |
-| `tenant.delete`    | `tenant`      | Tenant was permanently deleted       |
-| `user.deactivate`  | `user`        | User account was deactivated         |
-| `user.activate`    | `user`        | User account was activated           |
-| `admin.grant`      | `user`        | Global admin role was granted        |
-| `admin.revoke`     | `user`        | Global admin role was revoked        |
+| Action            | Resource Type | Description                    |
+| ----------------- | ------------- | ------------------------------ |
+| `dashboard.view`  | `system`      | Admin viewed the dashboard     |
+| `tenant.suspend`  | `tenant`      | Tenant was suspended           |
+| `tenant.activate` | `tenant`      | Tenant was activated           |
+| `tenant.delete`   | `tenant`      | Tenant was permanently deleted |
+| `user.deactivate` | `user`        | User account was deactivated   |
+| `user.activate`   | `user`        | User account was activated     |
+| `admin.grant`     | `user`        | Global admin role was granted  |
+| `admin.revoke`    | `user`        | Global admin role was revoked  |
 
 ---
 

@@ -56,6 +56,7 @@ export default function TenantSchedulingPage() {
     target_keywords: [],
     word_count: 1000,
     tone: "professional",
+    ai_model: "",
     generate_image: true,
     auto_publish: false,
     auto_post_social: false,
@@ -131,6 +132,7 @@ export default function TenantSchedulingPage() {
         scheduled_minute: parseInt(formData.scheduled_minute),
         word_count: parseInt(formData.word_count),
         priority: parseInt(formData.priority),
+        ai_model: formData.ai_model || null,
         social_media_config_id: formData.social_media_config_id
           ? parseInt(formData.social_media_config_id)
           : null,
@@ -172,6 +174,7 @@ export default function TenantSchedulingPage() {
         : [],
       word_count: config.word_count || 1000,
       tone: config.tone || "professional",
+      ai_model: config.ai_model || "",
       generate_image: config.generate_image ?? true,
       auto_publish: config.auto_publish ?? false,
       auto_post_social: config.auto_post_social ?? false,
@@ -257,6 +260,7 @@ export default function TenantSchedulingPage() {
       target_keywords: [],
       word_count: 1000,
       tone: "professional",
+      ai_model: "",
       generate_image: true,
       auto_publish: false,
       auto_post_social: false,
@@ -623,6 +627,46 @@ export default function TenantSchedulingPage() {
                       <option value="friendly">Friendly</option>
                       <option value="technical">Technical</option>
                     </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label">AI Model</label>
+                    <select
+                      className="select"
+                      value={formData.ai_model}
+                      onChange={(e) =>
+                        setFormData({ ...formData, ai_model: e.target.value })
+                      }
+                    >
+                      <option value="">System Default</option>
+                      <optgroup label="GPT-4o">
+                        <option value="gpt-4o">GPT-4o</option>
+                        <option value="gpt-4o-mini">
+                          GPT-4o Mini (faster)
+                        </option>
+                      </optgroup>
+                      <optgroup label="GPT-4.1">
+                        <option value="gpt-4.1">GPT-4.1</option>
+                        <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+                        <option value="gpt-4.1-nano">
+                          GPT-4.1 Nano (fastest)
+                        </option>
+                      </optgroup>
+                      <optgroup label="o-series (Reasoning)">
+                        <option value="o3">o3</option>
+                        <option value="o3-mini">o3 Mini</option>
+                        <option value="o4-mini">o4 Mini</option>
+                      </optgroup>
+                    </select>
+                    <p
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "var(--text-secondary)",
+                        marginTop: "0.25rem",
+                      }}
+                    >
+                      Select the OpenAI model for article generation
+                    </p>
                   </div>
 
                   <div className="form-group">

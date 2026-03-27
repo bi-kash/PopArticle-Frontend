@@ -18,8 +18,10 @@ export default function GenerateArticle() {
     tone: "professional",
     length: "medium",
     tenant_id: "",
+    ai_model: "",
     generate_image: true,
     include_content_images: false,
+    additional_context: "",
   });
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -56,6 +58,7 @@ export default function GenerateArticle() {
           ? parseInt(formData.category_id)
           : null,
         tenant_id: resolvedTenantId || tenantId,
+        ai_model: formData.ai_model || null,
       };
 
       const response = await articleService.generateArticle(
@@ -299,6 +302,71 @@ export default function GenerateArticle() {
                       <option value="long">Long (~2000 words)</option>
                     </select>
                   </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="label">AI Model</label>
+                  <select
+                    className="select"
+                    value={formData.ai_model}
+                    onChange={(e) =>
+                      setFormData({ ...formData, ai_model: e.target.value })
+                    }
+                  >
+                    <option value="">System Default</option>
+                    <optgroup label="GPT-4o">
+                      <option value="gpt-4o">GPT-4o</option>
+                      <option value="gpt-4o-mini">GPT-4o Mini (faster)</option>
+                    </optgroup>
+                    <optgroup label="GPT-4.1">
+                      <option value="gpt-4.1">GPT-4.1</option>
+                      <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+                      <option value="gpt-4.1-nano">
+                        GPT-4.1 Nano (fastest)
+                      </option>
+                    </optgroup>
+                    <optgroup label="o-series (Reasoning)">
+                      <option value="o3">o3</option>
+                      <option value="o3-mini">o3 Mini</option>
+                      <option value="o4-mini">o4 Mini</option>
+                    </optgroup>
+                  </select>
+                  <p
+                    style={{
+                      fontSize: "0.875rem",
+                      color: "var(--text-secondary)",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    Select the OpenAI model for article generation
+                  </p>
+                </div>
+
+                <div className="form-group">
+                  <label className="label">Additional Context</label>
+                  <textarea
+                    className="input"
+                    value={formData.additional_context}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        additional_context: e.target.value,
+                      })
+                    }
+                    rows={4}
+                    placeholder="Optional: Add specific facts, angles, news events, or any details the AI must include in the article..."
+                    style={{ resize: "vertical" }}
+                  />
+                  <p
+                    style={{
+                      fontSize: "0.875rem",
+                      color: "var(--text-secondary)",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    Provide extra context, facts, or requirements the AI should
+                    prioritize
+                  </p>
                 </div>
 
                 <div className="form-group">
