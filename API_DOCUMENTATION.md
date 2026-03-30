@@ -734,22 +734,24 @@ X-Tenant-ID: <tenant_id> (optional)
 
 ```json
 {
-  "category_id": 1,
   "topic": "The Future of Artificial Intelligence",
+  "description": "Focus on recent breakthroughs in generative AI and their impact on healthcare and education.",
+  "category_id": 1,
   "keywords": ["AI", "machine learning", "future tech"],
   "tone": "professional",
   "length": "medium",
   "generate_image": true,
   "include_content_images": false,
-  "additional_context": "Focus on recent breakthroughs in generative AI and their impact on healthcare and education.",
+  "additional_context": "Include statistics from 2024 reports.",
   "model": "gpt-4o-mini"
 }
 ```
 
 **Request Parameters:**
 
-- `category_id` (required): Category ID for the article
-- `topic` (required): Main topic/subject for the article
+- `topic` (optional\*): Main topic/subject for the article
+- `description` (optional\*): A description or content outline for the article. When provided without a `topic`, the AI infers a suitable topic. The description is also included as additional context for richer article generation
+- `category_id` (optional): Category ID for the article. If not provided, the AI automatically selects the most suitable category from the tenant's existing categories based on the topic and/or description
 - `keywords` (optional): Array of target keywords to include
 - `tone` (optional): Writing tone (default: "professional")
 - `length` (optional): Article length - "short", "medium", or "long" (default: "medium")
@@ -757,6 +759,24 @@ X-Tenant-ID: <tenant_id> (optional)
 - `include_content_images` (optional): Whether to include relevant images within the content (default: `false`)
 - `additional_context` (optional): Additional context, ideas, facts, or must-include details for the article. Accepts a string or an array of strings. The AI will prioritize incorporating this information into the generated article. Useful when the topic is based on specific news, real events, or when certain facts and angles must not be missed
 - `model` (optional): OpenAI model to use for this request (e.g. `gpt-4o`, `gpt-4o-mini`). If not specified the system-wide default (configured via `OPENAI_MODEL`) will be used.
+
+> **\*Note:** At least one of `topic` or `description` must be provided.
+
+**Flexible Input Examples:**
+
+```json
+// Topic only — AI auto-selects the best category
+{"topic": "Sustainable Energy Trends"}
+
+// Description only — AI infers topic and selects category
+{"description": "A deep dive into how solar panel efficiency has doubled in the last decade"}
+
+// Both topic and description, no category
+{"topic": "Solar Energy", "description": "Focus on residential adoption rates in 2025"}
+
+// Original flow: topic + category_id
+{"topic": "Solar Energy", "category_id": 42}
+```
 
 **Response (201):**
 
@@ -784,6 +804,9 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Notes:**
 
+- At least one of `topic` or `description` must be provided
+- If `category_id` is omitted, the AI selects the best matching category from the tenant's existing categories
+- If only `description` is provided (no `topic`), the AI infers a suitable topic from it
 - Checks tenant's monthly article limit
 - Article created with status "draft"
 - Returns 429 if limit exceeded

@@ -114,9 +114,9 @@ export default function TenantCategories() {
           name: form.name.trim(),
           slug: form.slug.trim() || toSlug(form.name.trim()) || undefined,
           description: form.description.trim() || undefined,
-          tenant_id: resolvedTenantId || tenantId,
+          tenant_id: resolvedTenantId,
         },
-        tenantId,
+        resolvedTenantId,
       );
       resetForm();
       setShowAddForm(false);
@@ -143,7 +143,7 @@ export default function TenantCategories() {
           slug: form.slug.trim() || undefined,
           description: form.description.trim() || undefined,
         },
-        tenantId,
+        resolvedTenantId,
       );
       resetForm();
       setEditingCategory(null);
@@ -171,7 +171,11 @@ export default function TenantCategories() {
       if (deleteAction === "reassign" && reassignCategoryId) {
         params.reassign_to = reassignCategoryId;
       }
-      await categoryService.deleteCategory(deleteModal.id, params, tenantId);
+      await categoryService.deleteCategory(
+        deleteModal.id,
+        params,
+        resolvedTenantId,
+      );
       setDeleteModal(null);
       setReassignCategoryId("");
       loadData();

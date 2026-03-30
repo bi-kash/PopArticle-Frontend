@@ -13,6 +13,7 @@ export default function GenerateArticle() {
   const { tenantId: resolvedTenantId } = useTenantBySlug();
   const [formData, setFormData] = useState({
     topic: "",
+    description: "",
     category_id: "",
     keywords: [],
     tone: "professional",
@@ -49,11 +50,19 @@ export default function GenerateArticle() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!formData.topic.trim() && !formData.description.trim()) {
+      setError("Please provide at least a topic or a description.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const data = {
         ...formData,
+        topic: formData.topic.trim() || undefined,
+        description: formData.description.trim() || undefined,
         category_id: formData.category_id
           ? parseInt(formData.category_id)
           : null,
@@ -170,8 +179,24 @@ export default function GenerateArticle() {
                   Article Settings
                 </h2>
 
+                <div
+                  style={{
+                    padding: "0.75rem 1rem",
+                    borderRadius: "0.5rem",
+                    background: "var(--surface-raised, rgba(16,185,129,0.07))",
+                    border: "1px solid rgba(16,185,129,0.25)",
+                    marginBottom: "1rem",
+                    fontSize: "0.875rem",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  Provide a <strong>topic</strong>, a{" "}
+                  <strong>description</strong>, or both. At least one is
+                  required.
+                </div>
+
                 <div className="form-group">
-                  <label className="label">Topic *</label>
+                  <label className="label">Topic</label>
                   <input
                     type="text"
                     className="input"
@@ -179,7 +204,6 @@ export default function GenerateArticle() {
                     onChange={(e) =>
                       setFormData({ ...formData, topic: e.target.value })
                     }
-                    required
                     placeholder="e.g., The Future of Artificial Intelligence in Healthcare"
                   />
                   <p
@@ -189,7 +213,32 @@ export default function GenerateArticle() {
                       marginTop: "0.25rem",
                     }}
                   >
-                    Describe what you want the article to be about
+                    Main subject for the article. If omitted, the AI infers it
+                    from the description.
+                  </p>
+                </div>
+
+                <div className="form-group">
+                  <label className="label">Description</label>
+                  <textarea
+                    className="input"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    rows={3}
+                    placeholder="e.g., A deep dive into how solar panel efficiency has doubled in the last decade"
+                    style={{ resize: "vertical" }}
+                  />
+                  <p
+                    style={{
+                      fontSize: "0.875rem",
+                      color: "var(--text-secondary)",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    Content outline or angle for the article. The AI uses this
+                    as additional context for richer generation.
                   </p>
                 </div>
 
