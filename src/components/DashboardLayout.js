@@ -27,6 +27,8 @@ import {
   DollarSign,
   Key,
   ChevronRight,
+  Rocket,
+  Server,
 } from "lucide-react";
 
 /* ─── helpers ──────────────────────────────────────────────── */
@@ -134,6 +136,7 @@ export default function DashboardLayout({ children }) {
       href: "/dashboard/subscription",
     },
     { icon: Key, label: "API Keys", href: "/dashboard/credentials" },
+    { icon: Rocket, label: "Templates", href: "/dashboard/templates" },
   ];
 
   const adminMenuItems = [
@@ -152,6 +155,7 @@ export default function DashboardLayout({ children }) {
     { icon: Building2, label: "All Tenants", href: "/admin/tenants" },
     { icon: Users, label: "All Users", href: "/admin/users" },
     { icon: ClipboardList, label: "Audit Logs", href: "/admin/audit-logs" },
+    { icon: Server, label: "Vercel / Templates", href: "/admin/vercel" },
   ];
 
   const isActive = (href) =>

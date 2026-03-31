@@ -16,6 +16,7 @@ import {
   BarChart2,
   PieChart,
   DollarSign,
+  Server,
 } from "lucide-react";
 
 function StatCard({ icon: Icon, label, value, sub, color, href }) {
@@ -276,6 +277,13 @@ export default function AdminDashboardPage() {
                     color: "#f59e0b",
                     title: "Audit Logs",
                     desc: "Review all admin actions with actor, resource, and timestamp",
+                  },
+                  {
+                    href: "/admin/vercel",
+                    icon: Server,
+                    color: "#111827",
+                    title: "Vercel & Templates",
+                    desc: "Manage Vercel integration and curate frontend templates for users",
                   },
                 ].map(({ href, icon: Icon, color, title, desc }) => (
                   <Link

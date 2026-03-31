@@ -33,6 +33,23 @@ Complete REST API reference for PopArticle content generation platform.
   - [Admin User Management](#admin-user-management)
   - [Global Admin Role Management](#global-admin-role-management)
   - [Admin Audit Logs](#admin-audit-logs)
+- [Vercel Integration](#vercel-integration)
+  - [Vercel Config (Admin)](#vercel-config-admin)
+    - [Get Active Vercel Config](#get-active-vercel-config)
+    - [Create / Replace Vercel Config](#create--replace-vercel-config)
+    - [Update Vercel Config](#update-vercel-config)
+    - [Delete Vercel Config](#delete-vercel-config)
+  - [Frontend Templates (Admin)](#frontend-templates-admin)
+    - [List All Templates (Admin)](#list-all-templates-admin)
+    - [Create Template](#create-template)
+    - [Update Template](#update-template)
+    - [Delete Template](#delete-template)
+    - [Publish Template](#publish-template)
+    - [Unpublish Template](#unpublish-template)
+    - [Sync Templates from Vercel](#sync-templates-from-vercel)
+  - [Frontend Templates (User)](#frontend-templates-user)
+    - [List Public Templates](#list-public-templates)
+    - [Get Public Template](#get-public-template)
 - [Health Check](#health-check)
 - [Error Responses](#error-responses)
 
@@ -5498,6 +5515,564 @@ Returns a paginated, filterable list of all admin actions recorded in the audit 
 | `user.activate`   | `user`        | User account was activated     |
 | `admin.grant`     | `user`        | Global admin role was granted  |
 | `admin.revoke`    | `user`        | Global admin role was revoked  |
+
+---
+
+---
+
+## Vercel Integration
+
+Superadmin-controlled system for connecting a Vercel account, managing shareable frontend templates (each backed by a GitHub repository), and controlling which templates are publicly visible to users.
+
+**Key Concepts:**
+
+- **`VercelConfig`** — Stores the platform-level Vercel access token and optional GitHub credentials. Only one active config exists at a time; creating a new one automatically deactivates the previous one.
+- **`FrontendTemplate`** — A shareable template with a GitHub repo URL, optional Vercel one-click-deploy URL, and an admin-controlled `is_public` visibility flag. Deletion is soft (sets `is_active=false`).
+- **Superadmin routes** (`/api/v1/admin/vercel/*`) require a global admin JWT. Non-admins receive `403 Forbidden`.
+- **User routes** (`/api/v1/vercel/*`) require a standard authenticated JWT and only expose public templates.
+
+---
+
+### Vercel Config (Admin)
+
+All config endpoints require a global admin token:
+
+```http
+Authorization: Bearer <global_admin_access_token>
+```
+
+---
+
+#### Get Active Vercel Config
+
+```http
+GET /api/v1/admin/vercel/config
+Authorization: Bearer <access_token>
+```
+
+Returns the current active Vercel config. Credential fields (`vercel_access_token`, `github_token`) are **not** included in the response.
+
+**Response (200) — config exists:**
+
+```json
+{
+  "config": {
+    "id": 1,
+    "vercel_team_id": "team_abc123",
+    "github_org": "my-org",
+    "is_active": true,
+    "created_at": "2026-03-31T08:00:00",
+    "updated_at": "2026-03-31T08:00:00"
+  }
+}
+```
+
+**Response (200) — no config yet:**
+
+```json
+{
+  "config": null
+}
+```
+
+---
+
+#### Create / Replace Vercel Config
+
+```http
+POST /api/v1/admin/vercel/config
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Creates a new active Vercel config. Any previously active config is automatically deactivated.
+
+**Request Body:**
+
+```json
+{
+  "vercel_access_token": "tok_vercel_xxxxxxxxxxxx",
+  "vercel_team_id": "team_abc123",
+  "github_token": "ghp_xxxxxxxxxxxx",
+  "github_org": "my-org"
+}
+```
+
+| Field                 | Type   | Required | Description                                |
+| --------------------- | ------ | -------- | ------------------------------------------ |
+| `vercel_access_token` | string | ✅       | Vercel personal or team access token       |
+| `vercel_team_id`      | string | ❌       | Vercel team ID (`team_*`) or project ID (`prj_*`). When a project ID is provided, only that single project is synced. |
+| `github_token`        | string | ❌       | GitHub personal access token               |
+| `github_org`          | string | ❌       | GitHub organisation or user name           |
+
+**Response (201):**
+
+```json
+{
+  "message": "Vercel config saved successfully",
+  "config": {
+    "id": 1,
+    "vercel_team_id": "team_abc123",
+    "github_org": "my-org",
+    "is_active": true,
+    "created_at": "2026-03-31T08:00:00",
+    "updated_at": "2026-03-31T08:00:00"
+  }
+}
+```
+
+**Error (400):** `vercel_access_token` is missing.
+
+---
+
+#### Update Vercel Config
+
+```http
+PUT /api/v1/admin/vercel/config/<config_id>
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Partially updates an existing config. Only supplied fields are changed.
+
+**Request Body (any subset of fields):**
+
+```json
+{
+  "vercel_team_id": "team_new",
+  "github_org": "new-org"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Vercel config updated successfully",
+  "config": {
+    "id": 1,
+    "vercel_team_id": "team_new",
+    "github_org": "new-org",
+    "is_active": true,
+    "created_at": "2026-03-31T08:00:00",
+    "updated_at": "2026-03-31T09:00:00"
+  }
+}
+```
+
+**Error (404):** Config not found.
+
+---
+
+#### Delete Vercel Config
+
+```http
+DELETE /api/v1/admin/vercel/config/<config_id>
+Authorization: Bearer <access_token>
+```
+
+Permanently deletes a Vercel config.
+
+**Response (200):**
+
+```json
+{
+  "message": "Vercel config deleted successfully"
+}
+```
+
+**Error (404):** Config not found.
+
+---
+
+### Frontend Templates (Admin)
+
+All admin template endpoints require a global admin token:
+
+```http
+Authorization: Bearer <global_admin_access_token>
+```
+
+---
+
+#### List All Templates (Admin)
+
+```http
+GET /api/v1/admin/vercel/templates
+Authorization: Bearer <access_token>
+```
+
+Returns **all** templates (including private ones) with pagination.
+
+**Query Parameters:**
+
+| Parameter  | Type | Default | Description              |
+| ---------- | ---- | ------- | ------------------------ |
+| `page`     | int  | 1       | Page number              |
+| `per_page` | int  | 20      | Results per page (max 100) |
+
+**Response (200):**
+
+```json
+{
+  "templates": [
+    {
+      "id": 1,
+      "name": "Blog Starter",
+      "description": "A minimal blog starter built with Next.js",
+      "github_repo_url": "https://github.com/my-org/blog-starter",
+      "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
+      "vercel_project_id": null,
+      "preview_url": "https://blog-starter.vercel.app",
+      "custom_domain": null,
+      "tags": ["blog", "nextjs"],
+      "is_public": true,
+      "is_active": true,
+      "created_at": "2026-03-31T08:00:00",
+      "updated_at": "2026-03-31T08:00:00"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total": 1,
+    "pages": 1
+  }
+}
+```
+
+---
+
+#### Create Template
+
+```http
+POST /api/v1/admin/vercel/templates
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Creates a new frontend template. Templates are private (`is_public: false`) by default.
+
+**Request Body:**
+
+```json
+{
+  "name": "Blog Starter",
+  "github_repo_url": "https://github.com/my-org/blog-starter",
+  "description": "A minimal blog starter built with Next.js",
+  "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
+  "preview_url": "https://blog-starter.vercel.app",
+  "custom_domain": "https://myblog.com",
+  "tags": ["blog", "nextjs"],
+  "is_public": false
+}
+```
+
+| Field               | Type          | Required | Description                              |
+| ------------------- | ------------- | -------- | ---------------------------------------- |
+| `name`              | string        | ✅       | Display name of the template             |
+| `github_repo_url`   | string        | ✅       | GitHub repository URL                    |
+| `description`       | string        | ❌       | Short description of the template        |
+| `vercel_deploy_url` | string        | ❌       | Vercel one-click deploy URL              |
+| `preview_url`       | string        | ❌       | Live demo or screenshot URL              |
+| `custom_domain`     | string        | ❌       | Custom domain URL (e.g. `https://example.com`) |
+| `tags`              | array[string] | ❌       | Categorisation tags                      |
+| `is_public`         | boolean       | ❌       | Whether the template is publicly visible (default: `false`) |
+
+**Response (201):**
+
+```json
+{
+  "message": "Template created successfully",
+  "template": {
+    "id": 1,
+    "name": "Blog Starter",
+    "description": "A minimal blog starter built with Next.js",
+    "github_repo_url": "https://github.com/my-org/blog-starter",
+    "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
+    "vercel_project_id": null,
+    "preview_url": "https://blog-starter.vercel.app",
+      "custom_domain": null,
+    "tags": ["blog", "nextjs"],
+    "is_public": false,
+    "is_active": true,
+    "created_at": "2026-03-31T08:00:00",
+    "updated_at": "2026-03-31T08:00:00"
+  }
+}
+```
+
+**Errors:**
+- `400` — `name` or `github_repo_url` is missing.
+
+---
+
+#### Update Template
+
+```http
+PUT /api/v1/admin/vercel/templates/<template_id>
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Partially updates an existing template. Only supplied fields are changed.
+
+**Request Body (any subset of fields):**
+
+```json
+{
+  "name": "Blog Starter v2",
+  "is_public": true
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Template updated successfully",
+  "template": {
+    "id": 1,
+    "name": "Blog Starter v2",
+    "description": "A minimal blog starter built with Next.js",
+    "github_repo_url": "https://github.com/my-org/blog-starter",
+    "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
+    "vercel_project_id": null,
+    "preview_url": "https://blog-starter.vercel.app",
+      "custom_domain": null,
+    "tags": ["blog", "nextjs"],
+    "is_public": true,
+    "is_active": true,
+    "created_at": "2026-03-31T08:00:00",
+    "updated_at": "2026-03-31T09:00:00"
+  }
+}
+```
+
+**Error (404):** Template not found.
+
+---
+
+#### Delete Template
+
+```http
+DELETE /api/v1/admin/vercel/templates/<template_id>
+Authorization: Bearer <access_token>
+```
+
+Soft-deletes a template (sets `is_active=false`). The template is no longer returned in any listing.
+
+**Response (200):**
+
+```json
+{
+  "message": "Template deleted successfully"
+}
+```
+
+**Error (404):** Template not found.
+
+---
+
+#### Publish Template
+
+```http
+POST /api/v1/admin/vercel/templates/<template_id>/publish
+Authorization: Bearer <access_token>
+```
+
+Makes a template publicly visible to all authenticated users.
+
+**Response (200):**
+
+```json
+{
+  "message": "Template published successfully",
+  "template": {
+    "id": 1,
+    "name": "Blog Starter",
+    "is_public": true,
+    ...
+  }
+}
+```
+
+**Error (404):** Template not found.
+
+---
+
+#### Unpublish Template
+
+```http
+POST /api/v1/admin/vercel/templates/<template_id>/unpublish
+Authorization: Bearer <access_token>
+```
+
+Removes a template from public visibility. Users can no longer see or fetch it.
+
+**Response (200):**
+
+```json
+{
+  "message": "Template unpublished successfully",
+  "template": {
+    "id": 1,
+    "name": "Blog Starter",
+    "is_public": false,
+    ...
+  }
+}
+```
+
+**Error (404):** Template not found.
+
+---
+
+#### Sync Templates from Vercel
+
+```http
+POST /api/v1/admin/vercel/templates/sync
+Authorization: Bearer <access_token>
+```
+
+Fetches all projects from the connected Vercel account using the stored credentials (`VercelConfig`) and imports them as `FrontendTemplate` records. Uses the Vercel REST API (`GET /v9/projects`) with automatic pagination. When `vercel_team_id` is a project ID (`prj_*`), fetches that single project via `GET /v9/projects/{id}` instead.
+
+**Behaviour:**
+
+- **New projects** are created as private templates (`is_public: false`) — the admin can then publish individual templates.
+- **Existing projects** (matched by `vercel_project_id`) are updated with the latest metadata from Vercel (name, GitHub URL, preview URL, etc.).
+- **Soft-deleted templates** that reappear during sync are re-activated.
+- GitHub repo URL, Vercel deploy URL, preview URL, and custom domain are automatically derived from Vercel project metadata.
+- **Custom domains** are extracted from the project's `alias` list — non-`.vercel.app` domains are stored as the `custom_domain` field.
+
+**Request Body:** None required (empty body or `{}`).
+
+**Response (200):**
+
+```json
+{
+  "message": "Synced 5 template(s) from Vercel (3 created, 1 updated, 1 unchanged)",
+  "created": 3,
+  "updated": 1,
+  "unchanged": 1,
+  "total": 5,
+  "templates": [
+    {
+      "id": 10,
+      "name": "blog-app",
+      "description": "Synced from Vercel (nextjs)",
+      "github_repo_url": "https://github.com/my-org/blog-app",
+      "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-app",
+      "vercel_project_id": "prj_xxxxxxxxxxxx",
+      "preview_url": "https://blog-app-xxx.vercel.app",
+      "custom_domain": "https://myblog.com",
+      "tags": ["nextjs"],
+      "is_public": false,
+      "is_active": true,
+      "created_at": "2026-03-31T08:00:00",
+      "updated_at": "2026-03-31T08:00:00"
+    }
+  ]
+}
+```
+
+**Errors:**
+- `400` — No active Vercel config found. Configure credentials first via `POST /config`.
+- `502` — Vercel API returned an error (e.g. invalid token, rate limit).
+
+---
+
+### Frontend Templates (User)
+
+User-facing endpoints that expose only publicly available templates. Require a standard authenticated JWT:
+
+```http
+Authorization: Bearer <access_token>
+```
+
+---
+
+#### List Public Templates
+
+```http
+GET /api/v1/vercel/templates
+Authorization: Bearer <access_token>
+```
+
+Returns only templates where `is_public=true` and `is_active=true`.
+
+**Query Parameters:**
+
+| Parameter  | Type | Default | Description              |
+| ---------- | ---- | ------- | ------------------------ |
+| `page`     | int  | 1       | Page number              |
+| `per_page` | int  | 20      | Results per page (max 100) |
+
+**Response (200):**
+
+```json
+{
+  "templates": [
+    {
+      "id": 1,
+      "name": "Blog Starter",
+      "description": "A minimal blog starter built with Next.js",
+      "github_repo_url": "https://github.com/my-org/blog-starter",
+      "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
+      "vercel_project_id": null,
+      "preview_url": "https://blog-starter.vercel.app",
+      "custom_domain": null,
+      "tags": ["blog", "nextjs"],
+      "is_public": true,
+      "is_active": true,
+      "created_at": "2026-03-31T08:00:00",
+      "updated_at": "2026-03-31T08:00:00"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total": 1,
+    "pages": 1
+  }
+}
+```
+
+---
+
+#### Get Public Template
+
+```http
+GET /api/v1/vercel/templates/<template_id>
+Authorization: Bearer <access_token>
+```
+
+Retrieves details of a single public template. Returns `404` for templates that are private or inactive.
+
+**Response (200):**
+
+```json
+{
+  "template": {
+    "id": 1,
+    "name": "Blog Starter",
+    "description": "A minimal blog starter built with Next.js",
+    "github_repo_url": "https://github.com/my-org/blog-starter",
+    "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
+    "vercel_project_id": null,
+    "preview_url": "https://blog-starter.vercel.app",
+      "custom_domain": null,
+    "tags": ["blog", "nextjs"],
+    "is_public": true,
+    "is_active": true,
+    "created_at": "2026-03-31T08:00:00",
+    "updated_at": "2026-03-31T08:00:00"
+  }
+}
+```
+
+**Errors:**
+- `404` — Template not found, is private, or has been deleted.
 
 ---
 

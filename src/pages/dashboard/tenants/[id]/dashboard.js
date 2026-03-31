@@ -117,7 +117,10 @@ export default function TenantDashboard() {
     try {
       await articleService.deleteArticle(articleId, resolvedId || id);
       setRecentArticles((prev) => prev.filter((a) => a.id !== articleId));
-      setStats((prev) => ({ ...prev, total_articles: Math.max(0, prev.total_articles - 1) }));
+      setStats((prev) => ({
+        ...prev,
+        total_articles: Math.max(0, prev.total_articles - 1),
+      }));
     } catch (error) {
       alert("Failed to delete article");
     }
@@ -773,7 +776,9 @@ export default function TenantDashboard() {
                           {new Date(article.created_at).toLocaleDateString()}
                         </td>
                         <td style={{ padding: "1rem", textAlign: "right" }}>
-                          <div style={{ display: "inline-flex", gap: "0.5rem" }}>
+                          <div
+                            style={{ display: "inline-flex", gap: "0.5rem" }}
+                          >
                             <Link
                               href={`/dashboard/tenants/${id}/articles/${article.id}`}
                             >
