@@ -21,7 +21,7 @@ export default function TermsOfService() {
           property="og:description"
           content={`Terms of Service for ${name} - AI-Powered Content Platform`}
         />
-        <meta property="og:image" content="/og-default.png" />
+        <meta property="og:image" content="/og-image.png" />
       </Head>
 
       <Navbar />

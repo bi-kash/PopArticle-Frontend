@@ -98,12 +98,13 @@ export default function ArticlesPage() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (article) => {
     if (!confirm("Are you sure you want to delete this article?")) return;
 
     try {
-      await articleService.deleteArticle(id);
-      setArticles(articles.filter((a) => a.id !== id));
+      const tenantId = article._tenant_id || article.tenant_id || null;
+      await articleService.deleteArticle(article.id, tenantId);
+      setArticles(articles.filter((a) => a.id !== article.id));
     } catch (error) {
       alert("Failed to delete article");
     }
@@ -464,7 +465,7 @@ export default function ArticlesPage() {
                                 borderRadius: "0.375rem",
                                 cursor: "pointer",
                               }}
-                              onClick={() => handleDelete(article.id)}
+                              onClick={() => handleDelete(article)}
                               title="Delete"
                             >
                               <Trash2 size={16} />

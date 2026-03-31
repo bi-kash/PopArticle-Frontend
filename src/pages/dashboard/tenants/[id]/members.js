@@ -342,7 +342,7 @@ export default function TenantMembers() {
           </div>
 
           <InviteMemberModal
-            tenantId={id}
+            tenantId={resolvedId || id}
             isOpen={showInviteModal}
             onClose={() => setShowInviteModal(false)}
             onSuccess={handleInviteSuccess}

@@ -25,6 +25,7 @@ import {
   Key,
   Copy,
   Check,
+  Trash2,
 } from "lucide-react";
 
 export default function TenantDashboard() {
@@ -110,6 +111,17 @@ export default function TenantDashboard() {
   };
 
   const [copiedTenantId, setCopiedTenantId] = useState(false);
+
+  const handleDeleteArticle = async (articleId) => {
+    if (!confirm("Are you sure you want to delete this article?")) return;
+    try {
+      await articleService.deleteArticle(articleId, resolvedId || id);
+      setRecentArticles((prev) => prev.filter((a) => a.id !== articleId));
+      setStats((prev) => ({ ...prev, total_articles: Math.max(0, prev.total_articles - 1) }));
+    } catch (error) {
+      alert("Failed to delete article");
+    }
+  };
 
   const handleCopyTenantId = async () => {
     if (!tenant?.id) return;
@@ -761,28 +773,50 @@ export default function TenantDashboard() {
                           {new Date(article.created_at).toLocaleDateString()}
                         </td>
                         <td style={{ padding: "1rem", textAlign: "right" }}>
-                          <Link
-                            href={`/dashboard/tenants/${id}/articles/${article.id}`}
-                          >
+                          <div style={{ display: "inline-flex", gap: "0.5rem" }}>
+                            <Link
+                              href={`/dashboard/tenants/${id}/articles/${article.id}`}
+                            >
+                              <button
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.375rem",
+                                  padding: "0.4rem 0.875rem",
+                                  fontSize: "0.8125rem",
+                                  background: "var(--primary-color)",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "0.5rem",
+                                  fontWeight: 500,
+                                  cursor: "pointer",
+                                }}
+                              >
+                                <Edit size={16} />
+                                Edit
+                              </button>
+                            </Link>
                             <button
+                              onClick={() => handleDeleteArticle(article.id)}
                               style={{
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: "0.375rem",
                                 padding: "0.4rem 0.875rem",
                                 fontSize: "0.8125rem",
-                                background: "var(--primary-color)",
-                                color: "white",
+                                background: "#fee2e2",
+                                color: "#991b1b",
                                 border: "none",
                                 borderRadius: "0.5rem",
                                 fontWeight: 500,
                                 cursor: "pointer",
                               }}
+                              title="Delete"
                             >
-                              <Edit size={16} />
-                              Edit
+                              <Trash2 size={16} />
+                              Delete
                             </button>
-                          </Link>
+                          </div>
                         </td>
                       </tr>
                     ))}
