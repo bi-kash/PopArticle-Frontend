@@ -4,6 +4,7 @@ import "react-quill/dist/quill.snow.css";
 import "easymde/dist/easymde.min.css";
 import Head from "next/head";
 import siteConfig from "@/lib/siteConfig";
+import { Analytics } from "@vercel/analytics/next";
 
 const APP_NAME = siteConfig.siteName;
 const DEFAULT_DESCRIPTION = siteConfig.description;
@@ -105,6 +106,7 @@ export default function App({ Component, pageProps }) {
       </Head>
 
       <Component {...pageProps} />
+      <Analytics debug={false} />
     </>
   );
 }
