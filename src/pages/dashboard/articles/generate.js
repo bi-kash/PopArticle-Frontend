@@ -4,7 +4,23 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
-import { Sparkles } from "lucide-react";
+import { subscriptionService } from "@/lib/subscriptionService";
+import { authService } from "@/lib/authService";
+import { Sparkles, AlertCircle } from "lucide-react";
+
+// All available models – order matters for display
+const ALL_MODELS = [
+  { value: "gpt-4o-mini", label: "GPT-4o Mini (faster)", group: "GPT-4o" },
+  { value: "gpt-4o", label: "GPT-4o", group: "GPT-4o" },
+  { value: "gpt-4.5-preview", label: "GPT-4.5 Preview", group: "GPT-4.5" },
+  { value: "gpt-4.1", label: "GPT-4.1", group: "GPT-4.1" },
+  { value: "gpt-4.1-mini", label: "GPT-4.1 Mini", group: "GPT-4.1" },
+  { value: "gpt-4.1-nano", label: "GPT-4.1 Nano (fastest)", group: "GPT-4.1" },
+  { value: "o1", label: "o1", group: "o-series (Reasoning)" },
+  { value: "o3", label: "o3", group: "o-series (Reasoning)" },
+  { value: "o3-mini", label: "o3 Mini", group: "o-series (Reasoning)" },
+  { value: "o4-mini", label: "o4 Mini", group: "o-series (Reasoning)" },
+];
 
 export default function GenerateArticle() {
   const router = useRouter();
@@ -24,10 +40,24 @@ export default function GenerateArticle() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
+  const [subscription, setSubscription] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     loadCategories();
+    loadSubscription();
+    const user = authService.getCurrentUser();
+    setIsAdmin(!!user?.is_super_admin);
   }, []);
+
+  const loadSubscription = async () => {
+    try {
+      const data = await subscriptionService.getStatus();
+      setSubscription(data);
+    } catch (err) {
+      console.error("Failed to load subscription:", err);
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -304,6 +334,68 @@ export default function GenerateArticle() {
 
                 <div className="form-group">
                   <label className="label">AI Model</label>
+                  {/* Subscription usage info */}
+                  {subscription && !isAdmin && (
+                    <div
+                      style={{
+                        padding: "0.5rem 0.75rem",
+                        borderRadius: "0.5rem",
+                        background:
+                          subscription.ai_credits_remaining <= 0
+                            ? "#fef2f2"
+                            : "var(--surface-raised, rgba(99,102,241,0.07))",
+                        border: `1px solid ${subscription.ai_credits_remaining <= 0 ? "#fecaca" : "rgba(99,102,241,0.25)"}`,
+                        marginBottom: "0.5rem",
+                        fontSize: "0.8125rem",
+                        color: "var(--text-secondary)",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: "0.5rem",
+                      }}
+                    >
+                      <span>
+                        Articles:{" "}
+                        <strong>{subscription.articles_used ?? 0}</strong>/
+                        {subscription.article_limit ?? 0}
+                      </span>
+                      <span>
+                        AI Credits:{" "}
+                        <strong>{subscription.ai_credits_used ?? 0}</strong>/
+                        {subscription.ai_credit_limit ?? 0}
+                      </span>
+                      <span style={{ textTransform: "capitalize" }}>
+                        Plan: <strong>{subscription.plan}</strong>
+                      </span>
+                    </div>
+                  )}
+                  {subscription &&
+                    !isAdmin &&
+                    subscription.ai_credits_remaining <= 0 && (
+                      <div
+                        style={{
+                          padding: "0.5rem 0.75rem",
+                          borderRadius: "0.5rem",
+                          background: "#fef2f2",
+                          border: "1px solid #fecaca",
+                          marginBottom: "0.5rem",
+                          fontSize: "0.8125rem",
+                          color: "#991b1b",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        <AlertCircle size={14} />
+                        You have reached your monthly AI credit limit.{" "}
+                        <a
+                          href="/dashboard/subscription"
+                          style={{ color: "#2563eb", fontWeight: 600 }}
+                        >
+                          Upgrade your plan
+                        </a>
+                      </div>
+                    )}
                   <select
                     className="select"
                     value={formData.ai_model}
@@ -312,22 +404,27 @@ export default function GenerateArticle() {
                     }
                   >
                     <option value="">System Default</option>
-                    <optgroup label="GPT-4o">
-                      <option value="gpt-4o">GPT-4o</option>
-                      <option value="gpt-4o-mini">GPT-4o Mini (faster)</option>
-                    </optgroup>
-                    <optgroup label="GPT-4.1">
-                      <option value="gpt-4.1">GPT-4.1</option>
-                      <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
-                      <option value="gpt-4.1-nano">
-                        GPT-4.1 Nano (fastest)
-                      </option>
-                    </optgroup>
-                    <optgroup label="o-series (Reasoning)">
-                      <option value="o3">o3</option>
-                      <option value="o3-mini">o3 Mini</option>
-                      <option value="o4-mini">o4 Mini</option>
-                    </optgroup>
+                    {(() => {
+                      const allowedModels = subscription?.allowed_models;
+                      const models =
+                        isAdmin || !allowedModels
+                          ? ALL_MODELS
+                          : ALL_MODELS.filter((m) =>
+                              allowedModels.includes(m.value),
+                            );
+                      const groups = [...new Set(models.map((m) => m.group))];
+                      return groups.map((group) => (
+                        <optgroup key={group} label={group}>
+                          {models
+                            .filter((m) => m.group === group)
+                            .map((m) => (
+                              <option key={m.value} value={m.value}>
+                                {m.label}
+                              </option>
+                            ))}
+                        </optgroup>
+                      ));
+                    })()}
                   </select>
                   <p
                     style={{
@@ -336,7 +433,11 @@ export default function GenerateArticle() {
                       marginTop: "0.25rem",
                     }}
                   >
-                    Select the OpenAI model for article generation
+                    {isAdmin
+                      ? "Admin: all models available"
+                      : subscription?.allowed_models
+                        ? `Your ${subscription.plan} plan allows: ${subscription.allowed_models.join(", ")}`
+                        : "Select the OpenAI model for article generation"}
                   </p>
                 </div>
 

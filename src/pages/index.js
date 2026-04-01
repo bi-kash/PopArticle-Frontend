@@ -6,6 +6,7 @@ import { authService } from "@/lib/authService";
 import siteConfig from "@/lib/siteConfig";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { PLANS as PLANS_CONFIG } from "@/lib/planConfig";
 import {
   Sparkles,
   Globe,
@@ -27,6 +28,28 @@ import {
   ChevronRight,
   Crown,
 } from "lucide-react";
+
+/* ── Icon map: resolves planConfig iconName to Lucide component ── */
+const HOME_ICON_MAP = { Shield, Layers, Zap, Crown };
+
+// Build home-page plan cards from the single source of truth
+const HOME_PLANS = PLANS_CONFIG.map((p) => {
+  const IconComp = HOME_ICON_MAP[p.iconName] || Shield;
+  return {
+    name: p.displayName,
+    price: p.price === 0 ? "$0" : `$${p.price}`,
+    desc: p.description,
+    icon: <IconComp size={20} style={{ color: p.color }} />,
+    iconBg: p.accentBg,
+    iconBorder: p.accentBorder,
+    accentColor: p.color,
+    dark: p.dark,
+    popular: p.popular,
+    features: p.features,
+    cta: p.cta,
+    ctaHref: p.ctaHref,
+  };
+});
 
 /* ───────── small reusable pieces ───────── */
 
@@ -1033,92 +1056,7 @@ export default function Home() {
                   alignItems: "stretch",
                 }}
               >
-                {[
-                  {
-                    name: "Free",
-                    price: "$0",
-                    desc: "No commitment, forever",
-                    icon: <Shield size={20} style={{ color: "#10b981" }} />,
-                    iconBg: "rgba(16,185,129,0.08)",
-                    iconBorder: "#6ee7b7",
-                    accentColor: "#10b981",
-                    dark: false,
-                    popular: false,
-                    features: [
-                      "1 tenant website",
-                      "5 articles / month",
-                      "Basic AI generation",
-                      "1 team member",
-                      "Community support",
-                    ],
-                    cta: "Start Free",
-                    ctaHref: "/register",
-                  },
-                  {
-                    name: "Basic",
-                    price: "$19",
-                    desc: "For individual creators",
-                    icon: <Layers size={20} style={{ color: "#2563eb" }} />,
-                    iconBg: "#eff6ff",
-                    iconBorder: "#93c5fd",
-                    accentColor: "#2563eb",
-                    dark: false,
-                    popular: false,
-                    features: [
-                      "1 tenant website",
-                      "30 articles / month",
-                      "Standard AI generation",
-                      "2 team members",
-                      "SEO tools",
-                      "Email support",
-                    ],
-                    cta: "Start Basic",
-                    ctaHref: "/register",
-                  },
-                  {
-                    name: "Pro",
-                    price: "$29",
-                    desc: "For growing teams",
-                    icon: <Zap size={20} style={{ color: "#a78bfa" }} />,
-                    iconBg: "rgba(139,92,246,0.18)",
-                    iconBorder: "rgba(139,92,246,0.35)",
-                    accentColor: "#6366f1",
-                    dark: true,
-                    popular: true,
-                    features: [
-                      "5 tenant websites",
-                      "200 articles / month",
-                      "Advanced AI generation",
-                      "Scheduling & analytics",
-                      "10 team members",
-                      "Social media tools",
-                      "Priority support",
-                    ],
-                    cta: "Start Pro",
-                    ctaHref: "/register",
-                  },
-                  {
-                    name: "Enterprise",
-                    price: "$79",
-                    desc: "For agencies & large teams",
-                    icon: <Crown size={20} style={{ color: "#7c3aed" }} />,
-                    iconBg: "#faf5ff",
-                    iconBorder: "#c4b5fd",
-                    accentColor: "#7c3aed",
-                    dark: false,
-                    popular: false,
-                    features: [
-                      "Unlimited websites",
-                      "Unlimited articles",
-                      "All AI models",
-                      "Unlimited team members",
-                      "API access",
-                      "Dedicated manager",
-                    ],
-                    cta: "Contact Sales",
-                    ctaHref: "/contact",
-                  },
-                ].map((plan) => (
+                {HOME_PLANS.map((plan) => (
                   <div
                     key={plan.name}
                     style={{

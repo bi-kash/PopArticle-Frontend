@@ -4,6 +4,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import siteConfig from "@/lib/siteConfig";
+import { PLANS as PLANS_CONFIG, COMPARE } from "@/lib/planConfig";
 import {
   Check,
   X,
@@ -18,183 +19,16 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-/* ── Plan definitions ── */
-const PLANS = [
-  {
-    id: "free",
-    name: "Free",
-    price: 0,
-    desc: "Explore the platform with no commitment",
-    icon: Shield,
-    color: "#10b981",
-    accentBg: "#ecfdf5",
-    accentBorder: "#6ee7b7",
-    dark: false,
-    popular: false,
-    cta: "Get Started Free",
-    ctaHref: "/register",
-    features: [
-      "1 tenant website",
-      "5 articles / month",
-      "Basic AI generation",
-      "Rich text editor",
-      "1 team member",
-      "Community support",
-    ],
-  },
-  {
-    id: "basic",
-    name: "Basic",
-    price: 9,
-    desc: "For individual creators getting serious",
-    icon: Layers,
-    color: "#2563eb",
-    accentBg: "#eff6ff",
-    accentBorder: "#93c5fd",
-    dark: false,
-    popular: false,
-    cta: "Start Basic",
-    ctaHref: "/register",
-    features: [
-      "1 tenant website",
-      "30 articles / month",
-      "Standard AI generation",
-      "Rich text & Markdown editors",
-      "2 team members",
-      "SEO metadata & slugs",
-      "Email support",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: 29,
-    desc: "For growing teams and power users",
-    icon: Zap,
-    color: "#6366f1",
-    dark: true,
-    popular: true,
-    cta: "Start Pro",
-    ctaHref: "/register",
-    features: [
-      "5 tenant websites",
-      "200 articles / month",
-      "Advanced AI generation",
-      "Smart content scheduling",
-      "Analytics & insights",
-      "10 team members",
-      "Social media distribution",
-      "SEO metadata & slug tools",
-      "Priority support",
-    ],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: 79,
-    desc: "For agencies and large-scale operations",
-    icon: Crown,
-    color: "#7c3aed",
-    accentBg: "#faf5ff",
-    accentBorder: "#c4b5fd",
-    dark: false,
-    popular: false,
-    cta: "Contact Sales",
-    ctaHref: "/contact",
-    features: [
-      "Unlimited tenant websites",
-      "Unlimited articles",
-      "All AI models & features",
-      "Scheduling & automation",
-      "Advanced analytics & custom reports",
-      "Unlimited team members",
-      "Social media distribution",
-      "API access",
-      "Dedicated account manager",
-    ],
-  },
-];
+// Map iconName strings from planConfig to Lucide components
+const ICON_MAP = { Shield, Layers, Zap, Crown };
 
-/* ── Feature comparison ── */
-const COMPARE = [
-  {
-    label: "Articles / month",
-    free: "5",
-    basic: "30",
-    pro: "200",
-    enterprise: "Unlimited",
-  },
-  {
-    label: "Tenant websites",
-    free: "1",
-    basic: "1",
-    pro: "5",
-    enterprise: "Unlimited",
-  },
-  {
-    label: "AI generation",
-    free: "Basic",
-    basic: "Standard",
-    pro: "Advanced",
-    enterprise: "All models",
-  },
-  {
-    label: "Team members",
-    free: "1",
-    basic: "2",
-    pro: "10",
-    enterprise: "Unlimited",
-  },
-  {
-    label: "Content scheduling",
-    free: false,
-    basic: false,
-    pro: true,
-    enterprise: true,
-  },
-  {
-    label: "Analytics & insights",
-    free: false,
-    basic: "Basic",
-    pro: "Advanced",
-    enterprise: "Custom",
-  },
-  {
-    label: "Social media tools",
-    free: false,
-    basic: false,
-    pro: true,
-    enterprise: true,
-  },
-  {
-    label: "SEO tools & slugs",
-    free: false,
-    basic: true,
-    pro: true,
-    enterprise: true,
-  },
-  {
-    label: "API access",
-    free: false,
-    basic: false,
-    pro: true,
-    enterprise: true,
-  },
-  {
-    label: "Priority support",
-    free: false,
-    basic: false,
-    pro: true,
-    enterprise: true,
-  },
-  {
-    label: "Dedicated manager",
-    free: false,
-    basic: false,
-    pro: false,
-    enterprise: true,
-  },
-];
+// Enrich config plans with the icon component (keeping config free of React deps)
+const PLANS = PLANS_CONFIG.map((p) => ({
+  ...p,
+  icon: ICON_MAP[p.iconName] || Shield,
+  // pricing.js uses `desc` key
+  desc: p.description,
+}));
 
 /* ── FAQ ── */
 const FAQ_ITEMS = [

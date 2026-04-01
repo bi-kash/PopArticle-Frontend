@@ -732,7 +732,8 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Notes:**
 
-- Checks tenant's monthly article limit (returns 429 if exceeded)
+- Enforces monthly article limit per subscription plan (returns 403 if exceeded)
+- Manual articles do **not** consume AI credits (only AI-generated articles do)
 - Auto-generates slug from title
 - Default status is "draft"
 
@@ -824,9 +825,9 @@ X-Tenant-ID: <tenant_id> (optional)
 - At least one of `topic` or `description` must be provided
 - If `category_id` is omitted, the AI selects the best matching category from the tenant's existing categories
 - If only `description` is provided (no `topic`), the AI infers a suitable topic from it
-- Checks tenant's monthly article limit
+- Enforces monthly article limit and AI credit limit (returns 403 if either is exceeded)
+- Enforces AI model access per subscription plan (returns 403 if the requested model is not allowed on the user's plan)
 - Article created with status "draft"
-- Returns 429 if limit exceeded
 - Task runs asynchronously via Celery
 - **NEW**: AI-generated content no longer includes redundant title headers (starts directly with content)
 - **NEW**: Optional DALL-E image generation for main article featured image
@@ -834,7 +835,16 @@ X-Tenant-ID: <tenant_id> (optional)
 - **DALL-E Costs**: Standard quality 1792x1024 images cost approximately $0.080 per image
 - Image URLs from DALL-E expire after 1 hour - they are automatically downloaded and uploaded to your S3 bucket
 
-**Model Selection:** The platform uses the `OPENAI_MODEL` environment variable as the default model (see `.env.example`). You can override the model per-request by providing the optional `model` field in AI endpoints. Accepted values depend on your OpenAI/Provider plan (for example: `gpt-4o`, `gpt-4o-mini`).
+**Model Selection:** The platform uses the `OPENAI_MODEL` environment variable as the default model (see `.env.example`). You can override the model per-request by providing the optional `model` field in AI endpoints. The available models depend on your subscription plan:
+
+| Plan       | Allowed Models                                              |
+| ---------- | ----------------------------------------------------------- |
+| Free       | `gpt-4o-mini`                                               |
+| Basic      | `gpt-4o-mini`, `gpt-4o`                                     |
+| Pro        | `gpt-4o-mini`, `gpt-4o`, `gpt-4.5-preview`                  |
+| Enterprise | `gpt-4o-mini`, `gpt-4o`, `gpt-4.5-preview`, `o1`, `o3-mini` |
+
+If no `model` is specified, the system default is used without plan-based restriction.
 
 ---
 
@@ -2573,9 +2583,11 @@ Content-Type: application/json
 
 **Notes:**
 
+- **Requires Basic plan or higher** — Free plan users cannot invite team members (returns 403)
 - Only owners and admins can invite (403 otherwise)
 - Expires in 7 days
 - Sends email with invitation link (if email configured)
+- Super admins bypass the subscription plan check
 
 ---
 
@@ -4014,16 +4026,22 @@ Response (200):
   "paddle_subscription_id": "sub_xxx",
   "plan": "pro",
   "status": "active",
-  "article_limit": 200,
+  "article_limit": 500,
   "articles_used": 45,
-  "articles_remaining": 155,
+  "articles_remaining": 455,
+  "ai_credit_limit": 200,
+  "ai_credits_used": 12,
+  "ai_credits_remaining": 188,
+  "allowed_models": ["gpt-4o-mini", "gpt-4o", "gpt-4.5-preview"],
+  "has_api_access": true,
+  "has_invitation_access": true,
   "billing_cycle": { "interval": "month", "frequency": 1 },
   "current_period": {
     "start": "2024-01-01T00:00:00Z",
     "end": "2024-02-01T00:00:00Z"
   },
   "pricing": {
-    "amount": "49.00",
+    "amount": "50.00",
     "currency": "USD"
   },
   "billing_email": "billing@example.com",
@@ -4043,6 +4061,12 @@ Response when on free tier (no subscription):
   "article_limit": 10,
   "articles_used": 0,
   "articles_remaining": 10,
+  "ai_credit_limit": 10,
+  "ai_credits_used": 0,
+  "ai_credits_remaining": 10,
+  "allowed_models": ["gpt-4o-mini"],
+  "has_api_access": false,
+  "has_invitation_access": false,
   "message": "You are on the free plan"
 }
 ```
@@ -4065,61 +4089,90 @@ Response (200):
       "currency": "USD",
       "billing_cycle": null,
       "article_limit": 10,
+      "ai_credit_limit": 10,
+      "allowed_models": ["gpt-4o-mini"],
+      "has_api_access": false,
+      "has_invitation_access": false,
       "features": [
         "Up to 10 articles per month",
-        "Basic AI article generation",
-        "Single user",
+        "Up to 10 AI-generated articles per month",
+        "Basic AI model only (gpt-4o-mini)",
+        "Unlimited tenants",
+        "No team members",
+        "No API access",
         "Community support"
       ]
     },
     {
       "name": "basic",
       "display_name": "Basic",
-      "price": "19",
+      "price": "20",
       "currency": "USD",
       "billing_cycle": "month",
-      "article_limit": 50,
+      "article_limit": 100,
+      "ai_credit_limit": 50,
+      "allowed_models": ["gpt-4o-mini", "gpt-4o"],
+      "has_api_access": false,
+      "has_invitation_access": true,
       "price_id": "pri_xxx",
       "features": [
-        "Up to 50 articles per month",
-        "Advanced AI article generation",
-        "Up to 3 team members",
-        "Email support",
+        "Up to 100 articles per month",
+        "Up to 50 AI-generated articles per month",
+        "Access to gpt-4o-mini and gpt-4o models",
+        "Team member invitations",
+        "No API access",
+        "Advanced support",
         "SEO optimization"
       ]
     },
     {
       "name": "pro",
       "display_name": "Pro",
-      "price": "49",
+      "price": "50",
       "currency": "USD",
       "billing_cycle": "month",
-      "article_limit": 200,
+      "article_limit": 500,
+      "ai_credit_limit": 200,
+      "allowed_models": ["gpt-4o-mini", "gpt-4o", "gpt-4.5-preview"],
+      "has_api_access": true,
+      "has_invitation_access": true,
       "price_id": "pri_xxx",
       "features": [
-        "Up to 200 articles per month",
-        "Premium AI article generation",
-        "Unlimited team members",
-        "Priority support",
-        "Advanced SEO & analytics",
-        "Custom branding"
+        "Up to 500 articles per month",
+        "Up to 200 AI-generated articles per month",
+        "Access to advanced AI models including gpt-4.5-preview",
+        "Team member invitations",
+        "API access",
+        "Advanced support",
+        "Advanced SEO & analytics"
       ]
     },
     {
       "name": "enterprise",
       "display_name": "Enterprise",
-      "price": "199",
+      "price": "100",
       "currency": "USD",
       "billing_cycle": "month",
-      "article_limit": 1000,
+      "article_limit": 1500,
+      "ai_credit_limit": 1000,
+      "allowed_models": [
+        "gpt-4o-mini",
+        "gpt-4o",
+        "gpt-4.5-preview",
+        "o1",
+        "o3-mini"
+      ],
+      "has_api_access": true,
+      "has_invitation_access": true,
       "price_id": "pri_xxx",
       "features": [
-        "Up to 1000 articles per month",
-        "Enterprise AI article generation",
-        "Unlimited team members",
-        "Dedicated support",
-        "White-label solution",
+        "Up to 1500 articles per month",
+        "Up to 1000 AI-generated articles per month",
+        "Access to all AI models including o1 and o3-mini",
+        "Team member invitations",
         "API access",
+        "Advanced support",
+        "White-label solution",
         "Custom integrations"
       ]
     }
@@ -4240,7 +4293,8 @@ Response (200):
   "message": "Subscription upgraded successfully",
   "old_plan": "pro",
   "new_plan": "enterprise",
-  "new_article_limit": 1000
+  "new_article_limit": 1500,
+  "new_ai_credit_limit": 1000
 }
 ```
 
@@ -4309,12 +4363,47 @@ Response (200):
 
 ### Subscription Plans & Monthly Limits
 
-| Plan       | Monthly Article Limit | Price/Month |
-| ---------- | --------------------- | ----------- |
-| Free       | 10                    | $0          |
-| Basic      | 50                    | $19         |
-| Pro        | 200                   | $49         |
-| Enterprise | 1000                  | $199        |
+| Plan       | Monthly Article Limit | Monthly AI Credits | Allowed AI Models                                 | Team Invitations | API Access | Price/Month |
+| ---------- | --------------------- | ------------------ | ------------------------------------------------- | ---------------- | ---------- | ----------- |
+| Free       | 10                    | 10                 | gpt-4o-mini                                       | ❌               | ❌         | $0          |
+| Basic      | 100                   | 50                 | gpt-4o-mini, gpt-4o                               | ✅               | ❌         | $20         |
+| Pro        | 500                   | 200                | gpt-4o-mini, gpt-4o, gpt-4.5-preview              | ✅               | ✅         | $50         |
+| Enterprise | 1500                  | 1000               | gpt-4o-mini, gpt-4o, gpt-4.5-preview, o1, o3-mini | ✅               | ✅         | $100        |
+
+**Note:** Super admins bypass all subscription limits and restrictions.
+
+### AI Credit System
+
+AI credits control usage of AI-powered article generation (the `POST /api/v1/articles/generate` endpoint). Each plan includes a monthly AI credit allowance that resets at the start of each billing period.
+
+**How credits are calculated:**
+
+- **1 AI credit = 1 AI-generated article.** Each successful call to `POST /api/v1/articles/generate` consumes exactly 1 AI credit, regardless of article length, model used, or whether image generation is enabled.
+- Manually created articles (`POST /api/v1/articles`) do **not** consume AI credits — they only count toward the monthly article limit.
+- Both article limits and AI credit limits are tracked independently:
+  - **Article limit**: Counts all articles (manual + AI-generated)
+  - **AI credit limit**: Counts only AI-generated articles
+
+**AI model restrictions per plan:**
+
+- Free plan users can only use `gpt-4o-mini` (the lowest-cost model)
+- Higher-tier plans unlock access to more powerful (and more expensive) models
+- If a user requests a model not available on their plan, the API returns 403 with the list of allowed models
+- When no `model` is specified in the request, the system default model is used (the request is allowed regardless of plan)
+
+**Enforcement behavior:**
+
+- When article limit is reached → 403 with `"error": "Monthly article limit reached"`
+- When AI credit limit is reached → 403 with `"error": "Monthly AI credit limit reached"`
+- When requesting a restricted model → 403 with `"error": "Your {plan} plan does not allow the \"{model}\" model"` and the `allowed_models` list
+- All 403 responses include `upgrade_url` pointing to `/api/v1/subscriptions/plans`
+
+### Feature Gating
+
+Beyond usage limits, certain features are restricted by plan:
+
+- **Team member invitations** (`POST /api/v1/tenants/<id>/invitations`): Requires Basic plan or higher. Free users receive 403.
+- **API key access**: Requires Pro plan or higher. Free and Basic users cannot use API keys for programmatic access.
 
 ---
 
@@ -4345,7 +4434,7 @@ Handled Events:
 Notes:
 
 - Include `user_id` in `custom_data` when creating checkout sessions to link Paddle subscriptions to users.
-- Webhooks are used to create/update the local `subscriptions` record and adjust `monthly_article_limit` accordingly.
+- Webhooks are used to create/update the local `subscriptions` record and adjust `monthly_article_limit` and `monthly_ai_credit_limit` accordingly.
 - Do not log sensitive payment information. Persist events to `subscription_events` for auditing and retries.
 
 ### Environment Variables
@@ -5598,12 +5687,12 @@ Creates a new active Vercel config. Any previously active config is automaticall
 }
 ```
 
-| Field                 | Type   | Required | Description                                |
-| --------------------- | ------ | -------- | ------------------------------------------ |
-| `vercel_access_token` | string | ✅       | Vercel personal or team access token       |
+| Field                 | Type   | Required | Description                                                                                                           |
+| --------------------- | ------ | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `vercel_access_token` | string | ✅       | Vercel personal or team access token                                                                                  |
 | `vercel_team_id`      | string | ❌       | Vercel team ID (`team_*`) or project ID (`prj_*`). When a project ID is provided, only that single project is synced. |
-| `github_token`        | string | ❌       | GitHub personal access token               |
-| `github_org`          | string | ❌       | GitHub organisation or user name           |
+| `github_token`        | string | ❌       | GitHub personal access token                                                                                          |
+| `github_org`          | string | ❌       | GitHub organisation or user name                                                                                      |
 
 **Response (201):**
 
@@ -5706,9 +5795,9 @@ Returns **all** templates (including private ones) with pagination.
 
 **Query Parameters:**
 
-| Parameter  | Type | Default | Description              |
-| ---------- | ---- | ------- | ------------------------ |
-| `page`     | int  | 1       | Page number              |
+| Parameter  | Type | Default | Description                |
+| ---------- | ---- | ------- | -------------------------- |
+| `page`     | int  | 1       | Page number                |
 | `per_page` | int  | 20      | Results per page (max 100) |
 
 **Response (200):**
@@ -5768,15 +5857,15 @@ Creates a new frontend template. Templates are private (`is_public: false`) by d
 }
 ```
 
-| Field               | Type          | Required | Description                              |
-| ------------------- | ------------- | -------- | ---------------------------------------- |
-| `name`              | string        | ✅       | Display name of the template             |
-| `github_repo_url`   | string        | ✅       | GitHub repository URL                    |
-| `description`       | string        | ❌       | Short description of the template        |
-| `vercel_deploy_url` | string        | ❌       | Vercel one-click deploy URL              |
-| `preview_url`       | string        | ❌       | Live demo or screenshot URL              |
-| `custom_domain`     | string        | ❌       | Custom domain URL (e.g. `https://example.com`) |
-| `tags`              | array[string] | ❌       | Categorisation tags                      |
+| Field               | Type          | Required | Description                                                 |
+| ------------------- | ------------- | -------- | ----------------------------------------------------------- |
+| `name`              | string        | ✅       | Display name of the template                                |
+| `github_repo_url`   | string        | ✅       | GitHub repository URL                                       |
+| `description`       | string        | ❌       | Short description of the template                           |
+| `vercel_deploy_url` | string        | ❌       | Vercel one-click deploy URL                                 |
+| `preview_url`       | string        | ❌       | Live demo or screenshot URL                                 |
+| `custom_domain`     | string        | ❌       | Custom domain URL (e.g. `https://example.com`)              |
+| `tags`              | array[string] | ❌       | Categorisation tags                                         |
 | `is_public`         | boolean       | ❌       | Whether the template is publicly visible (default: `false`) |
 
 **Response (201):**
@@ -5792,7 +5881,7 @@ Creates a new frontend template. Templates are private (`is_public: false`) by d
     "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
     "vercel_project_id": null,
     "preview_url": "https://blog-starter.vercel.app",
-      "custom_domain": null,
+    "custom_domain": null,
     "tags": ["blog", "nextjs"],
     "is_public": false,
     "is_active": true,
@@ -5803,6 +5892,7 @@ Creates a new frontend template. Templates are private (`is_public: false`) by d
 ```
 
 **Errors:**
+
 - `400` — `name` or `github_repo_url` is missing.
 
 ---
@@ -5839,7 +5929,7 @@ Partially updates an existing template. Only supplied fields are changed.
     "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
     "vercel_project_id": null,
     "preview_url": "https://blog-starter.vercel.app",
-      "custom_domain": null,
+    "custom_domain": null,
     "tags": ["blog", "nextjs"],
     "is_public": true,
     "is_active": true,
@@ -5977,6 +6067,7 @@ Fetches all projects from the connected Vercel account using the stored credenti
 ```
 
 **Errors:**
+
 - `400` — No active Vercel config found. Configure credentials first via `POST /config`.
 - `502` — Vercel API returned an error (e.g. invalid token, rate limit).
 
@@ -6003,9 +6094,9 @@ Returns only templates where `is_public=true` and `is_active=true`.
 
 **Query Parameters:**
 
-| Parameter  | Type | Default | Description              |
-| ---------- | ---- | ------- | ------------------------ |
-| `page`     | int  | 1       | Page number              |
+| Parameter  | Type | Default | Description                |
+| ---------- | ---- | ------- | -------------------------- |
+| `page`     | int  | 1       | Page number                |
 | `per_page` | int  | 20      | Results per page (max 100) |
 
 **Response (200):**
@@ -6061,7 +6152,7 @@ Retrieves details of a single public template. Returns `404` for templates that 
     "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
     "vercel_project_id": null,
     "preview_url": "https://blog-starter.vercel.app",
-      "custom_domain": null,
+    "custom_domain": null,
     "tags": ["blog", "nextjs"],
     "is_public": true,
     "is_active": true,
@@ -6072,6 +6163,7 @@ Retrieves details of a single public template. Returns `404` for templates that 
 ```
 
 **Errors:**
+
 - `404` — Template not found, is private, or has been deleted.
 
 ---

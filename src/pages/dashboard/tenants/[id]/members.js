@@ -5,6 +5,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { tenantService } from "@/lib/tenantService";
 import { getInvitations, cancelInvitation } from "@/lib/invitationService";
+import { subscriptionService } from "@/lib/subscriptionService";
+import { authService } from "@/lib/authService";
 import InviteMemberModal from "@/components/InviteMemberModal";
 import {
   Users,
@@ -32,12 +34,31 @@ export default function TenantMembers() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newMember, setNewMember] = useState({ email: "", role: "member" });
   const [error, setError] = useState("");
+  const [subscription, setSubscription] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (resolvedId) {
       loadData();
     }
   }, [resolvedId]);
+
+  useEffect(() => {
+    loadSubscription();
+    const user = authService.getCurrentUser();
+    setIsAdmin(!!user?.is_super_admin);
+  }, []);
+
+  const loadSubscription = async () => {
+    try {
+      const data = await subscriptionService.getStatus();
+      setSubscription(data);
+    } catch (err) {
+      console.error("Failed to load subscription:", err);
+    }
+  };
+
+  const canInvite = isAdmin || subscription?.has_invitation_access !== false;
 
   const loadData = async () => {
     try {
@@ -268,18 +289,26 @@ export default function TenantMembers() {
                 </button>
               )}
               <button
-                onClick={() => setShowInviteModal(true)}
+                onClick={() => (canInvite ? setShowInviteModal(true) : null)}
+                disabled={!canInvite}
+                title={
+                  canInvite
+                    ? "Send an invitation"
+                    : "Upgrade to Basic plan or higher to invite members"
+                }
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "0.5rem",
                   padding: "0.75rem 1.25rem",
-                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                  color: "white",
+                  background: canInvite
+                    ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                    : "#e5e7eb",
+                  color: canInvite ? "white" : "#9ca3af",
                   border: "none",
                   borderRadius: "0.75rem",
                   fontWeight: 600,
-                  cursor: "pointer",
+                  cursor: canInvite ? "pointer" : "not-allowed",
                 }}
               >
                 <Mail size={18} />
@@ -340,6 +369,28 @@ export default function TenantMembers() {
               </button>
             </div>
           </div>
+
+          {!canInvite && (
+            <div
+              style={{
+                padding: "0.75rem 1rem",
+                borderRadius: "0.5rem",
+                background: "#fef3c7",
+                border: "1px solid #fcd34d",
+                marginBottom: "1.5rem",
+                fontSize: "0.875rem",
+                color: "#92400e",
+              }}
+            >
+              Team invitations require a <strong>Basic</strong> plan or higher.{" "}
+              <a
+                href="/dashboard/subscription"
+                style={{ color: "#2563eb", fontWeight: 600 }}
+              >
+                Upgrade your plan
+              </a>
+            </div>
+          )}
 
           <InviteMemberModal
             tenantId={resolvedId || id}

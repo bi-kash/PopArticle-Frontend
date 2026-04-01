@@ -4,6 +4,7 @@ import Link from "next/link";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { subscriptionService } from "@/lib/subscriptionService";
+import { PLANS as PLANS_CONFIG } from "@/lib/planConfig";
 import {
   CreditCard,
   Check,
@@ -131,17 +132,26 @@ export default function Subscription() {
       setError("");
 
       const [subscriptionData, plansData] = await Promise.all([
-        subscriptionService.getStatus().catch((err) => {
-          return null;
-        }),
-        subscriptionService.getPlans().catch((err) => {
-          return { plans: [] };
-        }),
+        subscriptionService.getStatus().catch(() => null),
+        subscriptionService.getPlans().catch(() => ({ plans: [] })),
       ]);
 
       setSubscription(subscriptionData);
-      setPlans(plansData.plans || []);
       setIsPaddleConfigured(plansData.is_paddle_configured || false);
+
+      // Merge canonical planConfig data with the API's price_id so that
+      // displayed prices/features always match the single source of truth,
+      // while Paddle checkout still uses the correct server-side price_id.
+      const apiPlanMap = {};
+      (plansData.plans || []).forEach((p) => {
+        apiPlanMap[p.name?.toLowerCase()] = p;
+      });
+      const mergedPlans = PLANS_CONFIG.map((configPlan) => ({
+        ...configPlan,
+        display_name: configPlan.displayName,
+        price_id: apiPlanMap[configPlan.id]?.price_id || null,
+      }));
+      setPlans(mergedPlans);
 
       if (!plansData.is_paddle_configured) {
         console.warn("⚠️ Paddle is NOT configured on the backend!");
@@ -321,16 +331,8 @@ export default function Subscription() {
   };
 
   const getPlanColor = (planName) => {
-    switch (planName?.toLowerCase()) {
-      case "enterprise":
-        return "#8b5cf6";
-      case "pro":
-        return "#2563eb";
-      case "basic":
-        return "#10b981";
-      default:
-        return "#64748b";
-    }
+    const found = PLANS_CONFIG.find((p) => p.id === planName?.toLowerCase());
+    return found?.color || "#64748b";
   };
 
   const isCurrentPlan = (planName) => {
