@@ -92,17 +92,27 @@ export default function TenantDashboard() {
   const loadArticleStats = async (tenantUUID) => {
     try {
       setStatsLoading(true);
-      const articlesData = await articleService.getArticles({
-        tenant_id: tenantUUID,
-      });
-      const articlesList = articlesData.articles || articlesData.data || [];
+      // Fetch totals using limit=1 to get counts cheaply, plus recent articles
+      const [allData, publishedData, draftData] = await Promise.all([
+        articleService.getArticles({ tenant_id: tenantUUID, limit: 5 }),
+        articleService.getArticles({
+          tenant_id: tenantUUID,
+          limit: 1,
+          status: "published",
+        }),
+        articleService.getArticles({
+          tenant_id: tenantUUID,
+          limit: 1,
+          status: "draft",
+        }),
+      ]);
       setStats({
-        total_articles: articlesList.length,
-        published_articles: articlesList.filter((a) => a.status === "published")
-          .length,
-        draft_articles: articlesList.filter((a) => a.status === "draft").length,
+        total_articles: allData.total ?? (allData.articles || []).length,
+        published_articles:
+          publishedData.total ?? (publishedData.articles || []).length,
+        draft_articles: draftData.total ?? (draftData.articles || []).length,
       });
-      setRecentArticles(articlesList.slice(0, 5));
+      setRecentArticles(allData.articles || []);
     } catch (err) {
       console.error("Failed to load articles:", err);
     } finally {

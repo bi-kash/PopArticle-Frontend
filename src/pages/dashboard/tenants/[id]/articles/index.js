@@ -16,6 +16,8 @@ import {
   Search,
 } from "lucide-react";
 
+const PAGE_SIZE = 50;
+
 export default function TenantArticles() {
   const router = useRouter();
   const { id } = router.query;
@@ -24,25 +26,33 @@ export default function TenantArticles() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalArticles, setTotalArticles] = useState(0);
 
   useEffect(() => {
     if (resolvedId) {
-      loadData();
+      loadData(1);
     }
   }, [resolvedId]);
 
-  const loadData = async () => {
+  const loadData = async (pageNum = page) => {
     try {
       setLoading(true);
+      const offset = (pageNum - 1) * PAGE_SIZE;
       const [tenantData, articlesData] = await Promise.all([
         tenantService.getTenant(resolvedId || id),
-        articleService.getArticles({ tenant_id: resolvedId || id }),
+        articleService.getArticles({
+          tenant_id: resolvedId || id,
+          limit: PAGE_SIZE,
+          offset,
+        }),
       ]);
       setTenant(tenantData.tenant || tenantData);
 
-      // Backend filters by X-Tenant-ID header, so we get only tenant's articles
       const allArticles = articlesData.articles || [];
       setArticles(allArticles);
+      setTotalArticles(articlesData.total ?? allArticles.length);
+      setPage(pageNum);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
@@ -55,7 +65,11 @@ export default function TenantArticles() {
 
     try {
       await articleService.deleteArticle(articleId, resolvedId || id);
-      loadData();
+      setTotalArticles((prev) => Math.max(0, prev - 1));
+      // Go to previous page if deleting the last item on this page
+      const newTotal = totalArticles - 1;
+      const maxPage = Math.max(1, Math.ceil(newTotal / PAGE_SIZE));
+      loadData(Math.min(page, maxPage));
     } catch (error) {
       alert("Failed to delete article");
     }
@@ -118,6 +132,18 @@ export default function TenantArticles() {
                 <div>
                   <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
                     Articles
+                    {totalArticles > 0 && (
+                      <span
+                        style={{
+                          marginLeft: "0.75rem",
+                          fontSize: "1rem",
+                          fontWeight: 500,
+                          color: "var(--text-secondary)",
+                        }}
+                      >
+                        ({totalArticles} total)
+                      </span>
+                    )}
                   </h1>
                   <p
                     style={{
@@ -397,6 +423,89 @@ export default function TenantArticles() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalArticles > PAGE_SIZE && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginTop: "1.5rem",
+                padding: "1rem",
+                background: "var(--surface)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "0.75rem",
+              }}
+            >
+              <span
+                style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}
+              >
+                Showing {(page - 1) * PAGE_SIZE + 1}–
+                {Math.min(page * PAGE_SIZE, totalArticles)} of {totalArticles}{" "}
+                articles
+              </span>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button
+                  disabled={page <= 1 || loading}
+                  onClick={() => loadData(page - 1)}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    background:
+                      page <= 1
+                        ? "var(--surface-secondary)"
+                        : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    color: page <= 1 ? "var(--text-secondary)" : "white",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "0.5rem",
+                    cursor: page <= 1 ? "not-allowed" : "pointer",
+                    fontWeight: 500,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  ← Previous
+                </button>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "0.5rem 1rem",
+                    fontSize: "0.875rem",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  Page {page} of {Math.ceil(totalArticles / PAGE_SIZE)}
+                </span>
+                <button
+                  disabled={
+                    page >= Math.ceil(totalArticles / PAGE_SIZE) || loading
+                  }
+                  onClick={() => loadData(page + 1)}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    background:
+                      page >= Math.ceil(totalArticles / PAGE_SIZE)
+                        ? "var(--surface-secondary)"
+                        : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    color:
+                      page >= Math.ceil(totalArticles / PAGE_SIZE)
+                        ? "var(--text-secondary)"
+                        : "white",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "0.5rem",
+                    cursor:
+                      page >= Math.ceil(totalArticles / PAGE_SIZE)
+                        ? "not-allowed"
+                        : "pointer",
+                    fontWeight: 500,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Next →
+                </button>
               </div>
             </div>
           )}

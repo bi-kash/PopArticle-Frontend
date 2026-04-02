@@ -25,13 +25,18 @@ export default function ArticlesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [tenantFilter, setTenantFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [totalArticles, setTotalArticles] = useState(0);
+
+  const PAGE_SIZE = 50;
 
   useEffect(() => {
     loadTenants();
   }, []);
 
   useEffect(() => {
-    loadArticles();
+    setPage(1);
+    loadArticles(1);
   }, [filter, tenantFilter, tenants]);
 
   const loadTenants = async () => {
@@ -47,10 +52,11 @@ export default function ArticlesPage() {
     }
   };
 
-  const loadArticles = async () => {
+  const loadArticles = async (pageNum = page) => {
     try {
       setLoading(true);
-      const params = {};
+      const offset = (pageNum - 1) * PAGE_SIZE;
+      const params = { limit: PAGE_SIZE, offset };
       if (filter !== "all") params.status = filter;
 
       if (tenantFilter !== "all") {
@@ -62,8 +68,9 @@ export default function ArticlesPage() {
             _tenant_id: tenantFilter,
           })),
         );
+        setTotalArticles(data.total ?? (data.articles || []).length);
       } else if (tenants.length > 0) {
-        // Load from all tenants
+        // Load from all tenants in parallel with same page offset
         const all = await Promise.all(
           tenants.map(async (t) => {
             try {
@@ -71,26 +78,32 @@ export default function ArticlesPage() {
                 ...params,
                 tenant_id: t.id,
               });
-              return (data.articles || []).map((a) => ({
-                ...a,
-                _tenant_id: t.id,
-                _tenant_name: t.name,
-                _tenant_slug: getTenantSlug(t),
-              }));
+              return {
+                articles: (data.articles || []).map((a) => ({
+                  ...a,
+                  _tenant_id: t.id,
+                  _tenant_name: t.name,
+                  _tenant_slug: getTenantSlug(t),
+                })),
+                total: data.total ?? (data.articles || []).length,
+              };
             } catch {
-              return [];
+              return { articles: [], total: 0 };
             }
           }),
         );
-        setArticles(
-          all
-            .flat()
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
-        );
+        const combined = all
+          .flatMap((r) => r.articles)
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const combinedTotal = all.reduce((sum, r) => sum + r.total, 0);
+        setArticles(combined);
+        setTotalArticles(combinedTotal);
       } else {
         const data = await articleService.getArticles(params);
         setArticles(data.articles || []);
+        setTotalArticles(data.total ?? (data.articles || []).length);
       }
+      setPage(pageNum);
     } catch (error) {
       console.error("Failed to load articles:", error);
     } finally {
@@ -104,7 +117,10 @@ export default function ArticlesPage() {
     try {
       const tenantId = article._tenant_id || article.tenant_id || null;
       await articleService.deleteArticle(article.id, tenantId);
-      setArticles(articles.filter((a) => a.id !== article.id));
+      const newTotal = totalArticles - 1;
+      setTotalArticles(Math.max(0, newTotal));
+      const maxPage = Math.max(1, Math.ceil(newTotal / PAGE_SIZE));
+      loadArticles(Math.min(page, maxPage));
     } catch (error) {
       alert("Failed to delete article");
     }
@@ -113,7 +129,8 @@ export default function ArticlesPage() {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
-      loadArticles();
+      setPage(1);
+      loadArticles(1);
       return;
     }
 
@@ -121,6 +138,8 @@ export default function ArticlesPage() {
       setLoading(true);
       const data = await articleService.searchArticles(searchQuery);
       setArticles(data.articles || []);
+      setTotalArticles(data.total ?? (data.articles || []).length);
+      setPage(1);
     } catch (error) {
       console.error("Search failed:", error);
     } finally {
@@ -174,6 +193,18 @@ export default function ArticlesPage() {
               <div>
                 <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
                   Articles
+                  {totalArticles > 0 && (
+                    <span
+                      style={{
+                        marginLeft: "0.75rem",
+                        fontSize: "1rem",
+                        fontWeight: 500,
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      ({totalArticles} total)
+                    </span>
+                  )}
                 </h1>
                 <p
                   style={{
@@ -479,6 +510,89 @@ export default function ArticlesPage() {
               </div>
             )}
           </div>
+
+          {/* Pagination */}
+          {totalArticles > PAGE_SIZE && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginTop: "1.5rem",
+                padding: "1rem",
+                background: "var(--surface)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "0.75rem",
+              }}
+            >
+              <span
+                style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}
+              >
+                Showing {(page - 1) * PAGE_SIZE + 1}–
+                {Math.min(page * PAGE_SIZE, totalArticles)} of {totalArticles}{" "}
+                articles
+              </span>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button
+                  disabled={page <= 1 || loading}
+                  onClick={() => loadArticles(page - 1)}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    background:
+                      page <= 1
+                        ? "var(--surface-secondary)"
+                        : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    color: page <= 1 ? "var(--text-secondary)" : "white",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "0.5rem",
+                    cursor: page <= 1 ? "not-allowed" : "pointer",
+                    fontWeight: 500,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  ← Previous
+                </button>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "0.5rem 1rem",
+                    fontSize: "0.875rem",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  Page {page} of {Math.ceil(totalArticles / PAGE_SIZE)}
+                </span>
+                <button
+                  disabled={
+                    page >= Math.ceil(totalArticles / PAGE_SIZE) || loading
+                  }
+                  onClick={() => loadArticles(page + 1)}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    background:
+                      page >= Math.ceil(totalArticles / PAGE_SIZE)
+                        ? "var(--surface-secondary)"
+                        : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    color:
+                      page >= Math.ceil(totalArticles / PAGE_SIZE)
+                        ? "var(--text-secondary)"
+                        : "white",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "0.5rem",
+                    cursor:
+                      page >= Math.ceil(totalArticles / PAGE_SIZE)
+                        ? "not-allowed"
+                        : "pointer",
+                    fontWeight: 500,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </DashboardLayout>
     </ProtectedRoute>
