@@ -14,6 +14,7 @@ import {
   FileText,
   ArrowLeft,
   Search,
+  Upload,
 } from "lucide-react";
 
 const PAGE_SIZE = 50;
@@ -57,6 +58,20 @@ export default function TenantArticles() {
       console.error("Failed to load data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePublish = async (articleId) => {
+    if (!confirm("Publish this article now?")) return;
+    try {
+      await articleService.publishArticle(articleId, resolvedId || id);
+      setArticles((prev) =>
+        prev.map((a) =>
+          a.id === articleId ? { ...a, status: "published" } : a,
+        ),
+      );
+    } catch (error) {
+      alert("Failed to publish article");
     }
   };
 
@@ -291,15 +306,6 @@ export default function TenantArticles() {
                           fontWeight: 600,
                         }}
                       >
-                        Type
-                      </th>
-                      <th
-                        style={{
-                          textAlign: "left",
-                          padding: "1rem",
-                          fontWeight: 600,
-                        }}
-                      >
                         Created
                       </th>
                       <th
@@ -358,15 +364,6 @@ export default function TenantArticles() {
                           style={{
                             padding: "1rem",
                             color: "var(--text-secondary)",
-                            textTransform: "capitalize",
-                          }}
-                        >
-                          {article.content_type || "html"}
-                        </td>
-                        <td
-                          style={{
-                            padding: "1rem",
-                            color: "var(--text-secondary)",
                           }}
                         >
                           {new Date(article.created_at).toLocaleDateString()}
@@ -384,6 +381,28 @@ export default function TenantArticles() {
                               justifyContent: "flex-end",
                             }}
                           >
+                            {article.status !== "published" && (
+                              <button
+                                onClick={() => handlePublish(article.id)}
+                                style={{
+                                  padding: "0.5rem 0.75rem",
+                                  background: "#d1fae5",
+                                  color: "#065f46",
+                                  border: "none",
+                                  borderRadius: "0.5rem",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.3rem",
+                                  fontSize: "0.8125rem",
+                                  fontWeight: 600,
+                                }}
+                                title="Publish"
+                              >
+                                <Upload size={14} />
+                                Publish
+                              </button>
+                            )}
                             <Link
                               href={`/dashboard/tenants/${id}/articles/${article.id}`}
                             >

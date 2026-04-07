@@ -58,7 +58,7 @@ export default function TenantCategories() {
         tenantService.getTenant(resolvedTenantId),
         categoryService.getCategories({ tenant_id: resolvedTenantId }),
         articleService
-          .getArticles({ tenant_id: resolvedTenantId, per_page: 1000 })
+          .getArticles({ tenant_id: resolvedTenantId, limit: 10000 })
           .catch(() => ({ articles: [] })),
       ]);
       setTenant(tenantData.tenant || tenantData);

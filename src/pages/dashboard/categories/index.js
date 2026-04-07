@@ -4,6 +4,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { categoryService } from "@/lib/categoryService";
 import { tenantService } from "@/lib/tenantService";
+import { articleService } from "@/lib/articleService";
 import { Plus, Edit, Trash2, FolderTree, Globe } from "lucide-react";
 
 export default function CategoriesPage() {
@@ -42,26 +43,46 @@ export default function CategoriesPage() {
     try {
       setLoading(true);
       if (tenantFilter !== "all") {
-        const data = await categoryService.getCategories({
-          tenant_id: tenantFilter,
+        const [catData, artData] = await Promise.all([
+          categoryService.getCategories({ tenant_id: tenantFilter }),
+          articleService
+            .getArticles({ tenant_id: tenantFilter, limit: 10000 })
+            .catch(() => ({ articles: [] })),
+        ]);
+        const arts = artData.articles || [];
+        const countMap = {};
+        arts.forEach((a) => {
+          if (a.category_id != null)
+            countMap[a.category_id] = (countMap[a.category_id] || 0) + 1;
         });
         setCategories(
-          (data.categories || []).map((c) => ({
+          (catData.categories || []).map((c) => ({
             ...c,
             _tenant_id: tenantFilter,
+            article_count: countMap[c.id] ?? 0,
           })),
         );
       } else if (tenants.length > 0) {
         const all = await Promise.all(
           tenants.map(async (t) => {
             try {
-              const data = await categoryService.getCategories({
-                tenant_id: t.id,
+              const [catData, artData] = await Promise.all([
+                categoryService.getCategories({ tenant_id: t.id }),
+                articleService
+                  .getArticles({ tenant_id: t.id, limit: 10000 })
+                  .catch(() => ({ articles: [] })),
+              ]);
+              const arts = artData.articles || [];
+              const countMap = {};
+              arts.forEach((a) => {
+                if (a.category_id != null)
+                  countMap[a.category_id] = (countMap[a.category_id] || 0) + 1;
               });
-              return (data.categories || []).map((c) => ({
+              return (catData.categories || []).map((c) => ({
                 ...c,
                 _tenant_id: t.id,
                 _tenant_name: t.name,
+                article_count: countMap[c.id] ?? 0,
               }));
             } catch {
               return [];

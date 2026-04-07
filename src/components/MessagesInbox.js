@@ -27,6 +27,7 @@ export default function MessagesInbox() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [tenants, setTenants] = useState([]);
   const [tenantFilter, setTenantFilter] = useState("all");
+  const [tenantsFetched, setTenantsFetched] = useState(false);
 
   const user = JSON.parse(Cookies.get("user") || "{}");
   const tenantId = user?.tenant_id;
@@ -36,8 +37,9 @@ export default function MessagesInbox() {
   }, []);
 
   useEffect(() => {
+    if (!tenantsFetched) return;
     fetchMessages();
-  }, [filters, tenantFilter]);
+  }, [filters, tenantFilter, tenantsFetched]);
 
   const loadTenants = async () => {
     try {
@@ -49,25 +51,59 @@ export default function MessagesInbox() {
       setTenants(arr);
     } catch (error) {
       console.error("Failed to load tenants:", error);
+    } finally {
+      setTenantsFetched(true);
     }
   };
 
   const fetchMessages = async () => {
     setLoading(true);
     try {
-      const effectiveTenantId =
-        tenantFilter !== "all" ? tenantFilter : tenantId;
-      const response = await messageService.getMessages(
-        filters,
-        effectiveTenantId,
-      );
-      const msgs = (response.messages || []).map((m) => ({
-        ...m,
-        _tenant_id: effectiveTenantId,
-      }));
-      setMessages(msgs);
-      setPagination(response.pagination);
-      setUnreadCount(response.unread_count || 0);
+      if (tenantFilter === "all") {
+        // Fetch from every tenant individually — null-tenant messages are
+        // admin-only and are intentionally excluded here.
+        const allMessages = [];
+        let totalUnread = 0;
+        await Promise.all(
+          tenants.map(async (tenant) => {
+            try {
+              const response = await messageService.getMessages(
+                filters,
+                tenant.id,
+              );
+              const msgs = (response.messages || []).map((m) => ({
+                ...m,
+                _tenant_id: tenant.id,
+              }));
+              allMessages.push(...msgs);
+              totalUnread += response.unread_count || 0;
+            } catch (e) {
+              console.error(
+                `Failed to fetch messages for tenant ${tenant.id}:`,
+                e,
+              );
+            }
+          }),
+        );
+        allMessages.sort(
+          (a, b) => new Date(b.created_at) - new Date(a.created_at),
+        );
+        setMessages(allMessages);
+        setPagination(null);
+        setUnreadCount(totalUnread);
+      } else {
+        const response = await messageService.getMessages(
+          filters,
+          tenantFilter,
+        );
+        const msgs = (response.messages || []).map((m) => ({
+          ...m,
+          _tenant_id: tenantFilter,
+        }));
+        setMessages(msgs);
+        setPagination(response.pagination);
+        setUnreadCount(response.unread_count || 0);
+      }
     } catch (error) {
       console.error("Failed to fetch messages:", error);
     } finally {
@@ -76,15 +112,21 @@ export default function MessagesInbox() {
   };
 
   const handleStatusChange = async (messageId, newStatus) => {
+    const msg =
+      messages.find((m) => m.id === messageId) ||
+      (selectedMessage?.id === messageId ? selectedMessage : null);
+    const msgTenantId = msg?._tenant_id || tenantId;
     try {
       await messageService.updateMessage(
         messageId,
         { status: newStatus },
-        tenantId,
+        msgTenantId,
       );
-      await fetchMessages();
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, status: newStatus } : m)),
+      );
       if (selectedMessage?.id === messageId) {
-        setSelectedMessage({ ...selectedMessage, status: newStatus });
+        setSelectedMessage((prev) => ({ ...prev, status: newStatus }));
       }
     } catch (error) {
       console.error("Failed to update message status:", error);
@@ -97,12 +139,12 @@ export default function MessagesInbox() {
       alert("Please enter a reply");
       return;
     }
-
+    const msgTenantId = selectedMessage?._tenant_id || tenantId;
     try {
       await messageService.updateMessage(
         messageId,
         { status: "replied", reply_text: replyText },
-        tenantId,
+        msgTenantId,
       );
       setReplyText("");
       await fetchMessages();
@@ -115,10 +157,13 @@ export default function MessagesInbox() {
 
   const handleDelete = async (messageId) => {
     if (!confirm("Are you sure you want to delete this message?")) return;
-
+    const msg =
+      messages.find((m) => m.id === messageId) ||
+      (selectedMessage?.id === messageId ? selectedMessage : null);
+    const msgTenantId = msg?._tenant_id || tenantId;
     try {
-      await messageService.deleteMessage(messageId, tenantId);
-      await fetchMessages();
+      await messageService.deleteMessage(messageId, msgTenantId);
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
       if (selectedMessage?.id === messageId) {
         setSelectedMessage(null);
       }
