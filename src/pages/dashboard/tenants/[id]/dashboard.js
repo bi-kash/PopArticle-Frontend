@@ -26,6 +26,7 @@ import {
   Copy,
   Check,
   Trash2,
+  Upload,
 } from "lucide-react";
 
 export default function TenantDashboard() {
@@ -121,6 +122,25 @@ export default function TenantDashboard() {
   };
 
   const [copiedTenantId, setCopiedTenantId] = useState(false);
+
+  const handlePublishArticle = async (articleId) => {
+    if (!confirm("Publish this article now?")) return;
+    try {
+      await articleService.publishArticle(articleId, resolvedId || id);
+      setRecentArticles((prev) =>
+        prev.map((a) =>
+          a.id === articleId ? { ...a, status: "published" } : a,
+        ),
+      );
+      setStats((prev) => ({
+        ...prev,
+        published_articles: prev.published_articles + 1,
+        draft_articles: Math.max(0, prev.draft_articles - 1),
+      }));
+    } catch (error) {
+      alert("Failed to publish article");
+    }
+  };
 
   const handleDeleteArticle = async (articleId) => {
     if (!confirm("Are you sure you want to delete this article?")) return;
@@ -789,8 +809,30 @@ export default function TenantDashboard() {
                           <div
                             style={{ display: "inline-flex", gap: "0.5rem" }}
                           >
+                            {article.status !== "published" && (
+                              <button
+                                onClick={() => handlePublishArticle(article.id)}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.375rem",
+                                  padding: "0.4rem 0.875rem",
+                                  fontSize: "0.8125rem",
+                                  background: "#d1fae5",
+                                  color: "#065f46",
+                                  border: "none",
+                                  borderRadius: "0.5rem",
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                }}
+                                title="Publish"
+                              >
+                                <Upload size={14} />
+                                Publish
+                              </button>
+                            )}
                             <Link
-                              href={`/dashboard/tenants/${id}/articles/${article.id}`}
+                              href={`/dashboard/tenants/${id}/articles/${article.id}?from=/dashboard/tenants/${id}/dashboard`}
                             >
                               <button
                                 style={{

@@ -679,6 +679,7 @@ X-Tenant-ID: <tenant_id> (optional)
   "category_id": 1,
   "status": "draft",
   "is_featured": false,
+  "published_at": "2026-06-01T09:00:00",
   "seo": {
     "meta_title": "SEO Title",
     "meta_description": "SEO description for search engines",
@@ -701,6 +702,7 @@ X-Tenant-ID: <tenant_id> (optional)
 - `image`: Image URL or upload file (multipart/form-data)
 - `status`: `draft` (default), `published`, `archived`
 - `is_featured`: Boolean (default: false)
+- `published_at`: ISO 8601 UTC timestamp — see [Scheduled Publishing](#scheduled-publishing) below
 - `seo`: SEO metadata object
 - `tags`: Array of tag names
 - `keywords`: Array of keyword strings
@@ -736,6 +738,72 @@ X-Tenant-ID: <tenant_id> (optional)
 - Manual articles do **not** consume AI credits (only AI-generated articles do)
 - Auto-generates slug from title
 - Default status is "draft"
+
+---
+
+### Scheduled Publishing
+
+The `published_at` field lets you schedule a draft article to be published automatically at a future time. It is supported on both [Create Article](#create-article-manual) and [Update Article](#update-article).
+
+#### How it works
+
+| Scenario | What happens |
+|---|---|
+| `published_at` **not provided** | Normal behaviour — article status is whatever you pass (`draft` by default). No scheduling occurs. |
+| `published_at` is a **past or present** timestamp | The value is stored but no scheduled task is created. If status is `published` the article publishes immediately; if `draft` it stays draft. |
+| `published_at` is a **future** timestamp | Article is saved as `draft` regardless of the `status` field. A Celery task is dispatched with an ETA equal to `published_at` that will automatically set the article to `published` at the specified time. A periodic fallback sweep also runs every 3 hours to catch any tasks that may have been missed. |
+
+#### Request example — schedule for a future date
+
+```http
+POST /api/v1/articles
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+```json
+{
+  "title": "My Scheduled Article",
+  "content": "Article content here...",
+  "category_id": 1,
+  "published_at": "2026-06-01T09:00:00"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "id": 42,
+  "title": "My Scheduled Article",
+  "slug": "my-scheduled-article",
+  "status": "draft",
+  "published_at": "2026-06-01T09:00:00.000000",
+  "created_at": "2026-04-09T13:00:00.000000"
+}
+```
+
+> The article is created as `draft`. At `2026-06-01T09:00:00 UTC` it will be automatically published and social-media auto-posting (if configured) will be triggered.
+
+#### Updating the scheduled time
+
+Send a `PUT /api/v1/articles/<id>` with a new `published_at` value. The previous ETA task will simply no-op when it fires (because the article will have already been published by the newer task), so no manual cancellation is needed.
+
+```json
+{
+  "published_at": "2026-07-15T08:00:00"
+}
+```
+
+#### Publishing immediately instead
+
+Call `POST /api/v1/articles/<id>/publish` at any time to publish immediately, ignoring the scheduled time. This endpoint is idempotent — if the article is already published it returns 200 without changes.
+
+#### `published_at` format
+
+- ISO 8601, UTC (e.g. `2026-06-01T09:00:00` or `2026-06-01T09:00:00Z`)
+- Timezone offsets are accepted and normalised to UTC internally
+- Returns 400 if the value cannot be parsed
 
 ---
 
@@ -837,11 +905,11 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Model Selection:** The platform uses the `OPENAI_MODEL` environment variable as the default model (see `.env.example`). You can override the model per-request by providing the optional `model` field in AI endpoints. The available models depend on your subscription plan:
 
-| Plan       | Allowed Models                                              |
-| ---------- | ----------------------------------------------------------- |
-| Free       | `gpt-4o-mini`                                               |
-| Basic      | `gpt-4o-mini`, `gpt-4o`                                     |
-| Pro        | `gpt-4o-mini`, `gpt-4o`, `gpt-4.5-preview`                  |
+| Plan       | Allowed Models                                     |
+| ---------- | -------------------------------------------------- |
+| Free       | `gpt-4o-mini`                                      |
+| Basic      | `gpt-4o-mini`, `gpt-4o`                            |
+| Pro        | `gpt-4o-mini`, `gpt-4o`, `gpt-4.5-preview`        |
 | Enterprise | `gpt-4o-mini`, `gpt-4o`, `gpt-4.5-preview`, `o1`, `o3-mini` |
 
 If no `model` is specified, the system default is used without plan-based restriction.
@@ -1052,6 +1120,7 @@ X-Tenant-ID: <tenant_id> (optional)
   "status": "published",
   "is_featured": true,
   "category_id": 2,
+  "published_at": "2026-06-01T09:00:00",
   "tags": ["new-tag"],
   "keywords": ["new-keyword"]
 }
@@ -1093,6 +1162,7 @@ X-Tenant-ID: <tenant_id> (optional)
 
 - User must own the article (403 otherwise)
 - Slug auto-generated from title if title changes
+- Setting a future `published_at` keeps the article as `draft` and schedules automatic publishing — see [Scheduled Publishing](#scheduled-publishing)
 
 ---
 
@@ -1154,7 +1224,10 @@ X-Tenant-ID: <tenant_id> (optional)
 **Notes:**
 
 - User must own the article (403 otherwise)
-- Sets status to "published" and sets published_at timestamp
+- Sets `status` to `"published"` immediately, regardless of any scheduled `published_at`
+- Preserves the article's existing `published_at` if one was already set (e.g. via scheduling); otherwise sets it to the current UTC time
+- Idempotent — returns 200 without changes if the article is already published
+- Triggers social-media auto-posting if configured
 
 ---
 
@@ -4041,7 +4114,7 @@ Response (200):
     "end": "2024-02-01T00:00:00Z"
   },
   "pricing": {
-    "amount": "50.00",
+    "amount": "49.00",
     "currency": "USD"
   },
   "billing_email": "billing@example.com",
@@ -4106,7 +4179,7 @@ Response (200):
     {
       "name": "basic",
       "display_name": "Basic",
-      "price": "20",
+      "price": "19",
       "currency": "USD",
       "billing_cycle": "month",
       "article_limit": 100,
@@ -4128,7 +4201,7 @@ Response (200):
     {
       "name": "pro",
       "display_name": "Pro",
-      "price": "50",
+      "price": "49",
       "currency": "USD",
       "billing_cycle": "month",
       "article_limit": 500,
@@ -4150,18 +4223,12 @@ Response (200):
     {
       "name": "enterprise",
       "display_name": "Enterprise",
-      "price": "100",
+      "price": "199",
       "currency": "USD",
       "billing_cycle": "month",
       "article_limit": 1500,
       "ai_credit_limit": 1000,
-      "allowed_models": [
-        "gpt-4o-mini",
-        "gpt-4o",
-        "gpt-4.5-preview",
-        "o1",
-        "o3-mini"
-      ],
+      "allowed_models": ["gpt-4o-mini", "gpt-4o", "gpt-4.5-preview", "o1", "o3-mini"],
       "has_api_access": true,
       "has_invitation_access": true,
       "price_id": "pri_xxx",
@@ -4363,12 +4430,12 @@ Response (200):
 
 ### Subscription Plans & Monthly Limits
 
-| Plan       | Monthly Article Limit | Monthly AI Credits | Allowed AI Models                                 | Team Invitations | API Access | Price/Month |
-| ---------- | --------------------- | ------------------ | ------------------------------------------------- | ---------------- | ---------- | ----------- |
-| Free       | 10                    | 10                 | gpt-4o-mini                                       | ❌               | ❌         | $0          |
-| Basic      | 100                   | 50                 | gpt-4o-mini, gpt-4o                               | ✅               | ❌         | $20         |
-| Pro        | 500                   | 200                | gpt-4o-mini, gpt-4o, gpt-4.5-preview              | ✅               | ✅         | $50         |
-| Enterprise | 1500                  | 1000               | gpt-4o-mini, gpt-4o, gpt-4.5-preview, o1, o3-mini | ✅               | ✅         | $100        |
+| Plan       | Monthly Article Limit | Monthly AI Credits | Allowed AI Models                             | Team Invitations | API Access | Price/Month |
+| ---------- | --------------------- | ------------------ | --------------------------------------------- | ---------------- | ---------- | ----------- |
+| Free       | 10                    | 10                 | gpt-4o-mini                                   | ❌               | ❌         | $0          |
+| Basic      | 100                   | 50                 | gpt-4o-mini, gpt-4o                           | ✅               | ❌         | $19         |
+| Pro        | 500                   | 200                | gpt-4o-mini, gpt-4o, gpt-4.5-preview         | ✅               | ✅         | $49         |
+| Enterprise | 1500                  | 1000               | gpt-4o-mini, gpt-4o, gpt-4.5-preview, o1, o3-mini | ✅          | ✅         | $199        |
 
 **Note:** Super admins bypass all subscription limits and restrictions.
 
@@ -5687,12 +5754,12 @@ Creates a new active Vercel config. Any previously active config is automaticall
 }
 ```
 
-| Field                 | Type   | Required | Description                                                                                                           |
-| --------------------- | ------ | -------- | --------------------------------------------------------------------------------------------------------------------- |
-| `vercel_access_token` | string | ✅       | Vercel personal or team access token                                                                                  |
+| Field                 | Type   | Required | Description                                |
+| --------------------- | ------ | -------- | ------------------------------------------ |
+| `vercel_access_token` | string | ✅       | Vercel personal or team access token       |
 | `vercel_team_id`      | string | ❌       | Vercel team ID (`team_*`) or project ID (`prj_*`). When a project ID is provided, only that single project is synced. |
-| `github_token`        | string | ❌       | GitHub personal access token                                                                                          |
-| `github_org`          | string | ❌       | GitHub organisation or user name                                                                                      |
+| `github_token`        | string | ❌       | GitHub personal access token               |
+| `github_org`          | string | ❌       | GitHub organisation or user name           |
 
 **Response (201):**
 
@@ -5795,9 +5862,9 @@ Returns **all** templates (including private ones) with pagination.
 
 **Query Parameters:**
 
-| Parameter  | Type | Default | Description                |
-| ---------- | ---- | ------- | -------------------------- |
-| `page`     | int  | 1       | Page number                |
+| Parameter  | Type | Default | Description              |
+| ---------- | ---- | ------- | ------------------------ |
+| `page`     | int  | 1       | Page number              |
 | `per_page` | int  | 20      | Results per page (max 100) |
 
 **Response (200):**
@@ -5857,15 +5924,15 @@ Creates a new frontend template. Templates are private (`is_public: false`) by d
 }
 ```
 
-| Field               | Type          | Required | Description                                                 |
-| ------------------- | ------------- | -------- | ----------------------------------------------------------- |
-| `name`              | string        | ✅       | Display name of the template                                |
-| `github_repo_url`   | string        | ✅       | GitHub repository URL                                       |
-| `description`       | string        | ❌       | Short description of the template                           |
-| `vercel_deploy_url` | string        | ❌       | Vercel one-click deploy URL                                 |
-| `preview_url`       | string        | ❌       | Live demo or screenshot URL                                 |
-| `custom_domain`     | string        | ❌       | Custom domain URL (e.g. `https://example.com`)              |
-| `tags`              | array[string] | ❌       | Categorisation tags                                         |
+| Field               | Type          | Required | Description                              |
+| ------------------- | ------------- | -------- | ---------------------------------------- |
+| `name`              | string        | ✅       | Display name of the template             |
+| `github_repo_url`   | string        | ✅       | GitHub repository URL                    |
+| `description`       | string        | ❌       | Short description of the template        |
+| `vercel_deploy_url` | string        | ❌       | Vercel one-click deploy URL              |
+| `preview_url`       | string        | ❌       | Live demo or screenshot URL              |
+| `custom_domain`     | string        | ❌       | Custom domain URL (e.g. `https://example.com`) |
+| `tags`              | array[string] | ❌       | Categorisation tags                      |
 | `is_public`         | boolean       | ❌       | Whether the template is publicly visible (default: `false`) |
 
 **Response (201):**
@@ -5881,7 +5948,7 @@ Creates a new frontend template. Templates are private (`is_public: false`) by d
     "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
     "vercel_project_id": null,
     "preview_url": "https://blog-starter.vercel.app",
-    "custom_domain": null,
+      "custom_domain": null,
     "tags": ["blog", "nextjs"],
     "is_public": false,
     "is_active": true,
@@ -5892,7 +5959,6 @@ Creates a new frontend template. Templates are private (`is_public: false`) by d
 ```
 
 **Errors:**
-
 - `400` — `name` or `github_repo_url` is missing.
 
 ---
@@ -5929,7 +5995,7 @@ Partially updates an existing template. Only supplied fields are changed.
     "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
     "vercel_project_id": null,
     "preview_url": "https://blog-starter.vercel.app",
-    "custom_domain": null,
+      "custom_domain": null,
     "tags": ["blog", "nextjs"],
     "is_public": true,
     "is_active": true,
@@ -6067,7 +6133,6 @@ Fetches all projects from the connected Vercel account using the stored credenti
 ```
 
 **Errors:**
-
 - `400` — No active Vercel config found. Configure credentials first via `POST /config`.
 - `502` — Vercel API returned an error (e.g. invalid token, rate limit).
 
@@ -6094,9 +6159,9 @@ Returns only templates where `is_public=true` and `is_active=true`.
 
 **Query Parameters:**
 
-| Parameter  | Type | Default | Description                |
-| ---------- | ---- | ------- | -------------------------- |
-| `page`     | int  | 1       | Page number                |
+| Parameter  | Type | Default | Description              |
+| ---------- | ---- | ------- | ------------------------ |
+| `page`     | int  | 1       | Page number              |
 | `per_page` | int  | 20      | Results per page (max 100) |
 
 **Response (200):**
@@ -6152,7 +6217,7 @@ Retrieves details of a single public template. Returns `404` for templates that 
     "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
     "vercel_project_id": null,
     "preview_url": "https://blog-starter.vercel.app",
-    "custom_domain": null,
+      "custom_domain": null,
     "tags": ["blog", "nextjs"],
     "is_public": true,
     "is_active": true,
@@ -6163,7 +6228,6 @@ Retrieves details of a single public template. Returns `404` for templates that 
 ```
 
 **Errors:**
-
 - `404` — Template not found, is private, or has been deleted.
 
 ---

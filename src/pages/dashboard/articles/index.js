@@ -15,6 +15,7 @@ import {
   FileText,
   Globe,
   Building2,
+  Upload,
 } from "lucide-react";
 
 export default function ArticlesPage() {
@@ -108,6 +109,23 @@ export default function ArticlesPage() {
       console.error("Failed to load articles:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePublish = async (article) => {
+    if (!confirm("Publish this article now?")) return;
+    try {
+      const tenantId = article._tenant_id || article.tenant_id || null;
+      await articleService.publishArticle(article.id, tenantId);
+      setArticles((prev) =>
+        prev.map((a) =>
+          a.id === article.id && a._tenant_id === article._tenant_id
+            ? { ...a, status: "published" }
+            : a,
+        ),
+      );
+    } catch (error) {
+      alert("Failed to publish article");
     }
   };
 
@@ -461,11 +479,33 @@ export default function ArticlesPage() {
                         </td>
                         <td>
                           <div style={{ display: "flex", gap: "0.5rem" }}>
+                            {article.status !== "published" && (
+                              <button
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.25rem",
+                                  padding: "0.35rem 0.6rem",
+                                  background: "#d1fae5",
+                                  color: "#065f46",
+                                  border: "none",
+                                  borderRadius: "0.375rem",
+                                  cursor: "pointer",
+                                  fontSize: "0.8125rem",
+                                  fontWeight: 600,
+                                }}
+                                onClick={() => handlePublish(article)}
+                                title="Publish"
+                              >
+                                <Upload size={14} />
+                                Publish
+                              </button>
+                            )}
                             <Link
                               href={
                                 getTenantSlugForArticle(article)
-                                  ? `/dashboard/tenants/${getTenantSlugForArticle(article)}/articles/${article.id}`
-                                  : `/dashboard/articles/${article.id}`
+                                  ? `/dashboard/tenants/${getTenantSlugForArticle(article)}/articles/${article.id}?from=/dashboard/articles`
+                                  : `/dashboard/articles/${article.id}?from=/dashboard/articles`
                               }
                             >
                               <button

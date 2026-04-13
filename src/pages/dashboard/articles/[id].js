@@ -5,13 +5,23 @@ import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import CommentsSection from "@/components/CommentsSection";
 import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
-import { Save, Trash2, Eye, Edit3, Maximize2, X } from "lucide-react";
+import {
+  Save,
+  Trash2,
+  Eye,
+  Edit3,
+  Maximize2,
+  X,
+  ArrowLeft,
+  Calendar,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 export default function EditArticle() {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, from } = router.query;
+  const backPath = from || "/dashboard/articles";
   const [formData, setFormData] = useState(null);
   const [viewMode, setViewMode] = useState("edit"); // 'edit' or 'preview'
   const [fullscreenPreview, setFullscreenPreview] = useState(false);
@@ -37,6 +47,7 @@ export default function EditArticle() {
         excerpt: data.article.excerpt || "",
         category_id: data.article.category_id || "",
         status: data.article.status || "draft",
+        published_at: data.article.published_at || "",
         meta_title: data.article.meta_title || "",
         meta_description: data.article.meta_description || "",
         keywords: data.article.keywords || [],
@@ -68,10 +79,11 @@ export default function EditArticle() {
         category_id: formData.category_id
           ? parseInt(formData.category_id)
           : null,
+        published_at: formData.published_at || null,
       };
 
       await articleService.updateArticle(id, data);
-      router.push("/dashboard/articles");
+      router.push(backPath);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update article");
     } finally {
@@ -84,7 +96,7 @@ export default function EditArticle() {
 
     try {
       await articleService.deleteArticle(id);
-      router.push("/dashboard/articles");
+      router.push(backPath);
     } catch (error) {
       alert("Failed to delete article");
     }
@@ -156,9 +168,32 @@ export default function EditArticle() {
               marginBottom: "2rem",
             }}
           >
-            <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
-              Edit Article
-            </h1>
+            <div>
+              <button
+                type="button"
+                onClick={() => router.push(backPath)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.5rem 1rem",
+                  background: "var(--surface)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "0.75rem",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  fontSize: "0.875rem",
+                  marginBottom: "1rem",
+                }}
+              >
+                <ArrowLeft size={16} />
+                Back to Articles
+              </button>
+              <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
+                Edit Article
+              </h1>
+            </div>
             <button className="btn btn-danger" onClick={handleDelete}>
               <Trash2 size={20} />
               Delete
@@ -243,6 +278,132 @@ export default function EditArticle() {
                     <option value="archived">Archived</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Scheduled Publishing */}
+              <div className="form-group" style={{ marginTop: "1rem" }}>
+                <label
+                  className="label"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <Calendar size={16} style={{ color: "#6366f1" }} />
+                  Scheduled Publish Date
+                </label>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                  }}
+                >
+                  <input
+                    type="datetime-local"
+                    className="input"
+                    value={
+                      formData.published_at
+                        ? new Date(formData.published_at)
+                            .toISOString()
+                            .slice(0, 16)
+                        : ""
+                    }
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        published_at: e.target.value
+                          ? new Date(e.target.value).toISOString()
+                          : "",
+                      })
+                    }
+                    style={{ flex: 1, maxWidth: "320px" }}
+                  />
+                  {formData.published_at && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, published_at: "" })
+                      }
+                      style={{
+                        padding: "0.5rem 0.75rem",
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        border: "none",
+                        borderRadius: "0.5rem",
+                        cursor: "pointer",
+                        fontSize: "0.8125rem",
+                        fontWeight: 500,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div style={{ marginTop: "0.5rem" }}>
+                  {formData.published_at ? (
+                    (() => {
+                      const pubDate = new Date(formData.published_at);
+                      const now = new Date();
+                      const isFuture = pubDate > now;
+                      return (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.375rem",
+                            padding: "0.3rem 0.75rem",
+                            borderRadius: "9999px",
+                            fontSize: "0.8125rem",
+                            fontWeight: 500,
+                            background: isFuture ? "#ede9fe" : "#d1fae5",
+                            color: isFuture ? "#5b21b6" : "#065f46",
+                          }}
+                        >
+                          <Calendar size={13} />
+                          {isFuture ? "Scheduled for " : "Published on "}
+                          {pubDate.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      );
+                    })()
+                  ) : (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.375rem",
+                        padding: "0.3rem 0.75rem",
+                        borderRadius: "9999px",
+                        fontSize: "0.8125rem",
+                        fontWeight: 500,
+                        background: "#f3f4f6",
+                        color: "#6b7280",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      <Calendar size={13} />
+                      No scheduled date set
+                    </span>
+                  )}
+                </div>
+                <small
+                  style={{
+                    color: "var(--text-secondary)",
+                    display: "block",
+                    marginTop: "0.375rem",
+                  }}
+                >
+                  Set a future date to automatically publish the article. Leave
+                  empty for manual publishing.
+                </small>
               </div>
             </div>
 
@@ -421,7 +582,7 @@ export default function EditArticle() {
               <button
                 type="button"
                 className="btn btn-secondary"
-                onClick={() => router.push("/dashboard/articles")}
+                onClick={() => router.push(backPath)}
               >
                 Cancel
               </button>

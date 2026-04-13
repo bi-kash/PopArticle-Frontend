@@ -7,7 +7,15 @@ import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import CommentsSection from "@/components/CommentsSection";
 import { articleService } from "@/lib/articleService";
 import { categoryService } from "@/lib/categoryService";
-import { Save, Trash2, Eye, Edit3, ArrowLeft, FileText } from "lucide-react";
+import {
+  Save,
+  Trash2,
+  Eye,
+  Edit3,
+  ArrowLeft,
+  FileText,
+  Calendar,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -18,7 +26,8 @@ const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
 
 export default function EditArticle() {
   const router = useRouter();
-  const { id: tenantId, articleId } = router.query;
+  const { id: tenantId, articleId, from } = router.query;
+  const backPath = from || `/dashboard/tenants/${tenantId}/articles`;
   const { tenantId: resolvedTenantId } = useTenantBySlug();
   const [formData, setFormData] = useState(null);
   const [viewMode, setViewMode] = useState("edit"); // "edit" or "preview"
@@ -106,6 +115,7 @@ export default function EditArticle() {
       category_id: categoryId,
       status: articleData.status || "draft",
       is_featured: articleData.is_featured || false,
+      published_at: articleData.published_at || "",
       meta_title: metaTitle,
       meta_description: metaDescription,
       keywords: articleData.keywords || [],
@@ -145,6 +155,8 @@ export default function EditArticle() {
           dataToSend.append("meta_description", formData.meta_description);
         if (formData.keywords.length > 0)
           dataToSend.append("keywords", JSON.stringify(formData.keywords));
+        if (formData.published_at)
+          dataToSend.append("published_at", formData.published_at);
         dataToSend.append("image", imageFile);
         isFormData = true;
       } else {
@@ -155,6 +167,7 @@ export default function EditArticle() {
             ? parseInt(formData.category_id)
             : null,
           is_featured: Boolean(formData.is_featured),
+          published_at: formData.published_at || null,
         };
       }
 
@@ -164,7 +177,7 @@ export default function EditArticle() {
         resolvedTenantId || tenantId,
         isFormData,
       );
-      router.push(`/dashboard/tenants/${tenantId}/articles`);
+      router.push(backPath);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -184,7 +197,7 @@ export default function EditArticle() {
         articleId,
         resolvedTenantId || tenantId,
       );
-      router.push(`/dashboard/tenants/${tenantId}/articles`);
+      router.push(backPath);
     } catch (error) {
       alert("Failed to delete article");
     }
@@ -278,9 +291,7 @@ export default function EditArticle() {
         <div>
           <div style={{ marginBottom: "2rem" }}>
             <button
-              onClick={() =>
-                router.push(`/dashboard/tenants/${tenantId}/articles`)
-              }
+              onClick={() => router.push(backPath)}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -552,6 +563,132 @@ export default function EditArticle() {
                   </small>
                 </div>
               </div>
+
+              {/* Scheduled Publishing */}
+              <div className="form-group" style={{ marginTop: "1rem" }}>
+                <label
+                  className="label"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <Calendar size={16} style={{ color: "#6366f1" }} />
+                  Scheduled Publish Date
+                </label>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                  }}
+                >
+                  <input
+                    type="datetime-local"
+                    className="input"
+                    value={
+                      formData.published_at
+                        ? new Date(formData.published_at)
+                            .toISOString()
+                            .slice(0, 16)
+                        : ""
+                    }
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        published_at: e.target.value
+                          ? new Date(e.target.value).toISOString()
+                          : "",
+                      })
+                    }
+                    style={{ flex: 1 }}
+                  />
+                  {formData.published_at && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, published_at: "" })
+                      }
+                      style={{
+                        padding: "0.5rem 0.75rem",
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        border: "none",
+                        borderRadius: "0.5rem",
+                        cursor: "pointer",
+                        fontSize: "0.8125rem",
+                        fontWeight: 500,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div style={{ marginTop: "0.5rem" }}>
+                  {formData.published_at ? (
+                    (() => {
+                      const pubDate = new Date(formData.published_at);
+                      const now = new Date();
+                      const isFuture = pubDate > now;
+                      return (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.375rem",
+                            padding: "0.3rem 0.75rem",
+                            borderRadius: "9999px",
+                            fontSize: "0.8125rem",
+                            fontWeight: 500,
+                            background: isFuture ? "#ede9fe" : "#d1fae5",
+                            color: isFuture ? "#5b21b6" : "#065f46",
+                          }}
+                        >
+                          <Calendar size={13} />
+                          {isFuture ? "Scheduled for " : "Published on "}
+                          {pubDate.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      );
+                    })()
+                  ) : (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.375rem",
+                        padding: "0.3rem 0.75rem",
+                        borderRadius: "9999px",
+                        fontSize: "0.8125rem",
+                        fontWeight: 500,
+                        background: "#f3f4f6",
+                        color: "#6b7280",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      <Calendar size={13} />
+                      No scheduled date set
+                    </span>
+                  )}
+                </div>
+                <small
+                  style={{
+                    color: "var(--text-secondary)",
+                    display: "block",
+                    marginTop: "0.375rem",
+                  }}
+                >
+                  Set a future date to automatically publish the article. Leave
+                  empty for manual publishing.
+                </small>
+              </div>
             </div>
 
             <div className="card" style={{ marginBottom: "2rem" }}>
@@ -765,9 +902,7 @@ export default function EditArticle() {
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  router.push(`/dashboard/tenants/${tenantId}/articles`)
-                }
+                onClick={() => router.push(backPath)}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
