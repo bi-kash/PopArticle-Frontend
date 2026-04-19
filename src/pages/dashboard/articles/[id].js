@@ -291,63 +291,114 @@ export default function EditArticle() {
                   }}
                 >
                   <Calendar size={16} style={{ color: "#6366f1" }} />
-                  Scheduled Publish Date
+                  {formData.status === "published"
+                    ? "Publish Date"
+                    : "Scheduled Publish Date"}
                 </label>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                  }}
-                >
-                  <input
-                    type="datetime-local"
-                    className="input"
-                    value={
-                      formData.published_at
-                        ? new Date(formData.published_at)
-                            .toISOString()
-                            .slice(0, 16)
-                        : ""
-                    }
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        published_at: e.target.value
-                          ? new Date(e.target.value).toISOString()
-                          : "",
-                      })
-                    }
-                    style={{ flex: 1, maxWidth: "320px" }}
-                  />
-                  {formData.published_at && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setFormData({ ...formData, published_at: "" })
+                {formData.status !== "published" && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                    }}
+                  >
+                    <input
+                      type="datetime-local"
+                      className="input"
+                      value={
+                        formData.published_at
+                          ? new Date(
+                              new Date(formData.published_at).getTime() -
+                                new Date(
+                                  formData.published_at,
+                                ).getTimezoneOffset() *
+                                  60000,
+                            )
+                              .toISOString()
+                              .slice(0, 16)
+                          : ""
                       }
-                      style={{
-                        padding: "0.5rem 0.75rem",
-                        background: "#fee2e2",
-                        color: "#991b1b",
-                        border: "none",
-                        borderRadius: "0.5rem",
-                        cursor: "pointer",
-                        fontSize: "0.8125rem",
-                        fontWeight: 500,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          published_at: e.target.value
+                            ? new Date(e.target.value).toISOString()
+                            : "",
+                        })
+                      }
+                      style={{ flex: 1, maxWidth: "320px" }}
+                    />
+                    {formData.published_at && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({ ...formData, published_at: "" })
+                        }
+                        style={{
+                          padding: "0.5rem 0.75rem",
+                          background: "#fee2e2",
+                          color: "#991b1b",
+                          border: "none",
+                          borderRadius: "0.5rem",
+                          cursor: "pointer",
+                          fontSize: "0.8125rem",
+                          fontWeight: 500,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                )}
                 <div style={{ marginTop: "0.5rem" }}>
                   {formData.published_at ? (
                     (() => {
                       const pubDate = new Date(formData.published_at);
                       const now = new Date();
                       const isFuture = pubDate > now;
+                      const isPublished = formData.status === "published";
+
+                      // Calculate relative time
+                      let relativeText = "";
+                      if (isFuture && !isPublished) {
+                        const diffMs = pubDate - now;
+                        const diffDays = Math.floor(
+                          diffMs / (1000 * 60 * 60 * 24),
+                        );
+                        const diffHours = Math.floor(
+                          (diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+                        );
+                        const diffMinutes = Math.floor(
+                          (diffMs % (1000 * 60 * 60)) / (1000 * 60),
+                        );
+                        const parts = [];
+                        if (diffDays > 0)
+                          parts.push(
+                            `${diffDays} day${diffDays !== 1 ? "s" : ""}`,
+                          );
+                        if (diffHours > 0)
+                          parts.push(
+                            `${diffHours} hour${diffHours !== 1 ? "s" : ""}`,
+                          );
+                        if (diffMinutes > 0 && diffDays === 0)
+                          parts.push(
+                            `${diffMinutes} min${diffMinutes !== 1 ? "s" : ""}`,
+                          );
+                        if (parts.length > 0)
+                          relativeText = ` (in ${parts.join(", ")})`;
+                      }
+
+                      const dateStr = pubDate.toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZoneName: "short",
+                      });
+
                       return (
                         <span
                           style={{
@@ -358,19 +409,26 @@ export default function EditArticle() {
                             borderRadius: "9999px",
                             fontSize: "0.8125rem",
                             fontWeight: 500,
-                            background: isFuture ? "#ede9fe" : "#d1fae5",
-                            color: isFuture ? "#5b21b6" : "#065f46",
+                            background: isPublished
+                              ? "#d1fae5"
+                              : isFuture
+                                ? "#ede9fe"
+                                : "#d1fae5",
+                            color: isPublished
+                              ? "#065f46"
+                              : isFuture
+                                ? "#5b21b6"
+                                : "#065f46",
                           }}
                         >
                           <Calendar size={13} />
-                          {isFuture ? "Scheduled for " : "Published on "}
-                          {pubDate.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {isPublished
+                            ? "Published on "
+                            : isFuture
+                              ? "Will be published on "
+                              : "Published on "}
+                          {dateStr}
+                          {relativeText}
                         </span>
                       );
                     })()
@@ -394,16 +452,18 @@ export default function EditArticle() {
                     </span>
                   )}
                 </div>
-                <small
-                  style={{
-                    color: "var(--text-secondary)",
-                    display: "block",
-                    marginTop: "0.375rem",
-                  }}
-                >
-                  Set a future date to automatically publish the article. Leave
-                  empty for manual publishing.
-                </small>
+                {formData.status !== "published" && (
+                  <small
+                    style={{
+                      color: "var(--text-secondary)",
+                      display: "block",
+                      marginTop: "0.375rem",
+                    }}
+                  >
+                    Set a future date to automatically publish the article.
+                    Leave empty for manual publishing.
+                  </small>
+                )}
               </div>
             </div>
 

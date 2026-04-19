@@ -17,6 +17,7 @@ import {
   PieChart,
   DollarSign,
   Server,
+  Mail,
 } from "lucide-react";
 
 function StatCard({ icon: Icon, label, value, sub, color, href }) {
@@ -256,6 +257,13 @@ export default function AdminDashboardPage() {
                     color: "#f59e0b",
                     title: "Revenue Analytics",
                     desc: "MRR estimates, plan distribution, churn rate, and subscription health",
+                  },
+                  {
+                    href: "/admin/messages",
+                    icon: Mail,
+                    color: "#dc2626",
+                    title: "Platform Messages",
+                    desc: "View and respond to messages from the main platform contact form",
                   },
                   {
                     href: "/admin/tenants",

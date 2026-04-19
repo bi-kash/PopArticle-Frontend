@@ -116,20 +116,34 @@ export default function MessagesInbox() {
       messages.find((m) => m.id === messageId) ||
       (selectedMessage?.id === messageId ? selectedMessage : null);
     const msgTenantId = msg?._tenant_id || msg?.tenant_id || tenantId;
+
+    // Optimistic UI update
+    setMessages((prev) =>
+      prev.map((m) => (m.id === messageId ? { ...m, status: newStatus } : m)),
+    );
+    if (selectedMessage?.id === messageId) {
+      setSelectedMessage((prev) => ({ ...prev, status: newStatus }));
+    }
+
     try {
       await messageService.updateMessage(
         messageId,
         { status: newStatus },
         msgTenantId || null,
       );
-      setMessages((prev) =>
-        prev.map((m) => (m.id === messageId ? { ...m, status: newStatus } : m)),
-      );
-      if (selectedMessage?.id === messageId) {
-        setSelectedMessage((prev) => ({ ...prev, status: newStatus }));
-      }
     } catch (error) {
       console.error("Failed to update message status:", error);
+      // Revert optimistic update on failure
+      if (msg) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === messageId ? { ...m, status: msg.status } : m,
+          ),
+        );
+        if (selectedMessage?.id === messageId) {
+          setSelectedMessage((prev) => ({ ...prev, status: msg.status }));
+        }
+      }
     }
   };
 

@@ -68,8 +68,23 @@ export const messageService = {
       config.headers = { "X-Tenant-ID": tenantId };
     }
 
-    const response = await api.patch(`/api/v1/messages/${id}`, data, config);
-    return response.data;
+    // Try with tenant header first, if it fails with 404/403 and we had a
+    // tenantId, retry without it (backend may resolve by message ID alone)
+    try {
+      const response = await api.patch(`/api/v1/messages/${id}`, data, config);
+      return response.data;
+    } catch (err) {
+      const status = err.response?.status;
+      if (tenantId && (status === 404 || status === 403)) {
+        const retryResponse = await api.patch(
+          `/api/v1/messages/${id}`,
+          data,
+          {},
+        );
+        return retryResponse.data;
+      }
+      throw err;
+    }
   },
 
   // Delete a message

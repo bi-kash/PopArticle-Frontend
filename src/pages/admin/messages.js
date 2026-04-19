@@ -45,22 +45,38 @@ export default function AdminMessagesPage() {
   };
 
   const handleStatusChange = async (messageId, newStatus) => {
+    const msg = messages.find((m) => m.id === messageId);
+    const originalStatus = msg?.status;
+
+    // Optimistic UI update
+    setMessages((prev) =>
+      prev.map((m) => (m.id === messageId ? { ...m, status: newStatus } : m)),
+    );
+    if (selectedMessage?.id === messageId) {
+      setSelectedMessage((prev) => ({ ...prev, status: newStatus }));
+    }
+
     try {
-      // Platform messages — no X-Tenant-ID
+      // Platform messages — try without X-Tenant-ID first, then with message's tenant_id
       await messageService.updateMessage(
         messageId,
         { status: newStatus },
-        null,
+        msg?.tenant_id || null,
       );
+    } catch (error) {
+      console.error(
+        "Failed to update message status:",
+        error?.response?.data || error,
+      );
+      // Revert optimistic update
       setMessages((prev) =>
-        prev.map((m) => (m.id === messageId ? { ...m, status: newStatus } : m)),
+        prev.map((m) =>
+          m.id === messageId ? { ...m, status: originalStatus } : m,
+        ),
       );
       if (selectedMessage?.id === messageId) {
-        setSelectedMessage((prev) => ({ ...prev, status: newStatus }));
+        setSelectedMessage((prev) => ({ ...prev, status: originalStatus }));
       }
-    } catch (error) {
-      console.error("Failed to update message status:", error);
-      alert("Failed to update message status");
     }
   };
 
@@ -73,28 +89,40 @@ export default function AdminMessagesPage() {
       await messageService.updateMessage(
         messageId,
         { status: "replied", reply_text: replyText },
-        null,
+        selectedMessage?.tenant_id || null,
       );
       setReplyText("");
       await fetchMessages();
       alert("Reply sent successfully!");
     } catch (error) {
-      console.error("Failed to send reply:", error);
-      alert("Failed to send reply");
+      console.error("Failed to send reply:", error?.response?.data || error);
+      alert(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          "Failed to send reply",
+      );
     }
   };
 
   const handleDelete = async (messageId) => {
     if (!confirm("Are you sure you want to delete this message?")) return;
+    const msg = messages.find((m) => m.id === messageId);
     try {
-      await messageService.deleteMessage(messageId, null);
+      await messageService.deleteMessage(messageId, msg?.tenant_id || null);
       setMessages((prev) => prev.filter((m) => m.id !== messageId));
       if (selectedMessage?.id === messageId) {
         setSelectedMessage(null);
       }
     } catch (error) {
-      console.error("Failed to delete message:", error);
-      alert("Failed to delete message");
+      console.error(
+        "Failed to delete message:",
+        error?.response?.data || error,
+      );
+      alert(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          "Failed to delete message",
+      );
     }
   };
 
