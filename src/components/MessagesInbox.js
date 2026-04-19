@@ -115,12 +115,12 @@ export default function MessagesInbox() {
     const msg =
       messages.find((m) => m.id === messageId) ||
       (selectedMessage?.id === messageId ? selectedMessage : null);
-    const msgTenantId = msg?._tenant_id || tenantId;
+    const msgTenantId = msg?._tenant_id || msg?.tenant_id || tenantId;
     try {
       await messageService.updateMessage(
         messageId,
         { status: newStatus },
-        msgTenantId,
+        msgTenantId || null,
       );
       setMessages((prev) =>
         prev.map((m) => (m.id === messageId ? { ...m, status: newStatus } : m)),
@@ -130,7 +130,6 @@ export default function MessagesInbox() {
       }
     } catch (error) {
       console.error("Failed to update message status:", error);
-      alert("Failed to update message status");
     }
   };
 
@@ -139,7 +138,8 @@ export default function MessagesInbox() {
       alert("Please enter a reply");
       return;
     }
-    const msgTenantId = selectedMessage?._tenant_id || tenantId;
+    const msgTenantId =
+      selectedMessage?._tenant_id || selectedMessage?.tenant_id || tenantId;
     try {
       await messageService.updateMessage(
         messageId,
@@ -160,9 +160,9 @@ export default function MessagesInbox() {
     const msg =
       messages.find((m) => m.id === messageId) ||
       (selectedMessage?.id === messageId ? selectedMessage : null);
-    const msgTenantId = msg?._tenant_id || tenantId;
+    const msgTenantId = msg?._tenant_id || msg?.tenant_id || tenantId;
     try {
-      await messageService.deleteMessage(messageId, msgTenantId);
+      await messageService.deleteMessage(messageId, msgTenantId || null);
       setMessages((prev) => prev.filter((m) => m.id !== messageId));
       if (selectedMessage?.id === messageId) {
         setSelectedMessage(null);

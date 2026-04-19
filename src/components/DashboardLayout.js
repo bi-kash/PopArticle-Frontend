@@ -152,6 +152,7 @@ export default function DashboardLayout({ children }) {
       label: "Revenue Analytics",
       href: "/admin/revenue-analytics",
     },
+    { icon: Mail, label: "Platform Messages", href: "/admin/messages" },
     { icon: Building2, label: "All Tenants", href: "/admin/tenants" },
     { icon: Users, label: "All Users", href: "/admin/users" },
     { icon: ClipboardList, label: "Audit Logs", href: "/admin/audit-logs" },

@@ -91,7 +91,12 @@ export default function GenerateArticle() {
       };
 
       const response = await articleService.generateArticle(data);
-      router.push(`/dashboard/articles/${response.article.id}`);
+      const articleId = response.article?.id || response.id;
+      if (articleId) {
+        router.push(`/dashboard/articles/${articleId}`);
+      } else {
+        router.push("/dashboard/articles");
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to generate article");
     } finally {

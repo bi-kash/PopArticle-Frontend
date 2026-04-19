@@ -107,9 +107,12 @@ export default function GenerateArticle() {
         data,
         resolvedTenantId || tenantId,
       );
-      router.push(
-        `/dashboard/tenants/${tenantId}/articles/${response.article.id}`,
-      );
+      const articleId = response.article?.id || response.id;
+      if (articleId) {
+        router.push(`/dashboard/tenants/${tenantId}/articles/${articleId}`);
+      } else {
+        router.push(`/dashboard/tenants/${tenantId}/articles`);
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to generate article");
     } finally {
