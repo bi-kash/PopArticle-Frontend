@@ -6,6 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayoutWrapper";
 import { articleService } from "@/lib/articleService";
 import { tenantService } from "@/lib/tenantService";
+import { categoryService } from "@/lib/categoryService";
 import {
   Plus,
   Edit,
@@ -15,6 +16,8 @@ import {
   ArrowLeft,
   Search,
   Upload,
+  Filter,
+  X,
 } from "lucide-react";
 
 const PAGE_SIZE = 50;
@@ -25,28 +28,59 @@ export default function TenantArticles() {
   const { tenantId: resolvedId } = useTenantBySlug();
   const [tenant, setTenant] = useState(null);
   const [articles, setArticles] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalArticles, setTotalArticles] = useState(0);
+  
+  // Filter states
+  const [statusFilter, setStatusFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [featuredFilter, setFeaturedFilter] = useState("");
+
+  useEffect(() => {
+    if (resolvedId) {
+      loadCategories();
+    }
+  }, [resolvedId]);
 
   useEffect(() => {
     if (resolvedId) {
       loadData(1);
     }
-  }, [resolvedId]);
+  }, [resolvedId, statusFilter, categoryFilter, featuredFilter]);
+
+  const loadCategories = async () => {
+    try {
+      const data = await categoryService.getCategories({
+        tenant_id: resolvedId || id,
+      });
+      setCategories(data.categories || []);
+    } catch (error) {
+      console.error("Failed to load categories:", error);
+    }
+  };
 
   const loadData = async (pageNum = page) => {
     try {
       setLoading(true);
       const offset = (pageNum - 1) * PAGE_SIZE;
+      
+      // Build filter parameters
+      const filterParams = {
+        tenant_id: resolvedId || id,
+        limit: PAGE_SIZE,
+        offset,
+      };
+      
+      if (statusFilter) filterParams.status = statusFilter;
+      if (categoryFilter) filterParams.category_id = categoryFilter;
+      if (featuredFilter) filterParams.is_featured = featuredFilter;
+      
       const [tenantData, articlesData] = await Promise.all([
         tenantService.getTenant(resolvedId || id),
-        articleService.getArticles({
-          tenant_id: resolvedId || id,
-          limit: PAGE_SIZE,
-          offset,
-        }),
+        articleService.getArticles(filterParams),
       ]);
       setTenant(tenantData.tenant || tenantData);
 
@@ -93,6 +127,14 @@ export default function TenantArticles() {
   const filteredArticles = articles.filter((article) =>
     article.title.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  const hasActiveFilters = statusFilter || categoryFilter || featuredFilter;
+
+  const clearFilters = () => {
+    setStatusFilter("");
+    setCategoryFilter("");
+    setFeaturedFilter("");
+  };
 
   return (
     <ProtectedRoute>
@@ -216,6 +258,149 @@ export default function TenantArticles() {
             </div>
           </div>
 
+          {/* Filters */}
+          <div className="card" style={{ marginBottom: "1.5rem" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                marginBottom: "1rem",
+              }}
+            >
+              <Filter size={18} style={{ color: "var(--text-secondary)" }} />
+              <h3
+                style={{
+                  fontSize: "0.9375rem",
+                  fontWeight: 600,
+                  color: "var(--text-secondary)",
+                }}
+              >
+                Filters
+              </h3>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  style={{
+                    marginLeft: "auto",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                    padding: "0.375rem 0.75rem",
+                    background: "var(--surface-secondary)",
+                    color: "var(--text-secondary)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "0.5rem",
+                    fontSize: "0.8125rem",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
+                >
+                  <X size={14} />
+                  Clear Filters
+                </button>
+              )}
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "1rem",
+              }}
+            >
+              {/* Status Filter */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.8125rem",
+                    fontWeight: 500,
+                    color: "var(--text-secondary)",
+                    marginBottom: "0.375rem",
+                  }}
+                >
+                  Status
+                </label>
+                <select
+                  className="input"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem 0.75rem",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+
+              {/* Category Filter */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.8125rem",
+                    fontWeight: 500,
+                    color: "var(--text-secondary)",
+                    marginBottom: "0.375rem",
+                  }}
+                >
+                  Category
+                </label>
+                <select
+                  className="input"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem 0.75rem",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Featured Filter */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.8125rem",
+                    fontWeight: 500,
+                    color: "var(--text-secondary)",
+                    marginBottom: "0.375rem",
+                  }}
+                >
+                  Featured
+                </label>
+                <select
+                  className="input"
+                  value={featuredFilter}
+                  onChange={(e) => setFeaturedFilter(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem 0.75rem",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  <option value="">All Articles</option>
+                  <option value="true">Featured Only</option>
+                  <option value="false">Non-Featured</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           {loading ? (
             <div className="loading">
               <div className="spinner"></div>
@@ -297,6 +482,15 @@ export default function TenantArticles() {
                           fontWeight: 600,
                         }}
                       >
+                        Category
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          padding: "1rem",
+                          fontWeight: 600,
+                        }}
+                      >
                         Status
                       </th>
                       <th
@@ -335,6 +529,28 @@ export default function TenantArticles() {
                           }}
                         >
                           {article.title}
+                        </td>
+                        <td style={{ padding: "1rem" }}>
+                          {article.category ? (
+                            <span
+                              style={{
+                                color: "var(--text-secondary)",
+                                fontSize: "0.875rem",
+                              }}
+                            >
+                              {article.category}
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                color: "var(--text-secondary)",
+                                fontSize: "0.875rem",
+                                fontStyle: "italic",
+                              }}
+                            >
+                              Uncategorized
+                            </span>
+                          )}
                         </td>
                         <td style={{ padding: "1rem" }}>
                           <span
