@@ -24,7 +24,7 @@ const PAGE_SIZE = 50;
 
 export default function TenantArticles() {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, page: urlPage, status, category, featured, search } = router.query;
   const { tenantId: resolvedId } = useTenantBySlug();
   const [tenant, setTenant] = useState(null);
   const [articles, setArticles] = useState([]);
@@ -33,23 +33,36 @@ export default function TenantArticles() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalArticles, setTotalArticles] = useState(0);
+  const [initialized, setInitialized] = useState(false);
   
   // Filter states
   const [statusFilter, setStatusFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [featuredFilter, setFeaturedFilter] = useState("");
 
+  // Initialize state from URL query parameters
   useEffect(() => {
-    if (resolvedId) {
-      loadCategories();
+    if (router.isReady && !initialized) {
+      setPage(parseInt(urlPage) || 1);
+      setStatusFilter(status || "");
+      setCategoryFilter(category || "");
+      setFeaturedFilter(featured || "");
+      setSearchTerm(search || "");
+      setInitialized(true);
     }
-  }, [resolvedId]);
+  }, [router.isReady, urlPage, status, category, featured, search, initialized]);
 
   useEffect(() => {
-    if (resolvedId) {
-      loadData(1);
+    if (resolvedId && initialized) {
+      loadCategories();
     }
-  }, [resolvedId, statusFilter, categoryFilter, featuredFilter]);
+  }, [resolvedId, initialized]);
+
+  useEffect(() => {
+    if (resolvedId && initialized) {
+      loadData(page);
+    }
+  }, [resolvedId, initialized, statusFilter, categoryFilter, featuredFilter, page]);
 
   const loadCategories = async () => {
     try {
@@ -60,6 +73,41 @@ export default function TenantArticles() {
     } catch (error) {
       console.error("Failed to load categories:", error);
     }
+  };
+
+  // Update URL with current filter and pagination state
+  const updateURL = (updates) => {
+    const query = { id };
+    
+    // Add current state
+    if (page && page !== 1) query.page = page;
+    if (statusFilter) query.status = statusFilter;
+    if (categoryFilter) query.category = categoryFilter;
+    if (featuredFilter) query.featured = featuredFilter;
+    if (searchTerm) query.search = searchTerm;
+    
+    // Apply updates
+    Object.keys(updates).forEach(key => {
+      if (updates[key]) {
+        query[key] = updates[key];
+      } else {
+        delete query[key];
+      }
+    });
+    
+    // Remove page if it's 1 (default)
+    if (query.page === 1 || query.page === "1") {
+      delete query.page;
+    }
+    
+    router.push(
+      {
+        pathname: router.pathname,
+        query,
+      },
+      undefined,
+      { shallow: true }
+    );
   };
 
   const loadData = async (pageNum = page) => {
@@ -87,7 +135,12 @@ export default function TenantArticles() {
       const allArticles = articlesData.articles || [];
       setArticles(allArticles);
       setTotalArticles(articlesData.total ?? allArticles.length);
-      setPage(pageNum);
+      
+      // Update page state and URL if page changed
+      if (pageNum !== page) {
+        setPage(pageNum);
+        updateURL({ page: pageNum === 1 ? null : pageNum });
+      }
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
@@ -134,6 +187,32 @@ export default function TenantArticles() {
     setStatusFilter("");
     setCategoryFilter("");
     setFeaturedFilter("");
+    setPage(1);
+    updateURL({ status: null, category: null, featured: null, page: null });
+  };
+
+  const handleStatusFilterChange = (value) => {
+    setStatusFilter(value);
+    setPage(1);
+    updateURL({ status: value || null, page: null });
+  };
+
+  const handleCategoryFilterChange = (value) => {
+    setCategoryFilter(value);
+    setPage(1);
+    updateURL({ category: value || null, page: null });
+  };
+
+  const handleFeaturedFilterChange = (value) => {
+    setFeaturedFilter(value);
+    setPage(1);
+    updateURL({ featured: value || null, page: null });
+  };
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    // Debounce would be ideal here, but for now update immediately
+    updateURL({ search: value || null });
   };
 
   return (
@@ -252,7 +331,7 @@ export default function TenantArticles() {
                 className="input"
                 placeholder="Search articles..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 style={{ paddingLeft: "3rem" }}
               />
             </div>
@@ -324,7 +403,7 @@ export default function TenantArticles() {
                 <select
                   className="input"
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  onChange={(e) => handleStatusFilterChange(e.target.value)}
                   style={{
                     width: "100%",
                     padding: "0.5rem 0.75rem",
@@ -354,7 +433,7 @@ export default function TenantArticles() {
                 <select
                   className="input"
                   value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  onChange={(e) => handleCategoryFilterChange(e.target.value)}
                   style={{
                     width: "100%",
                     padding: "0.5rem 0.75rem",
@@ -386,7 +465,7 @@ export default function TenantArticles() {
                 <select
                   className="input"
                   value={featuredFilter}
-                  onChange={(e) => setFeaturedFilter(e.target.value)}
+                  onChange={(e) => handleFeaturedFilterChange(e.target.value)}
                   style={{
                     width: "100%",
                     padding: "0.5rem 0.75rem",
