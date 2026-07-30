@@ -62,7 +62,7 @@ export default function TenantArticles() {
     if (resolvedId && initialized) {
       loadData(page);
     }
-  }, [resolvedId, initialized, statusFilter, categoryFilter, featuredFilter, page]);
+  }, [resolvedId, initialized, statusFilter, categoryFilter, featuredFilter, page, searchTerm]);
 
   const loadCategories = async () => {
     try {
@@ -117,7 +117,6 @@ export default function TenantArticles() {
       
       // Build filter parameters
       const filterParams = {
-        tenant_id: resolvedId || id,
         limit: PAGE_SIZE,
         offset,
       };
@@ -125,10 +124,24 @@ export default function TenantArticles() {
       if (statusFilter) filterParams.status = statusFilter;
       if (categoryFilter) filterParams.category_id = categoryFilter;
       if (featuredFilter) filterParams.is_featured = featuredFilter;
-      
-      const [tenantData, articlesData] = await Promise.all([
+
+      let articlesData;
+      if (searchTerm.trim()) {
+        // Use the search endpoint so results span all articles, not just the current page
+        articlesData = await articleService.searchArticles(
+          searchTerm.trim(),
+          filterParams,
+          resolvedId || id,
+        );
+      } else {
+        articlesData = await articleService.getArticles({
+          tenant_id: resolvedId || id,
+          ...filterParams,
+        });
+      }
+
+      const [tenantData] = await Promise.all([
         tenantService.getTenant(resolvedId || id),
-        articleService.getArticles(filterParams),
       ]);
       setTenant(tenantData.tenant || tenantData);
 
@@ -177,10 +190,6 @@ export default function TenantArticles() {
     }
   };
 
-  const filteredArticles = articles.filter((article) =>
-    article.title.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
   const hasActiveFilters = statusFilter || categoryFilter || featuredFilter;
 
   const clearFilters = () => {
@@ -211,8 +220,8 @@ export default function TenantArticles() {
 
   const handleSearchChange = (value) => {
     setSearchTerm(value);
-    // Debounce would be ideal here, but for now update immediately
-    updateURL({ search: value || null });
+    setPage(1);
+    updateURL({ search: value || null, page: null });
   };
 
   return (
@@ -484,7 +493,7 @@ export default function TenantArticles() {
             <div className="loading">
               <div className="spinner"></div>
             </div>
-          ) : filteredArticles.length === 0 ? (
+          ) : articles.length === 0 ? (
             <div
               className="card"
               style={{ textAlign: "center", padding: "3rem" }}
@@ -593,7 +602,7 @@ export default function TenantArticles() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredArticles.map((article) => (
+                    {articles.map((article) => (
                       <tr
                         key={article.id}
                         style={{
