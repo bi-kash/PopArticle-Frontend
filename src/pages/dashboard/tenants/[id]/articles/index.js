@@ -626,7 +626,7 @@ export default function TenantArticles() {
                                 fontSize: "0.875rem",
                               }}
                             >
-                              {article.category}
+                              {article.category?.name || article.category}
                             </span>
                           ) : (
                             <span
