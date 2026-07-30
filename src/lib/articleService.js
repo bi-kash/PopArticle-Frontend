@@ -117,9 +117,9 @@ export const articleService = {
   },
 
   // Search articles
-  async searchArticles(query, limit = 10, tenantId = null) {
+  async searchArticles(query, params = {}, tenantId = null) {
     const config = {
-      params: { q: query, limit },
+      params: { q: query, ...params },
     };
 
     // If tenant_id is provided, send it as X-Tenant-ID header
